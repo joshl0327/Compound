@@ -28,6 +28,11 @@
 <body>
   <div id="root"></div>
   <script>
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -37,23 +42,23 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
-function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-const _React = React,
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var _React = React,
   useState = _React.useState,
   useEffect = _React.useEffect,
   useCallback = _React.useCallback;
 
 // Pure SVG donut chart
 function SVGDonut(_ref) {
-let data = _ref.data,
+var data = _ref.data,
 colors = _ref.colors;
-const size = 180,
+var size = 180,
 cx = 90,
 cy = 90,
 r = 72,
 ir = 45;
-const total = data.reduce(function (s, d) {
+var total = data.reduce(function (s, d) {
 return s + d.value;
 }, 0);
 if (total === 0) return React.createElement(“div”, {
@@ -64,20 +69,20 @@ textAlign: “center”,
 padding: “20px 0”
 }
 }, “No debts added yet”);
-let angle = -Math.PI / 2;
-const slices = data.map(function (d, i) {
-const a = d.value / total * 2 * Math.PI;
-const x1 = cx + r * Math.cos(angle),
+var angle = -Math.PI / 2;
+var slices = data.map(function (d, i) {
+var a = d.value / total * 2 * Math.PI;
+var x1 = cx + r * Math.cos(angle),
 y1 = cy + r * Math.sin(angle);
-const x2 = cx + r * Math.cos(angle + a),
+var x2 = cx + r * Math.cos(angle + a),
 y2 = cy + r * Math.sin(angle + a);
-const ix1 = cx + ir * Math.cos(angle),
+var ix1 = cx + ir * Math.cos(angle),
 iy1 = cy + ir * Math.sin(angle);
-const ix2 = cx + ir * Math.cos(angle + a),
+var ix2 = cx + ir * Math.cos(angle + a),
 iy2 = cy + ir * Math.sin(angle + a);
-const large = a > Math.PI ? 1 : 0;
-const path = “M “ + x1 + “ “ + y1 + “ A “ + r + “ “ + r + “ 0 “ + large + “ 1 “ + x2 + “ “ + y2 + “ L “ + ix2 + “ “ + iy2 + “ A “ + ir + “ “ + ir + “ 0 “ + large + “ 0 “ + ix1 + “ “ + iy1 + “ Z”;
-const slice = React.createElement(“path”, {
+var large = a > Math.PI ? 1 : 0;
+var path = “M “ + x1 + “ “ + y1 + “ A “ + r + “ “ + r + “ 0 “ + large + “ 1 “ + x2 + “ “ + y2 + “ L “ + ix2 + “ “ + iy2 + “ A “ + ir + “ “ + ir + “ 0 “ + large + “ 0 “ + ix1 + “ “ + iy1 + “ Z”;
+var slice = React.createElement(“path”, {
 key: i,
 d: path,
 fill: colors[i % colors.length],
@@ -100,9 +105,9 @@ fill: “#0a1520”
 
 // Pure SVG bar chart
 function SVGBarChart(_ref2) {
-let data = _ref2.data,
+var data = _ref2.data,
 height = _ref2.height;
-const w = 340,
+var w = 340,
 h = height || 180,
 pad = {
 t: 10,
@@ -110,14 +115,14 @@ r: 10,
 b: 30,
 l: 45
 };
-const chartW = w - pad.l - pad.r,
+var chartW = w - pad.l - pad.r,
 chartH = h - pad.t - pad.b;
-const maxVal = Math.max.apply(null, data.map(function (d) {
+var maxVal = Math.max.apply(null, data.map(function (d) {
 return Math.max(d.Budgeted || 0, d.Spent || 0);
 })) || 1;
-const barW = Math.floor(chartW / data.length * 0.35);
-const gap = Math.floor(chartW / data.length * 0.1);
-const ticks = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
+var barW = Math.floor(chartW / data.length * 0.35);
+var gap = Math.floor(chartW / data.length * 0.1);
+var ticks = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
 return Math.round(maxVal * t);
 });
 return React.createElement(“svg”, {
@@ -126,7 +131,7 @@ viewBox: “0 0 “ + w + “ “ + h
 },
 // Y axis ticks
 ticks.map(function (v, i) {
-const y = pad.t + chartH - v / maxVal * chartH;
+var y = pad.t + chartH - v / maxVal * chartH;
 return React.createElement(“g”, {
 key: i
 }, React.createElement(“line”, {
@@ -146,13 +151,13 @@ fill: “#5a7a9a”
 }),
 // Bars
 data.map(function (d, i) {
-const slotW = chartW / data.length;
-const bx = pad.l + i * slotW + slotW * 0.15;
-const bH1 = (d.Budgeted || 0) / maxVal * chartH;
-const bH2 = (d.Spent || 0) / maxVal * chartH;
-const by1 = pad.t + chartH - bH1;
-const by2 = pad.t + chartH - bH2;
-const label = d.name.length > 6 ? d.name.slice(0, 6) + “…” : d.name;
+var slotW = chartW / data.length;
+var bx = pad.l + i * slotW + slotW * 0.15;
+var bH1 = (d.Budgeted || 0) / maxVal * chartH;
+var bH2 = (d.Spent || 0) / maxVal * chartH;
+var by1 = pad.t + chartH - bH1;
+var by2 = pad.t + chartH - bH2;
+var label = d.name.length > 6 ? d.name.slice(0, 6) + “…” : d.name;
 return React.createElement(“g”, {
 key: i
 }, React.createElement(“rect”, {
@@ -181,9 +186,9 @@ fill: “#5a7a9a”
 
 // Pure SVG line chart
 function SVGLineChart(_ref3) {
-let data = *ref3.data,
+var data = *ref3.data,
 height = *ref3.height;
-const w = 400,
+var w = 400,
 h = height || 200,
 pad = {
 t: 10,
@@ -191,7 +196,7 @@ r: 20,
 b: 30,
 l: 55
 };
-const chartW = w - pad.l - pad.r,
+var chartW = w - pad.l - pad.r,
 chartH = h - pad.t - pad.b;
 if (!data || data.length < 2) return React.createElement(“div”, {
 style: {
@@ -201,15 +206,15 @@ textAlign: “center”,
 padding: “40px 0”
 }
 }, “Enter your age and target age to see projections”);
-const maxVal = Math.max.apply(null, data.map(function (d) {
+var maxVal = Math.max.apply(null, data.map(function (d) {
 return d.balance;
 })) || 1;
-const minVal = 0;
-const xStep = chartW / (data.length - 1);
-const points = data.map(function (d, i) {
+var minVal = 0;
+var xStep = chartW / (data.length - 1);
+var points = data.map(function (d, i) {
 return pad.l + i * xStep + “,” + (pad.t + chartH - (d.balance - minVal) / (maxVal - minVal) * chartH);
 }).join(” “);
-const ticks = 5;
+var ticks = 5;
 return React.createElement(“svg”, {
 width: “100%”,
 viewBox: “0 0 “ + w + “ “ + h
@@ -218,8 +223,8 @@ viewBox: “0 0 “ + w + “ “ + h
 Array.from({
 length: ticks
 }, function (*, i) {
-const v = Math.round(maxVal / (ticks - 1) * i);
-const y = pad.t + chartH - v / maxVal * chartH;
+var v = Math.round(maxVal / (ticks - 1) * i);
+var y = pad.t + chartH - v / maxVal * chartH;
 return React.createElement(“g”, {
 key: i
 }, React.createElement(“line”, {
@@ -242,7 +247,7 @@ fill: “#5a7a9a”
 data.filter(function (*, i) {
 return i === 0 || i === data.length - 1 || data[i].age % 10 === 0;
 }).map(function (d, i) {
-const idx = data.indexOf(d);
+var idx = data.indexOf(d);
 return React.createElement(“text”, {
 key: i,
 x: pad.l + idx * xStep,
@@ -273,8 +278,8 @@ r: 4,
 fill: “#a855f7”
 }));
 }
-const STORAGE_KEY = “compound_v1”;
-const defaultData = {
+var STORAGE_KEY = “compound_v1”;
+var defaultData = {
 income: {
 monthly: “”
 },
@@ -303,18 +308,18 @@ incomeBasis: “gross”,
 matchInIncome: false
 }
 };
-const formatCurrency = v => {
-const n = parseFloat(v) || 0;
+var formatCurrency = function formatCurrency(v) {
+var n = parseFloat(v) || 0;
 return new Intl.NumberFormat(“en-US”, {
 style: “currency”,
 currency: “USD”,
 maximumFractionDigits: 0
 }).format(n);
 };
-const Input = _ref4 => {
-let label = _ref4.label,
+var Input = function Input(_ref4) {
+var label = _ref4.label,
 value = _ref4.value,
-onChange = _ref4.onChange,
+_onChange = _ref4.onChange,
 _ref4$type = _ref4.type,
 type = _ref4$type === void 0 ? “text” : _ref4$type,
 prefix = _ref4.prefix,
@@ -352,7 +357,9 @@ fontWeight: 600
 }, prefix), /*#**PURE***/React.createElement(“input”, {
 type: type,
 value: value,
-onChange: e => onChange(e.target.value),
+onChange: function onChange(e) {
+return _onChange(e.target.value);
+},
 placeholder: placeholder || “0”,
 style: {
 flex: 1,
@@ -372,8 +379,8 @@ fontSize: 13
 }
 }, suffix)));
 };
-const Card = _ref5 => {
-let children = _ref5.children,
+var Card = function Card(_ref5) {
+var children = _ref5.children,
 style = _ref5.style;
 return /*#**PURE***/React.createElement(“div”, {
 style: _objectSpread({
@@ -384,8 +391,8 @@ padding: 24
 }, style)
 }, children);
 };
-const SectionTitle = _ref6 => {
-let children = _ref6.children,
+var SectionTitle = function SectionTitle(_ref6) {
+var children = _ref6.children,
 accent = _ref6.accent;
 return /*#**PURE***/React.createElement(“div”, {
 style: {
@@ -411,11 +418,11 @@ fontFamily: “‘Syne’, sans-serif”
 }
 }, children));
 };
-const StatBadge = _ref7 => {
-let label = _ref7.label,
+var StatBadge = function StatBadge(_ref7) {
+var label = _ref7.label,
 value = _ref7.value,
 color = _ref7.color;
-const borderColor = “1px solid “ + color + “22”;
+var borderColor = “1px solid “ + color + “22”;
 return /*#**PURE***/React.createElement(“div”, {
 style: {
 background: “#0a1520”,
@@ -440,13 +447,13 @@ fontFamily: “‘DM Mono’, monospace”
 }
 }, value));
 };
-const DEBT_COLORS = [”#f97316”, “#ef4444”, “#a855f7”, “#3b82f6”, “#14b8a6”, “#eab308”];
-const BUDGET_COLORS = [”#3b82f6”, “#10b981”, “#f59e0b”, “#ef4444”, “#a855f7”, “#06b6d4”, “#f97316”, “#84cc16”];
+var DEBT_COLORS = [”#f97316”, “#ef4444”, “#a855f7”, “#3b82f6”, “#14b8a6”, “#eab308”];
+var BUDGET_COLORS = [”#3b82f6”, “#10b981”, “#f59e0b”, “#ef4444”, “#a855f7”, “#06b6d4”, “#f97316”, “#84cc16”];
 function App() {
 var _data$budget$categori;
-const _useState = useState(() => {
+var _useState = useState(function () {
 try {
-const s = localStorage.getItem(STORAGE_KEY);
+var s = localStorage.getItem(STORAGE_KEY);
 return s ? _objectSpread(_objectSpread({}, defaultData), JSON.parse(s)) : defaultData;
 } catch (_unused) {
 return defaultData;
@@ -455,15 +462,15 @@ return defaultData;
 _useState2 = _slicedToArray(_useState, 2),
 data = _useState2[0],
 setData = _useState2[1];
-const _useState3 = useState(“overview”),
+var _useState3 = useState(“overview”),
 _useState4 = _slicedToArray(_useState3, 2),
 tab = _useState4[0],
 setTab = _useState4[1];
-const _useState5 = useState(“avalanche”),
+var _useState5 = useState(“avalanche”),
 _useState6 = _slicedToArray(_useState5, 2),
 debtMethod = _useState6[0],
 setDebtMethod = _useState6[1];
-const _useState7 = useState({
+var _useState7 = useState({
 name: “”,
 balance: “”,
 rate: “”,
@@ -472,7 +479,7 @@ minPayment: “”
 _useState8 = _slicedToArray(_useState7, 2),
 newDebt = _useState8[0],
 setNewDebt = _useState8[1];
-const _useState9 = useState({
+var _useState9 = useState({
 name: “”,
 budgeted: “”,
 spent: “”
@@ -480,104 +487,120 @@ spent: “”
 _useState0 = _slicedToArray(_useState9, 2),
 newBudget = _useState0[0],
 setNewBudget = _useState0[1];
-const _useState1 = useState(””),
+var _useState1 = useState(””),
 _useState10 = _slicedToArray(_useState1, 2),
 extraPayment = _useState10[0],
 setExtraPayment = _useState10[1];
-const _useState11 = useState(””),
+var _useState11 = useState(””),
 _useState12 = _slicedToArray(_useState11, 2),
 importMsg = _useState12[0],
 setImportMsg = _useState12[1];
-useEffect(() => {
+useEffect(function () {
 try {
 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 } catch (_unused2) {}
 }, [data]);
-const update = useCallback((section, key, value) => setData(d => _objectSpread(_objectSpread({}, d), {}, {
-[section]: _objectSpread(_objectSpread({}, d[section]), {}, {
-[key]: value
-})
-})), []);
-const income = parseFloat(data.income.monthly) || 0;
-const totalDebt = data.debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0);
-const totalBudgeted = data.budget.categories.reduce((s, c) => s + (parseFloat(c.budgeted) || 0), 0);
-const totalSpent = data.budget.categories.reduce((s, c) => s + (parseFloat(c.spent) || 0), 0);
-const emergencyGoal = parseFloat(data.emergency.goal) || 0;
-const emergencyCurrent = parseFloat(data.emergency.current) || 0;
-const emergencyPct = emergencyGoal > 0 ? Math.min(100, emergencyCurrent / emergencyGoal * 100) : 0;
-const monthlySavings = parseFloat(data.savings.monthlySavings) || 0;
-const monthlyInvest = parseFloat(data.savings.monthlyInvest) || 0;
-const ret401kContrib = parseFloat(data.retirement.monthlyContrib) || 0;
-const ret401kMatchPct = parseFloat(data.retirement.employerMatch) || 0;
-const monthlyMatch = ret401kContrib * ret401kMatchPct / 100;
-const effectiveIncome = data.settings.matchInIncome ? income + monthlyMatch : income;
-const totalMonthlySaved = monthlySavings + monthlyInvest + ret401kContrib + monthlyMatch;
-const savingsRate = effectiveIncome > 0 ? (monthlySavings / effectiveIncome * 100).toFixed(1) : 0;
-const investRate = effectiveIncome > 0 ? ((monthlyInvest + ret401kContrib + monthlyMatch) / effectiveIncome * 100).toFixed(1) : 0;
-const totalSavingsRate = effectiveIncome > 0 ? (totalMonthlySaved / effectiveIncome * 100).toFixed(1) : 0;
-const totalMinPayment = data.debts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0);
-const extra = parseFloat(extraPayment) || 0;
-const sortedDebts = […data.debts].sort((a, b) => {
+var update = useCallback(function (section, key, value) {
+return setData(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, _defineProperty({}, section, _objectSpread(_objectSpread({}, d[section]), {}, _defineProperty({}, key, value))));
+});
+}, []);
+var income = parseFloat(data.income.monthly) || 0;
+var totalDebt = data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.balance) || 0);
+}, 0);
+var totalBudgeted = data.budget.categories.reduce(function (s, c) {
+return s + (parseFloat(c.budgeted) || 0);
+}, 0);
+var totalSpent = data.budget.categories.reduce(function (s, c) {
+return s + (parseFloat(c.spent) || 0);
+}, 0);
+var emergencyGoal = parseFloat(data.emergency.goal) || 0;
+var emergencyCurrent = parseFloat(data.emergency.current) || 0;
+var emergencyPct = emergencyGoal > 0 ? Math.min(100, emergencyCurrent / emergencyGoal * 100) : 0;
+var monthlySavings = parseFloat(data.savings.monthlySavings) || 0;
+var monthlyInvest = parseFloat(data.savings.monthlyInvest) || 0;
+var ret401kContrib = parseFloat(data.retirement.monthlyContrib) || 0;
+var ret401kMatchPct = parseFloat(data.retirement.employerMatch) || 0;
+var monthlyMatch = ret401kContrib * ret401kMatchPct / 100;
+var effectiveIncome = data.settings.matchInIncome ? income + monthlyMatch : income;
+var totalMonthlySaved = monthlySavings + monthlyInvest + ret401kContrib + monthlyMatch;
+var savingsRate = effectiveIncome > 0 ? (monthlySavings / effectiveIncome * 100).toFixed(1) : 0;
+var investRate = effectiveIncome > 0 ? ((monthlyInvest + ret401kContrib + monthlyMatch) / effectiveIncome * 100).toFixed(1) : 0;
+var totalSavingsRate = effectiveIncome > 0 ? (totalMonthlySaved / effectiveIncome * 100).toFixed(1) : 0;
+var totalMinPayment = data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.minPayment) || 0);
+}, 0);
+var extra = parseFloat(extraPayment) || 0;
+var sortedDebts = _toConsumableArray(data.debts).sort(function (a, b) {
 if (debtMethod === “avalanche”) return (parseFloat(b.rate) || 0) - (parseFloat(a.rate) || 0);
 if (debtMethod === “snowball”) return (parseFloat(a.balance) || 0) - (parseFloat(b.balance) || 0);
 return 0;
 });
-const handleExport = () => {
-const blob = new Blob([JSON.stringify(data, null, 2)], {
+var handleExport = function handleExport() {
+var blob = new Blob([JSON.stringify(data, null, 2)], {
 type: “application/json”
 });
-const url = URL.createObjectURL(blob);
-const a = document.createElement(“a”);
+var url = URL.createObjectURL(blob);
+var a = document.createElement(“a”);
 a.href = url;
 a.download = “compound-backup-” + new Date().toISOString().slice(0, 10) + “.json”;
 a.click();
 URL.revokeObjectURL(url);
 };
-const handleImport = e => {
-const file = e.target.files[0];
+var handleImport = function handleImport(e) {
+var file = e.target.files[0];
 if (!file) return;
-const reader = new FileReader();
-reader.onload = ev => {
+var reader = new FileReader();
+reader.onload = function (ev) {
 try {
 setData(_objectSpread(_objectSpread({}, defaultData), JSON.parse(ev.target.result)));
 setImportMsg(“✓ Imported!”);
-setTimeout(() => setImportMsg(””), 3000);
+setTimeout(function () {
+return setImportMsg(””);
+}, 3000);
 } catch (*unused3) {
 setImportMsg(“✗ Invalid file”);
-setTimeout(() => setImportMsg(””), 3000);
+setTimeout(function () {
+return setImportMsg(””);
+}, 3000);
 }
 };
 reader.readAsText(file);
 e.target.value = “”;
 };
-const calcPayoffMonths = (balance, rate, payment) => {
+var calcPayoffMonths = function calcPayoffMonths(balance, rate, payment) {
 if (!balance || !payment || payment <= 0) return null;
-const r = rate / 100 / 12;
+var r = rate / 100 / 12;
 if (r === 0) return Math.ceil(balance / payment);
 if (payment <= balance * r) return null;
 return Math.ceil(-Math.log(1 - balance * r / payment) / Math.log(1 + r));
 };
-const retMonthly = parseFloat(data.retirement.monthlyContrib) || 0;
-const retMatch = parseFloat(data.retirement.employerMatch) || 0;
-const retBalance = parseFloat(data.retirement.currentBalance) || 0;
-const retTargetAge = parseInt(data.retirement.targetAge) || 65;
-const retCurrentAge = parseInt(data.retirement.currentAge) || 30;
-const retYears = Math.max(0, retTargetAge - retCurrentAge);
-const mRate = 0.07 / 12;
-const totalMonthly = retMonthly + retMonthly * retMatch / 100;
-const projectedBalance = retBalance * Math.pow(1 + mRate, retYears * 12) + totalMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate;
-const retChartData = Array.from({
+var retMonthly = parseFloat(data.retirement.monthlyContrib) || 0;
+var retMatch = parseFloat(data.retirement.employerMatch) || 0;
+var retBalance = parseFloat(data.retirement.currentBalance) || 0;
+var retTargetAge = parseInt(data.retirement.targetAge) || 65;
+var retCurrentAge = parseInt(data.retirement.currentAge) || 30;
+var retYears = Math.max(0, retTargetAge - retCurrentAge);
+var mRate = 0.07 / 12;
+var totalMonthly = retMonthly + retMonthly * retMatch / 100;
+var projectedBalance = retBalance * Math.pow(1 + mRate, retYears * 12) + totalMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate;
+var retChartData = Array.from({
 length: retYears + 1
-}, (*, i) => ({
+}, function (*, i) {
+return {
 age: retCurrentAge + i,
 balance: Math.round(retBalance * Math.pow(1 + mRate, i * 12) + totalMonthly * (Math.pow(1 + mRate, i * 12) - 1) / mRate)
-}));
-const budgetChartData = data.budget.categories.map(c => ({
+};
+});
+var budgetChartData = data.budget.categories.map(function (c) {
+return {
 name: c.name,
 Budgeted: parseFloat(c.budgeted) || 0,
 Spent: parseFloat(c.spent) || 0
-}));
-const tabs = [{
+};
+});
+var tabs = [{
 id: “overview”,
 label: “Overview”
 }, {
@@ -599,7 +622,8 @@ label: “Savings Rate”
 id: “settings”,
 label: “Settings”
 }];
-const btnStyle = active => ({
+var btnStyle = function btnStyle(active) {
+return {
 marginRight: 8,
 marginBottom: 8,
 padding: “7px 14px”,
@@ -610,8 +634,10 @@ borderRadius: 20,
 fontSize: 12,
 fontWeight: 600,
 cursor: “pointer”
-});
-const radioOpt = (selected, accentColor, onClick, label, desc) => /*#**PURE***/React.createElement(“div”, {
+};
+};
+var radioOpt = function radioOpt(selected, accentColor, onClick, label, desc) {
+return /*#**PURE***/React.createElement(“div”, {
 onClick: onClick,
 style: {
 display: “flex”,
@@ -656,6 +682,7 @@ color: “#8b9cb5”,
 lineHeight: 1.5
 }
 }, desc)));
+};
 return /*#**PURE***/React.createElement(“div”, {
 style: {
 minHeight: “100vh”,
@@ -761,7 +788,9 @@ fontSize: 13
 }, “$”), /*#**PURE***/React.createElement(“input”, {
 type: “number”,
 value: data.income.monthly,
-onChange: e => update(“income”, “monthly”, e.target.value),
+onChange: function onChange(e) {
+return update(“income”, “monthly”, e.target.value);
+},
 placeholder: “Income”,
 style: {
 background: “transparent”,
@@ -786,9 +815,12 @@ margin: “0 auto”,
 display: “flex”,
 padding: “0 20px”
 }
-}, tabs.map(t => /*#**PURE***/React.createElement(“button”, {
+}, tabs.map(function (t) {
+return /*#**PURE***/React.createElement(“button”, {
 key: t.id,
-onClick: () => setTab(t.id),
+onClick: function onClick() {
+return setTab(t.id);
+},
 style: {
 background: “none”,
 border: “none”,
@@ -800,7 +832,8 @@ fontSize: 12,
 borderBottom: “2px solid “ + (tab === t.id ? “#60a5fa” : “transparent”),
 whiteSpace: “nowrap”
 }
-}, t.label)))), /*#**PURE***/React.createElement(“div”, {
+}, t.label);
+}))), /*#**PURE***/React.createElement(“div”, {
 style: {
 maxWidth: 1100,
 margin: “0 auto”,
@@ -901,7 +934,7 @@ gap: 12
 }
 }, [{
 label: “Housing (<28%)”,
-value: effectiveIncome > 0 ? (parseFloat(((_data$budget$categori = data.budget.categories.find(c => {
+value: effectiveIncome > 0 ? (parseFloat(((_data$budget$categori = data.budget.categories.find(function (c) {
 var _c$name, _c$name2;
 return ((_c$name = c.name) === null || _c$name === void 0 ? void 0 : _c$name.toLowerCase().includes(“hous”)) || ((_c$name2 = c.name) === null || _c$name2 === void 0 ? void 0 : _c$name2.toLowerCase().includes(“rent”));
 })) === null || _data$budget$categori === void 0 ? void 0 : _data$budget$categori.spent) || 0) / effectiveIncome * 100).toFixed(1) + “%” : “—”,
@@ -914,7 +947,8 @@ color: “#f97316”
 label: “Total Savings”,
 value: effectiveIncome > 0 ? totalSavingsRate + “%” : “—”,
 color: “#10b981”
-}].map(r => /*#**PURE***/React.createElement(“div”, {
+}].map(function (r) {
+return /*#**PURE***/React.createElement(“div”, {
 key: r.label,
 style: {
 background: “#0a1520”,
@@ -934,7 +968,8 @@ fontWeight: 700,
 color: r.color,
 fontFamily: “‘DM Mono’, monospace”
 }
-}, r.value))))))), tab === “debts” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+}, r.value));
+}))))), tab === “debts” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
 style: {
 margin: “0 0 4px”,
 fontFamily: “‘Syne’, sans-serif”,
@@ -959,42 +994,60 @@ accent: “#f97316”
 }, “Add a Debt”), /*#**PURE***/React.createElement(Input, {
 label: “Name”,
 value: newDebt.name,
-onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+onChange: function onChange(v) {
+return setNewDebt(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 name: v
-})),
+});
+});
+},
 placeholder: “e.g. Student Loan”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Balance”,
 value: newDebt.balance,
-onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+onChange: function onChange(v) {
+return setNewDebt(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 balance: v
-})),
+});
+});
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Interest Rate (APR)”,
 value: newDebt.rate,
-onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+onChange: function onChange(v) {
+return setNewDebt(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 rate: v
-})),
+});
+});
+},
 suffix: “%”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Minimum Payment”,
 value: newDebt.minPayment,
-onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+onChange: function onChange(v) {
+return setNewDebt(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 minPayment: v
-})),
+});
+});
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(“button”, {
-onClick: () => {
+onClick: function onClick() {
 if (!newDebt.name || !newDebt.balance) return;
-setData(d => _objectSpread(_objectSpread({}, d), {}, {
-debts: […d.debts, _objectSpread(_objectSpread({}, newDebt), {}, {
+setData(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
+debts: [].concat(_toConsumableArray(d.debts), [_objectSpread(_objectSpread({}, newDebt), {}, {
 id: Date.now()
-})]
-}));
+})])
+});
+});
 setNewDebt({
 name: “”,
 balance: “”,
@@ -1020,11 +1073,15 @@ accent: “#a855f7”
 style: {
 marginBottom: 14
 }
-}, [“avalanche”, “snowball”, “custom”].map(m => /*#**PURE***/React.createElement(“button”, {
+}, [“avalanche”, “snowball”, “custom”].map(function (m) {
+return /*#**PURE***/React.createElement(“button”, {
 key: m,
-onClick: () => setDebtMethod(m),
+onClick: function onClick() {
+return setDebtMethod(m);
+},
 style: btnStyle(debtMethod === m)
-}, m.charAt(0).toUpperCase() + m.slice(1))), /*#**PURE***/React.createElement(“div”, {
+}, m.charAt(0).toUpperCase() + m.slice(1));
+}), /*#**PURE***/React.createElement(“div”, {
 style: {
 fontSize: 11,
 color: “#4a7fa5”,
@@ -1084,13 +1141,13 @@ display: “flex”,
 flexDirection: “column”,
 gap: 8
 }
-}, sortedDebts.map((debt, i) => {
-const balance = parseFloat(debt.balance) || 0,
+}, sortedDebts.map(function (debt, i) {
+var balance = parseFloat(debt.balance) || 0,
 rate = parseFloat(debt.rate) || 0,
 minPay = parseFloat(debt.minPayment) || 0;
-const effectivePay = i === 0 ? minPay + extra : minPay;
-const months = calcPayoffMonths(balance, rate, effectivePay);
-const color = DEBT_COLORS[i % DEBT_COLORS.length];
+var effectivePay = i === 0 ? minPay + extra : minPay;
+var months = calcPayoffMonths(balance, rate, effectivePay);
+var color = DEBT_COLORS[i % DEBT_COLORS.length];
 return /*#**PURE***/React.createElement(“div”, {
 key: debt.id,
 style: {
@@ -1107,7 +1164,7 @@ width: 26,
 height: 26,
 borderRadius: “50%”,
 background: color + “22”,
-color,
+color: color,
 fontSize: 11,
 fontWeight: 700,
 display: “flex”,
@@ -1136,7 +1193,7 @@ textAlign: “right”
 }, /*#**PURE***/React.createElement(“div”, {
 style: {
 fontFamily: “‘DM Mono’,monospace”,
-color,
+color: color,
 fontWeight: 600,
 fontSize: 13
 }
@@ -1149,9 +1206,15 @@ color: months ? “#10b981” : “#ef4444”
 month: “short”,
 year: “numeric”
 }) : “∞”)), /*#**PURE***/React.createElement(“button”, {
-onClick: () => setData(d => _objectSpread(_objectSpread({}, d), {}, {
-debts: d.debts.filter(x => x.id !== debt.id)
-})),
+onClick: function onClick() {
+return setData(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
+debts: d.debts.filter(function (x) {
+return x.id !== debt.id;
+})
+});
+});
+},
 style: {
 background: “none”,
 border: “none”,
@@ -1188,36 +1251,50 @@ accent: “#3b82f6”
 }, “Add Category”), /*#**PURE***/React.createElement(Input, {
 label: “Category Name”,
 value: newBudget.name,
-onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+onChange: function onChange(v) {
+return setNewBudget(function (b) {
+return _objectSpread(_objectSpread({}, b), {}, {
 name: v
-})),
+});
+});
+},
 placeholder: “e.g. Groceries”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Monthly Budget”,
 value: newBudget.budgeted,
-onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+onChange: function onChange(v) {
+return setNewBudget(function (b) {
+return _objectSpread(_objectSpread({}, b), {}, {
 budgeted: v
-})),
+});
+});
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Spent This Month”,
 value: newBudget.spent,
-onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+onChange: function onChange(v) {
+return setNewBudget(function (b) {
+return _objectSpread(_objectSpread({}, b), {}, {
 spent: v
-})),
+});
+});
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(“button”, {
-onClick: () => {
+onClick: function onClick() {
 if (!newBudget.name) return;
-setData(d => _objectSpread(_objectSpread({}, d), {}, {
+setData(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 budget: {
-categories: […d.budget.categories, _objectSpread(_objectSpread({}, newBudget), {}, {
+categories: [].concat(_toConsumableArray(d.budget.categories), [_objectSpread(_objectSpread({}, newBudget), {}, {
 id: Date.now()
-})]
+})])
 }
-}));
+});
+});
 setNewBudget({
 name: “”,
 budgeted: “”,
@@ -1236,8 +1313,8 @@ fontSize: 14,
 fontFamily: “‘DM Sans’,sans-serif”,
 marginTop: 4
 }
-}, “Add Category”)), /*#**PURE***/React.createElement(Card, null, [[“Budgeted”, “#3b82f6”, totalBudgeted], [“Spent”, “#f97316”, totalSpent]].map(_ref8 => {
-let _ref9 = _slicedToArray(_ref8, 3),
+}, “Add Category”)), /*#**PURE***/React.createElement(Card, null, [[“Budgeted”, “#3b82f6”, totalBudgeted], [“Spent”, “#f97316”, totalSpent]].map(function (_ref8) {
+var _ref9 = _slicedToArray(_ref8, 3),
 l = _ref9[0],
 c = _ref9[1],
 v = _ref9[2];
@@ -1276,11 +1353,11 @@ fontFamily: “‘DM Mono’,monospace”,
 color: totalBudgeted - totalSpent >= 0 ? “#10b981” : “#ef4444”,
 fontWeight: 600
 }
-}, formatCurrency(totalBudgeted - totalSpent))))), /*#**PURE***/React.createElement(“div”, null, data.budget.categories.map((cat, i) => {
-const budgeted = parseFloat(cat.budgeted) || 0,
+}, formatCurrency(totalBudgeted - totalSpent))))), /*#**PURE***/React.createElement(“div”, null, data.budget.categories.map(function (cat, i) {
+var budgeted = parseFloat(cat.budgeted) || 0,
 spent = parseFloat(cat.spent) || 0;
-const pct = budgeted > 0 ? Math.min(100, spent / budgeted * 100) : 0;
-const over = spent > budgeted;
+var pct = budgeted > 0 ? Math.min(100, spent / budgeted * 100) : 0;
+var over = spent > budgeted;
 return /*#**PURE***/React.createElement(“div”, {
 key: cat.id,
 style: {
@@ -1328,11 +1405,17 @@ fontSize: 12,
 color: over ? “#ef4444” : “#10b981”
 }
 }, formatCurrency(spent), “ / “, formatCurrency(budgeted)), /*#**PURE***/React.createElement(“button”, {
-onClick: () => setData(d => _objectSpread(_objectSpread({}, d), {}, {
+onClick: function onClick() {
+return setData(function (d) {
+return _objectSpread(_objectSpread({}, d), {}, {
 budget: {
-categories: d.budget.categories.filter(x => x.id !== cat.id)
+categories: d.budget.categories.filter(function (x) {
+return x.id !== cat.id;
+})
 }
-})),
+});
+});
+},
 style: {
 background: “none”,
 border: “none”,
@@ -1378,19 +1461,25 @@ accent: “#10b981”
 }, “Fund Details”), /*#**PURE***/React.createElement(Input, {
 label: “Goal Amount”,
 value: data.emergency.goal,
-onChange: v => update(“emergency”, “goal”, v),
+onChange: function onChange(v) {
+return update(“emergency”, “goal”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Current Balance”,
 value: data.emergency.current,
-onChange: v => update(“emergency”, “current”, v),
+onChange: function onChange(v) {
+return update(“emergency”, “current”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Monthly Contribution”,
 value: data.emergency.monthly,
-onChange: v => update(“emergency”, “monthly”, v),
+onChange: function onChange(v) {
+return update(“emergency”, “monthly”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(“div”, {
@@ -1464,11 +1553,11 @@ value: formatCurrency(Math.max(0, emergencyGoal - emergencyCurrent)),
 color: “#f59e0b”
 }), /*#**PURE***/React.createElement(StatBadge, {
 label: “Months Left”,
-value: (() => {
-const m = parseFloat(data.emergency.monthly) || 0;
-const r = Math.max(0, emergencyGoal - emergencyCurrent);
+value: function () {
+var m = parseFloat(data.emergency.monthly) || 0;
+var r = Math.max(0, emergencyGoal - emergencyCurrent);
 return m > 0 ? Math.ceil(r / m) + “ mo” : “—”;
-})(),
+}(),
 color: “#a78bfa”
 }))))), tab === “retirement” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
 style: {
@@ -1494,29 +1583,39 @@ accent: “#a855f7”
 }, “Your Info”), /*#**PURE***/React.createElement(Input, {
 label: “Current Age”,
 value: data.retirement.currentAge,
-onChange: v => update(“retirement”, “currentAge”, v),
+onChange: function onChange(v) {
+return update(“retirement”, “currentAge”, v);
+},
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Target Retirement Age”,
 value: data.retirement.targetAge,
-onChange: v => update(“retirement”, “targetAge”, v),
+onChange: function onChange(v) {
+return update(“retirement”, “targetAge”, v);
+},
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Current Balance”,
 value: data.retirement.currentBalance,
-onChange: v => update(“retirement”, “currentBalance”, v),
+onChange: function onChange(v) {
+return update(“retirement”, “currentBalance”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Monthly Contribution”,
 value: data.retirement.monthlyContrib,
-onChange: v => update(“retirement”, “monthlyContrib”, v),
+onChange: function onChange(v) {
+return update(“retirement”, “monthlyContrib”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Employer Match %”,
 value: data.retirement.employerMatch,
-onChange: v => update(“retirement”, “employerMatch”, v),
+onChange: function onChange(v) {
+return update(“retirement”, “employerMatch”, v);
+},
 suffix: “%”,
 type: “number”
 }), /*#**PURE***/React.createElement(“div”, {
@@ -1526,8 +1625,8 @@ borderRadius: 10,
 padding: 12,
 marginTop: 8
 }
-}, [[“Your contribution”, formatCurrency(retMonthly), “#a855f7”], [“Employer match”, formatCurrency(retMonthly * retMatch / 100), “#10b981”]].map(_ref0 => {
-let _ref1 = _slicedToArray(_ref0, 3),
+}, [[“Your contribution”, formatCurrency(retMonthly), “#a855f7”], [“Employer match”, formatCurrency(retMonthly * retMatch / 100), “#10b981”]].map(function (_ref0) {
+var _ref1 = _slicedToArray(_ref0, 3),
 l = _ref1[0],
 v = _ref1[1],
 c = _ref1[2];
@@ -1609,7 +1708,9 @@ color: “#5a7a9a”,
 fontSize: 13
 }
 }, “vs. “ + data.settings.incomeBasis + “ income” + (data.settings.matchInIncome ? “ (total comp)” : “”) + “. “, /*#**PURE***/React.createElement(“button”, {
-onClick: () => setTab(“settings”),
+onClick: function onClick() {
+return setTab(“settings”);
+},
 style: {
 background: “none”,
 border: “none”,
@@ -1630,19 +1731,25 @@ accent: “#34d399”
 }, “Monthly Flows”), /*#**PURE***/React.createElement(Input, {
 label: “Monthly Savings (liquid)”,
 value: data.savings.monthlySavings,
-onChange: v => update(“savings”, “monthlySavings”, v),
+onChange: function onChange(v) {
+return update(“savings”, “monthlySavings”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: “Monthly Investments (taxable, IRA)”,
 value: data.savings.monthlyInvest,
-onChange: v => update(“savings”, “monthlyInvest”, v),
+onChange: function onChange(v) {
+return update(“savings”, “monthlyInvest”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(Input, {
 label: (data.settings.incomeBasis === “gross” ? “Gross” : “Net”) + “ Monthly Income”,
 value: data.income.monthly,
-onChange: v => update(“income”, “monthly”, v),
+onChange: function onChange(v) {
+return update(“income”, “monthly”, v);
+},
 prefix: “$”,
 type: “number”
 }), /*#**PURE***/React.createElement(“div”, {
@@ -1663,8 +1770,8 @@ textTransform: “uppercase”,
 letterSpacing: “0.05em”,
 fontSize: 10
 }
-}, “What Counts as Savings”), [[“Liquid savings”, formatCurrency(monthlySavings), null], [“Investments”, formatCurrency(monthlyInvest), null], [“401k contribution”, formatCurrency(ret401kContrib), null], [“Employer match”, formatCurrency(monthlyMatch), “#10b981”]].map(_ref10 => {
-let _ref11 = _slicedToArray(_ref10, 3),
+}, “What Counts as Savings”), [[“Liquid savings”, formatCurrency(monthlySavings), null], [“Investments”, formatCurrency(monthlyInvest), null], [“401k contribution”, formatCurrency(ret401kContrib), null], [“Employer match”, formatCurrency(monthlyMatch), “#10b981”]].map(function (_ref10) {
+var _ref11 = _slicedToArray(_ref10, 3),
 l = _ref11[0],
 v = _ref11[1],
 c = _ref11[2];
@@ -1762,8 +1869,8 @@ label: “Excellent”,
 pct: 30,
 desc: “Accelerated path — wealth-building mode”,
 color: “#34d399”
-}].map(tier => {
-const achieved = (parseFloat(totalSavingsRate) || 0) >= tier.pct;
+}].map(function (tier) {
+var achieved = (parseFloat(totalSavingsRate) || 0) >= tier.pct;
 return /*#**PURE***/React.createElement(“div”, {
 key: tier.label,
 style: {
@@ -1828,7 +1935,11 @@ color: “#8b9cb5”,
 margin: “0 0 14px”,
 lineHeight: 1.6
 }
-}, “Calculate rates against gross (pre-tax) or net (take-home) income.”), radioOpt(data.settings.incomeBasis === “gross”, “#60a5fa”, () => update(“settings”, “incomeBasis”, “gross”), “Gross income (recommended)”, “Pre-tax. Matches standard rules like "save 15% of income". Stable benchmark.”), radioOpt(data.settings.incomeBasis === “net”, “#60a5fa”, () => update(“settings”, “incomeBasis”, “net”), “Net income”, “Take-home pay only. Won’t match published savings rate guidelines.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+}, “Calculate rates against gross (pre-tax) or net (take-home) income.”), radioOpt(data.settings.incomeBasis === “gross”, “#60a5fa”, function () {
+return update(“settings”, “incomeBasis”, “gross”);
+}, “Gross income (recommended)”, “Pre-tax. Matches standard rules like "save 15% of income". Stable benchmark.”), radioOpt(data.settings.incomeBasis === “net”, “#60a5fa”, function () {
+return update(“settings”, “incomeBasis”, “net”);
+}, “Net income”, “Take-home pay only. Won’t match published savings rate guidelines.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
 accent: “#a855f7”
 }, “401k Match Treatment”), /*#**PURE***/React.createElement(“p”, {
 style: {
@@ -1837,7 +1948,11 @@ color: “#8b9cb5”,
 margin: “0 0 14px”,
 lineHeight: 1.6
 }
-}, “Match always counts as savings. Also add it to income (total comp view)?”), radioOpt(data.settings.matchInIncome === false, “#a855f7”, () => update(“settings”, “matchInIncome”, false), “Match in savings only (recommended)”, “Rewards capturing the full match — your savings rate visibly increases when you do.”), radioOpt(data.settings.matchInIncome === true, “#a855f7”, () => update(“settings”, “matchInIncome”, true), “Match in both income and savings”, “Total compensation view. More technically accurate, but rates appear lower.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+}, “Match always counts as savings. Also add it to income (total comp view)?”), radioOpt(data.settings.matchInIncome === false, “#a855f7”, function () {
+return update(“settings”, “matchInIncome”, false);
+}, “Match in savings only (recommended)”, “Rewards capturing the full match — your savings rate visibly increases when you do.”), radioOpt(data.settings.matchInIncome === true, “#a855f7”, function () {
+return update(“settings”, “matchInIncome”, true);
+}, “Match in both income and savings”, “Total compensation view. More technically accurate, but rates appear lower.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
 accent: “#10b981”
 }, “Live Preview”), /*#**PURE***/React.createElement(“div”, {
 style: {
@@ -1870,7 +1985,7 @@ color: “#8b9cb5”,
 margin: “0 0 12px”
 }
 }, “Wipes all data. Export first if you want a backup.”), /*#**PURE***/React.createElement(“button”, {
-onClick: () => {
+onClick: function onClick() {
 if (window.confirm(“Reset all data? Cannot be undone.”)) setData(defaultData);
 },
 style: {

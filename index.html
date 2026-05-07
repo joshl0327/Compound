@@ -157,7 +157,7 @@ var bH1 = (d.Budgeted || 0) / maxVal * chartH;
 var bH2 = (d.Spent || 0) / maxVal * chartH;
 var by1 = pad.t + chartH - bH1;
 var by2 = pad.t + chartH - bH2;
-var label = d.name.length > 6 ? d.name.slice(0, 6) + “…” : d.name;
+var label = d.name.length > 6 ? d.name.slice(0, 6) + “\u2026” : d.name;
 return React.createElement(“g”, {
 key: i
 }, React.createElement(“rect”, {
@@ -555,12 +555,12 @@ var reader = new FileReader();
 reader.onload = function (ev) {
 try {
 setData(_objectSpread(_objectSpread({}, defaultData), JSON.parse(ev.target.result)));
-setImportMsg(“✓ Imported!”);
+setImportMsg(”\u2713 Imported!”);
 setTimeout(function () {
 return setImportMsg(””);
 }, 3000);
 } catch (*unused3) {
-setImportMsg(“✗ Invalid file”);
+setImportMsg(”\u2717 Invalid file”);
 setTimeout(function () {
 return setImportMsg(””);
 }, 3000);
@@ -738,7 +738,7 @@ gap: 8
 }, importMsg && /*#**PURE***/React.createElement(“span”, {
 style: {
 fontSize: 11,
-color: importMsg.startsWith(“✓”) ? “#10b981” : “#ef4444”,
+color: importMsg.startsWith(”\u2713”) ? “#10b981” : “#ef4444”,
 fontWeight: 600
 }
 }, importMsg), /*#**PURE***/React.createElement(“button”, {
@@ -937,15 +937,15 @@ label: “Housing (<28%)”,
 value: effectiveIncome > 0 ? (parseFloat(((_data$budget$categori = data.budget.categories.find(function (c) {
 var _c$name, _c$name2;
 return ((_c$name = c.name) === null || _c$name === void 0 ? void 0 : _c$name.toLowerCase().includes(“hous”)) || ((_c$name2 = c.name) === null || _c$name2 === void 0 ? void 0 : _c$name2.toLowerCase().includes(“rent”));
-})) === null || _data$budget$categori === void 0 ? void 0 : _data$budget$categori.spent) || 0) / effectiveIncome * 100).toFixed(1) + “%” : “—”,
+})) === null || _data$budget$categori === void 0 ? void 0 : _data$budget$categori.spent) || 0) / effectiveIncome * 100).toFixed(1) + “%” : “\u2014”,
 color: “#3b82f6”
 }, {
 label: “Debt-to-Income”,
-value: effectiveIncome > 0 ? (totalMinPayment / effectiveIncome * 100).toFixed(1) + “%” : “—”,
+value: effectiveIncome > 0 ? (totalMinPayment / effectiveIncome * 100).toFixed(1) + “%” : “\u2014”,
 color: “#f97316”
 }, {
 label: “Total Savings”,
-value: effectiveIncome > 0 ? totalSavingsRate + “%” : “—”,
+value: effectiveIncome > 0 ? totalSavingsRate + “%” : “\u2014”,
 color: “#10b981”
 }].map(function (r) {
 return /*#**PURE***/React.createElement(“div”, {
@@ -1087,7 +1087,7 @@ fontSize: 11,
 color: “#4a7fa5”,
 marginTop: 4
 }
-}, debtMethod === “avalanche” && “Highest interest first — saves most money.”, debtMethod === “snowball” && “Smallest balance first — builds momentum.”, debtMethod === “custom” && “Order you added them.”)), /*#**PURE***/React.createElement(Input, {
+}, debtMethod === “avalanche” && “Highest interest first \u2014 saves most money.”, debtMethod === “snowball” && “Smallest balance first \u2014 builds momentum.”, debtMethod === “custom” && “Order you added them.”)), /*#**PURE***/React.createElement(Input, {
 label: “Extra Monthly Payment”,
 value: extraPayment,
 onChange: setExtraPayment,
@@ -1202,10 +1202,10 @@ style: {
 fontSize: 10,
 color: months ? “#10b981” : “#ef4444”
 }
-}, months ? months + “ mo · “ + new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(“en-US”, {
+}, months ? months + “ mo \u00b7 “ + new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(“en-US”, {
 month: “short”,
 year: “numeric”
-}) : “∞”)), /*#**PURE***/React.createElement(“button”, {
+}) : “\u221e”)), /*#**PURE***/React.createElement(“button”, {
 onClick: function onClick() {
 return setData(function (d) {
 return _objectSpread(_objectSpread({}, d), {}, {
@@ -1556,7 +1556,7 @@ label: “Months Left”,
 value: function () {
 var m = parseFloat(data.emergency.monthly) || 0;
 var r = Math.max(0, emergencyGoal - emergencyCurrent);
-return m > 0 ? Math.ceil(r / m) + “ mo” : “—”;
+return m > 0 ? Math.ceil(r / m) + “ mo” : “\u2014”;
 }(),
 color: “#a78bfa”
 }))))), tab === “retirement” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
@@ -1842,12 +1842,12 @@ marginTop: -12
 }, “Based on total savings rate (”, totalSavingsRate, “%)”), [{
 label: “Survival mode”,
 pct: 0,
-desc: “No savings — any emergency is a crisis”,
+desc: “No savings \u2014 any emergency is a crisis”,
 color: “#ef4444”
 }, {
 label: “Getting started”,
 pct: 5,
-desc: “Better than nothing — build the habit”,
+desc: “Better than nothing \u2014 build the habit”,
 color: “#f97316”
 }, {
 label: “On track”,
@@ -1867,7 +1867,7 @@ color: “#10b981”
 }, {
 label: “Excellent”,
 pct: 30,
-desc: “Accelerated path — wealth-building mode”,
+desc: “Accelerated path \u2014 wealth-building mode”,
 color: “#34d399”
 }].map(function (tier) {
 var achieved = (parseFloat(totalSavingsRate) || 0) >= tier.pct;
@@ -1950,7 +1950,7 @@ lineHeight: 1.6
 }
 }, “Match always counts as savings. Also add it to income (total comp view)?”), radioOpt(data.settings.matchInIncome === false, “#a855f7”, function () {
 return update(“settings”, “matchInIncome”, false);
-}, “Match in savings only (recommended)”, “Rewards capturing the full match — your savings rate visibly increases when you do.”), radioOpt(data.settings.matchInIncome === true, “#a855f7”, function () {
+}, “Match in savings only (recommended)”, “Rewards capturing the full match \u2014 your savings rate visibly increases when you do.”), radioOpt(data.settings.matchInIncome === true, “#a855f7”, function () {
 return update(“settings”, “matchInIncome”, true);
 }, “Match in both income and savings”, “Total compensation view. More technically accurate, but rates appear lower.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
 accent: “#10b981”

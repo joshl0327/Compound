@@ -32,7 +32,7 @@
 
 ```
 // Pure SVG donut chart
-function DonutChart({ data, colors }) {
+function SVGDonut({ data, colors }) {
   const size = 180, cx = 90, cy = 90, r = 72, ir = 45;
   const total = data.reduce(function(s, d) { return s + d.value; }, 0);
   if (total === 0) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" } }, "No debts added yet");
@@ -56,7 +56,7 @@ function DonutChart({ data, colors }) {
 }
 
 // Pure SVG bar chart
-function BarChart({ data, height }) {
+function SVGBarChart({ data, height }) {
   const w = 340, h = height || 180, pad = { t: 10, r: 10, b: 30, l: 45 };
   const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
   const maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.Budgeted || 0, d.Spent || 0); })) || 1;
@@ -91,7 +91,7 @@ function BarChart({ data, height }) {
 }
 
 // Pure SVG line chart
-function LineChart({ data, height }) {
+function SVGLineChart({ data, height }) {
   const w = 400, h = height || 200, pad = { t: 10, r: 20, b: 30, l: 55 };
   const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
   if (!data || data.length < 2) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "40px 0" } }, "Enter your age and target age to see projections");
@@ -334,14 +334,14 @@ function App() {
                 <SectionTitle accent="#f97316">Debt Breakdown</SectionTitle>
                 {data.debts.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No debts added yet</div> : (
                   <div style={{ display: "flex", justifyContent: "center", padding: "10px 0" }}>
-                    <DonutChart data={data.debts.map(function(d) { return { name: d.name, value: parseFloat(d.balance)||0 }; })} colors={DEBT_COLORS} />
+                    <SVGDonut data={data.debts.map(function(d) { return { name: d.name, value: parseFloat(d.balance)||0 }; })} colors={DEBT_COLORS} />
                   </div>
                 )}
               </Card>
               <Card>
                 <SectionTitle accent="#3b82f6">Budget vs Spent</SectionTitle>
                 {data.budget.categories.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No categories yet</div> : (
-                  <BarChart data={budgetChartData} height={180} />
+                  <SVGBarChart data={budgetChartData} height={180} />
                 )}
               </Card>
               <Card style={{ gridColumn: "1 / -1" }}>
@@ -537,7 +537,7 @@ function App() {
                 </div>
                 <Card>
                   <SectionTitle accent="#a855f7">Projected Balance Growth</SectionTitle>
-                  <LineChart data={retChartData} height={200} />
+                  <SVGLineChart data={retChartData} height={200} />
                 </Card>
               </div>
             </div>

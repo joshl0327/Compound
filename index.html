@@ -13,9 +13,7 @@
   <meta name="theme-color" content="#070e16" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
@@ -31,9 +29,102 @@
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
-    const { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } = Recharts;
 
 ```
+// Pure SVG donut chart
+function DonutChart({ data, colors }) {
+  const size = 180, cx = 90, cy = 90, r = 72, ir = 45;
+  const total = data.reduce(function(s, d) { return s + d.value; }, 0);
+  if (total === 0) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" } }, "No debts added yet");
+  let angle = -Math.PI / 2;
+  const slices = data.map(function(d, i) {
+    const a = (d.value / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    const x2 = cx + r * Math.cos(angle + a), y2 = cy + r * Math.sin(angle + a);
+    const ix1 = cx + ir * Math.cos(angle), iy1 = cy + ir * Math.sin(angle);
+    const ix2 = cx + ir * Math.cos(angle + a), iy2 = cy + ir * Math.sin(angle + a);
+    const large = a > Math.PI ? 1 : 0;
+    const path = "M " + x1 + " " + y1 + " A " + r + " " + r + " 0 " + large + " 1 " + x2 + " " + y2 + " L " + ix2 + " " + iy2 + " A " + ir + " " + ir + " 0 " + large + " 0 " + ix1 + " " + iy1 + " Z";
+    const slice = React.createElement("path", { key: i, d: path, fill: colors[i % colors.length], opacity: 0.9 });
+    angle += a;
+    return slice;
+  });
+  return React.createElement("svg", { width: size, height: size, viewBox: "0 0 " + size + " " + size },
+    slices,
+    React.createElement("circle", { cx: cx, cy: cy, r: ir - 2, fill: "#0a1520" })
+  );
+}
+
+// Pure SVG bar chart
+function BarChart({ data, height }) {
+  const w = 340, h = height || 180, pad = { t: 10, r: 10, b: 30, l: 45 };
+  const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
+  const maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.Budgeted || 0, d.Spent || 0); })) || 1;
+  const barW = Math.floor(chartW / data.length * 0.35);
+  const gap = Math.floor(chartW / data.length * 0.1);
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map(function(t) { return Math.round(maxVal * t); });
+  return React.createElement("svg", { width: "100%", viewBox: "0 0 " + w + " " + h },
+    // Y axis ticks
+    ticks.map(function(v, i) {
+      const y = pad.t + chartH - (v / maxVal) * chartH;
+      return React.createElement("g", { key: i },
+        React.createElement("line", { x1: pad.l, y1: y, x2: pad.l + chartW, y2: y, stroke: "#1a2840", strokeWidth: 1 }),
+        React.createElement("text", { x: pad.l - 4, y: y + 4, textAnchor: "end", fontSize: 8, fill: "#5a7a9a" }, v >= 1000 ? "$" + Math.round(v/1000) + "k" : "$" + v)
+      );
+    }),
+    // Bars
+    data.map(function(d, i) {
+      const slotW = chartW / data.length;
+      const bx = pad.l + i * slotW + slotW * 0.15;
+      const bH1 = ((d.Budgeted || 0) / maxVal) * chartH;
+      const bH2 = ((d.Spent || 0) / maxVal) * chartH;
+      const by1 = pad.t + chartH - bH1;
+      const by2 = pad.t + chartH - bH2;
+      const label = d.name.length > 6 ? d.name.slice(0, 6) + "…" : d.name;
+      return React.createElement("g", { key: i },
+        React.createElement("rect", { x: bx, y: by1, width: barW, height: bH1, fill: "#3b82f6", rx: 2 }),
+        React.createElement("rect", { x: bx + barW + gap, y: by2, width: barW, height: bH2, fill: "#f97316", rx: 2 }),
+        React.createElement("text", { x: bx + barW, y: h - 8, textAnchor: "middle", fontSize: 8, fill: "#5a7a9a" }, label)
+      );
+    })
+  );
+}
+
+// Pure SVG line chart
+function LineChart({ data, height }) {
+  const w = 400, h = height || 200, pad = { t: 10, r: 20, b: 30, l: 55 };
+  const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
+  if (!data || data.length < 2) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "40px 0" } }, "Enter your age and target age to see projections");
+  const maxVal = Math.max.apply(null, data.map(function(d) { return d.balance; })) || 1;
+  const minVal = 0;
+  const xStep = chartW / (data.length - 1);
+  const points = data.map(function(d, i) {
+    return (pad.l + i * xStep) + "," + (pad.t + chartH - ((d.balance - minVal) / (maxVal - minVal)) * chartH);
+  }).join(" ");
+  const ticks = 5;
+  return React.createElement("svg", { width: "100%", viewBox: "0 0 " + w + " " + h },
+    // Grid + Y labels
+    Array.from({ length: ticks }, function(_, i) {
+      const v = Math.round((maxVal / (ticks - 1)) * i);
+      const y = pad.t + chartH - (v / maxVal) * chartH;
+      return React.createElement("g", { key: i },
+        React.createElement("line", { x1: pad.l, y1: y, x2: pad.l + chartW, y2: y, stroke: "#1a2840", strokeWidth: 1, strokeDasharray: "4 4" }),
+        React.createElement("text", { x: pad.l - 4, y: y + 4, textAnchor: "end", fontSize: 9, fill: "#5a7a9a" }, "$" + Math.round(v/1000) + "k")
+      );
+    }),
+    // X labels (every ~10 years)
+    data.filter(function(_, i) { return i === 0 || i === data.length - 1 || data[i].age % 10 === 0; }).map(function(d, i) {
+      const idx = data.indexOf(d);
+      return React.createElement("text", { key: i, x: pad.l + idx * xStep, y: h - 6, textAnchor: "middle", fontSize: 9, fill: "#5a7a9a" }, d.age);
+    }),
+    // Line
+    React.createElement("polyline", { points: points, fill: "none", stroke: "#a855f7", strokeWidth: 2.5, strokeLinejoin: "round" }),
+    // Dots at start and end
+    React.createElement("circle", { cx: pad.l, cy: pad.t + chartH, r: 3, fill: "#a855f7" }),
+    React.createElement("circle", { cx: pad.l + chartW, cy: pad.t + chartH - ((data[data.length-1].balance - minVal) / (maxVal - minVal)) * chartH, r: 4, fill: "#a855f7" })
+  );
+}
+
 const STORAGE_KEY = "compound_v1";
 
 const defaultData = {
@@ -242,22 +333,15 @@ function App() {
               <Card>
                 <SectionTitle accent="#f97316">Debt Breakdown</SectionTitle>
                 {data.debts.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No debts added yet</div> : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart><Pie data={data.debts.map(d => ({ name: d.name, value: parseFloat(d.balance)||0 }))} cx="50%" cy="50%" innerRadius={45} outerRadius={72} paddingAngle={3} dataKey="value">
-                      {data.debts.map((_,i) => <Cell key={i} fill={DEBT_COLORS[i % DEBT_COLORS.length]} />)}
-                    </Pie><Tooltip formatter={v => formatCurrency(v)} contentStyle={{ background: "#0d1a26", border: "1px solid #1e3a5f", borderRadius: 8, fontSize: 11 }} /></PieChart>
-                  </ResponsiveContainer>
+                  <div style={{ display: "flex", justifyContent: "center", padding: "10px 0" }}>
+                    <DonutChart data={data.debts.map(function(d) { return { name: d.name, value: parseFloat(d.balance)||0 }; })} colors={DEBT_COLORS} />
+                  </div>
                 )}
               </Card>
               <Card>
                 <SectionTitle accent="#3b82f6">Budget vs Spent</SectionTitle>
                 {data.budget.categories.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No categories yet</div> : (
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={budgetChartData}><XAxis dataKey="name" tick={{ fontSize: 9, fill: "#5a7a9a" }} /><YAxis tick={{ fontSize: 9, fill: "#5a7a9a" }} />
-                      <Tooltip formatter={v => formatCurrency(v)} contentStyle={{ background: "#0d1a26", border: "1px solid #1e3a5f", borderRadius: 8, fontSize: 11 }} />
-                      <Bar dataKey="Budgeted" fill="#3b82f6" radius={[4,4,0,0]} /><Bar dataKey="Spent" fill="#f97316" radius={[4,4,0,0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <BarChart data={budgetChartData} height={180} />
                 )}
               </Card>
               <Card style={{ gridColumn: "1 / -1" }}>
@@ -453,17 +537,7 @@ function App() {
                 </div>
                 <Card>
                   <SectionTitle accent="#a855f7">Projected Balance Growth</SectionTitle>
-                  {retCurrentAge && retYears > 0 ? (
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={retChartData}>
-                        <CartesianGrid stroke="#111f30" strokeDasharray="4 4" />
-                        <XAxis dataKey="age" tick={{ fontSize: 10, fill: "#5a7a9a" }} />
-                        <YAxis tickFormatter={function(v) { return "$" + (v/1000).toFixed(0) + "k"; }} tick={{ fontSize: 10, fill: "#5a7a9a" }} />
-                        <Tooltip formatter={function(v) { return formatCurrency(v); }} labelFormatter={function(v) { return "Age " + v; }} contentStyle={{ background: "#0d1a26", border: "1px solid #1e3a5f", borderRadius: 8, fontSize: 11 }} />
-                        <Line type="monotone" dataKey="balance" stroke="#a855f7" strokeWidth={2.5} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Enter your age and target age to see projections</div>}
+                  <LineChart data={retChartData} height={200} />
                 </Card>
               </div>
             </div>

@@ -7,13 +7,13 @@
   <meta name="description" content="Compound — your financial literacy journey starts here." />
   <title>Compound</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Compound" />
   <meta name="theme-color" content="#070e16" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
@@ -27,627 +27,1866 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+  <script>
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+const _React = React,
+  useState = _React.useState,
+  useEffect = _React.useEffect,
+  useCallback = _React.useCallback;
 
-```
 // Pure SVG donut chart
-function SVGDonut({ data, colors }) {
-  const size = 180, cx = 90, cy = 90, r = 72, ir = 45;
-  const total = data.reduce(function(s, d) { return s + d.value; }, 0);
-  if (total === 0) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" } }, "No debts added yet");
-  let angle = -Math.PI / 2;
-  const slices = data.map(function(d, i) {
-    const a = (d.value / total) * 2 * Math.PI;
-    const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
-    const x2 = cx + r * Math.cos(angle + a), y2 = cy + r * Math.sin(angle + a);
-    const ix1 = cx + ir * Math.cos(angle), iy1 = cy + ir * Math.sin(angle);
-    const ix2 = cx + ir * Math.cos(angle + a), iy2 = cy + ir * Math.sin(angle + a);
-    const large = a > Math.PI ? 1 : 0;
-    const path = "M " + x1 + " " + y1 + " A " + r + " " + r + " 0 " + large + " 1 " + x2 + " " + y2 + " L " + ix2 + " " + iy2 + " A " + ir + " " + ir + " 0 " + large + " 0 " + ix1 + " " + iy1 + " Z";
-    const slice = React.createElement("path", { key: i, d: path, fill: colors[i % colors.length], opacity: 0.9 });
-    angle += a;
-    return slice;
-  });
-  return React.createElement("svg", { width: size, height: size, viewBox: "0 0 " + size + " " + size },
-    slices,
-    React.createElement("circle", { cx: cx, cy: cy, r: ir - 2, fill: "#0a1520" })
-  );
+function SVGDonut(_ref) {
+let data = _ref.data,
+colors = _ref.colors;
+const size = 180,
+cx = 90,
+cy = 90,
+r = 72,
+ir = 45;
+const total = data.reduce(function (s, d) {
+return s + d.value;
+}, 0);
+if (total === 0) return React.createElement(“div”, {
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “20px 0”
+}
+}, “No debts added yet”);
+let angle = -Math.PI / 2;
+const slices = data.map(function (d, i) {
+const a = d.value / total * 2 * Math.PI;
+const x1 = cx + r * Math.cos(angle),
+y1 = cy + r * Math.sin(angle);
+const x2 = cx + r * Math.cos(angle + a),
+y2 = cy + r * Math.sin(angle + a);
+const ix1 = cx + ir * Math.cos(angle),
+iy1 = cy + ir * Math.sin(angle);
+const ix2 = cx + ir * Math.cos(angle + a),
+iy2 = cy + ir * Math.sin(angle + a);
+const large = a > Math.PI ? 1 : 0;
+const path = “M “ + x1 + “ “ + y1 + “ A “ + r + “ “ + r + “ 0 “ + large + “ 1 “ + x2 + “ “ + y2 + “ L “ + ix2 + “ “ + iy2 + “ A “ + ir + “ “ + ir + “ 0 “ + large + “ 0 “ + ix1 + “ “ + iy1 + “ Z”;
+const slice = React.createElement(“path”, {
+key: i,
+d: path,
+fill: colors[i % colors.length],
+opacity: 0.9
+});
+angle += a;
+return slice;
+});
+return React.createElement(“svg”, {
+width: size,
+height: size,
+viewBox: “0 0 “ + size + “ “ + size
+}, slices, React.createElement(“circle”, {
+cx: cx,
+cy: cy,
+r: ir - 2,
+fill: “#0a1520”
+}));
 }
 
 // Pure SVG bar chart
-function SVGBarChart({ data, height }) {
-  const w = 340, h = height || 180, pad = { t: 10, r: 10, b: 30, l: 45 };
-  const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
-  const maxVal = Math.max.apply(null, data.map(function(d) { return Math.max(d.Budgeted || 0, d.Spent || 0); })) || 1;
-  const barW = Math.floor(chartW / data.length * 0.35);
-  const gap = Math.floor(chartW / data.length * 0.1);
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map(function(t) { return Math.round(maxVal * t); });
-  return React.createElement("svg", { width: "100%", viewBox: "0 0 " + w + " " + h },
-    // Y axis ticks
-    ticks.map(function(v, i) {
-      const y = pad.t + chartH - (v / maxVal) * chartH;
-      return React.createElement("g", { key: i },
-        React.createElement("line", { x1: pad.l, y1: y, x2: pad.l + chartW, y2: y, stroke: "#1a2840", strokeWidth: 1 }),
-        React.createElement("text", { x: pad.l - 4, y: y + 4, textAnchor: "end", fontSize: 8, fill: "#5a7a9a" }, v >= 1000 ? "$" + Math.round(v/1000) + "k" : "$" + v)
-      );
-    }),
-    // Bars
-    data.map(function(d, i) {
-      const slotW = chartW / data.length;
-      const bx = pad.l + i * slotW + slotW * 0.15;
-      const bH1 = ((d.Budgeted || 0) / maxVal) * chartH;
-      const bH2 = ((d.Spent || 0) / maxVal) * chartH;
-      const by1 = pad.t + chartH - bH1;
-      const by2 = pad.t + chartH - bH2;
-      const label = d.name.length > 6 ? d.name.slice(0, 6) + "…" : d.name;
-      return React.createElement("g", { key: i },
-        React.createElement("rect", { x: bx, y: by1, width: barW, height: bH1, fill: "#3b82f6", rx: 2 }),
-        React.createElement("rect", { x: bx + barW + gap, y: by2, width: barW, height: bH2, fill: "#f97316", rx: 2 }),
-        React.createElement("text", { x: bx + barW, y: h - 8, textAnchor: "middle", fontSize: 8, fill: "#5a7a9a" }, label)
-      );
-    })
-  );
+function SVGBarChart(_ref2) {
+let data = _ref2.data,
+height = _ref2.height;
+const w = 340,
+h = height || 180,
+pad = {
+t: 10,
+r: 10,
+b: 30,
+l: 45
+};
+const chartW = w - pad.l - pad.r,
+chartH = h - pad.t - pad.b;
+const maxVal = Math.max.apply(null, data.map(function (d) {
+return Math.max(d.Budgeted || 0, d.Spent || 0);
+})) || 1;
+const barW = Math.floor(chartW / data.length * 0.35);
+const gap = Math.floor(chartW / data.length * 0.1);
+const ticks = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
+return Math.round(maxVal * t);
+});
+return React.createElement(“svg”, {
+width: “100%”,
+viewBox: “0 0 “ + w + “ “ + h
+},
+// Y axis ticks
+ticks.map(function (v, i) {
+const y = pad.t + chartH - v / maxVal * chartH;
+return React.createElement(“g”, {
+key: i
+}, React.createElement(“line”, {
+x1: pad.l,
+y1: y,
+x2: pad.l + chartW,
+y2: y,
+stroke: “#1a2840”,
+strokeWidth: 1
+}), React.createElement(“text”, {
+x: pad.l - 4,
+y: y + 4,
+textAnchor: “end”,
+fontSize: 8,
+fill: “#5a7a9a”
+}, v >= 1000 ? “$” + Math.round(v / 1000) + “k” : “$” + v));
+}),
+// Bars
+data.map(function (d, i) {
+const slotW = chartW / data.length;
+const bx = pad.l + i * slotW + slotW * 0.15;
+const bH1 = (d.Budgeted || 0) / maxVal * chartH;
+const bH2 = (d.Spent || 0) / maxVal * chartH;
+const by1 = pad.t + chartH - bH1;
+const by2 = pad.t + chartH - bH2;
+const label = d.name.length > 6 ? d.name.slice(0, 6) + “…” : d.name;
+return React.createElement(“g”, {
+key: i
+}, React.createElement(“rect”, {
+x: bx,
+y: by1,
+width: barW,
+height: bH1,
+fill: “#3b82f6”,
+rx: 2
+}), React.createElement(“rect”, {
+x: bx + barW + gap,
+y: by2,
+width: barW,
+height: bH2,
+fill: “#f97316”,
+rx: 2
+}), React.createElement(“text”, {
+x: bx + barW,
+y: h - 8,
+textAnchor: “middle”,
+fontSize: 8,
+fill: “#5a7a9a”
+}, label));
+}));
 }
 
 // Pure SVG line chart
-function SVGLineChart({ data, height }) {
-  const w = 400, h = height || 200, pad = { t: 10, r: 20, b: 30, l: 55 };
-  const chartW = w - pad.l - pad.r, chartH = h - pad.t - pad.b;
-  if (!data || data.length < 2) return React.createElement("div", { style: { color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "40px 0" } }, "Enter your age and target age to see projections");
-  const maxVal = Math.max.apply(null, data.map(function(d) { return d.balance; })) || 1;
-  const minVal = 0;
-  const xStep = chartW / (data.length - 1);
-  const points = data.map(function(d, i) {
-    return (pad.l + i * xStep) + "," + (pad.t + chartH - ((d.balance - minVal) / (maxVal - minVal)) * chartH);
-  }).join(" ");
-  const ticks = 5;
-  return React.createElement("svg", { width: "100%", viewBox: "0 0 " + w + " " + h },
-    // Grid + Y labels
-    Array.from({ length: ticks }, function(_, i) {
-      const v = Math.round((maxVal / (ticks - 1)) * i);
-      const y = pad.t + chartH - (v / maxVal) * chartH;
-      return React.createElement("g", { key: i },
-        React.createElement("line", { x1: pad.l, y1: y, x2: pad.l + chartW, y2: y, stroke: "#1a2840", strokeWidth: 1, strokeDasharray: "4 4" }),
-        React.createElement("text", { x: pad.l - 4, y: y + 4, textAnchor: "end", fontSize: 9, fill: "#5a7a9a" }, "$" + Math.round(v/1000) + "k")
-      );
-    }),
-    // X labels (every ~10 years)
-    data.filter(function(_, i) { return i === 0 || i === data.length - 1 || data[i].age % 10 === 0; }).map(function(d, i) {
-      const idx = data.indexOf(d);
-      return React.createElement("text", { key: i, x: pad.l + idx * xStep, y: h - 6, textAnchor: "middle", fontSize: 9, fill: "#5a7a9a" }, d.age);
-    }),
-    // Line
-    React.createElement("polyline", { points: points, fill: "none", stroke: "#a855f7", strokeWidth: 2.5, strokeLinejoin: "round" }),
-    // Dots at start and end
-    React.createElement("circle", { cx: pad.l, cy: pad.t + chartH, r: 3, fill: "#a855f7" }),
-    React.createElement("circle", { cx: pad.l + chartW, cy: pad.t + chartH - ((data[data.length-1].balance - minVal) / (maxVal - minVal)) * chartH, r: 4, fill: "#a855f7" })
-  );
+function SVGLineChart(_ref3) {
+let data = *ref3.data,
+height = *ref3.height;
+const w = 400,
+h = height || 200,
+pad = {
+t: 10,
+r: 20,
+b: 30,
+l: 55
+};
+const chartW = w - pad.l - pad.r,
+chartH = h - pad.t - pad.b;
+if (!data || data.length < 2) return React.createElement(“div”, {
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “40px 0”
 }
-
-const STORAGE_KEY = "compound_v1";
-
+}, “Enter your age and target age to see projections”);
+const maxVal = Math.max.apply(null, data.map(function (d) {
+return d.balance;
+})) || 1;
+const minVal = 0;
+const xStep = chartW / (data.length - 1);
+const points = data.map(function (d, i) {
+return pad.l + i * xStep + “,” + (pad.t + chartH - (d.balance - minVal) / (maxVal - minVal) * chartH);
+}).join(” “);
+const ticks = 5;
+return React.createElement(“svg”, {
+width: “100%”,
+viewBox: “0 0 “ + w + “ “ + h
+},
+// Grid + Y labels
+Array.from({
+length: ticks
+}, function (*, i) {
+const v = Math.round(maxVal / (ticks - 1) * i);
+const y = pad.t + chartH - v / maxVal * chartH;
+return React.createElement(“g”, {
+key: i
+}, React.createElement(“line”, {
+x1: pad.l,
+y1: y,
+x2: pad.l + chartW,
+y2: y,
+stroke: “#1a2840”,
+strokeWidth: 1,
+strokeDasharray: “4 4”
+}), React.createElement(“text”, {
+x: pad.l - 4,
+y: y + 4,
+textAnchor: “end”,
+fontSize: 9,
+fill: “#5a7a9a”
+}, “$” + Math.round(v / 1000) + “k”));
+}),
+// X labels (every ~10 years)
+data.filter(function (*, i) {
+return i === 0 || i === data.length - 1 || data[i].age % 10 === 0;
+}).map(function (d, i) {
+const idx = data.indexOf(d);
+return React.createElement(“text”, {
+key: i,
+x: pad.l + idx * xStep,
+y: h - 6,
+textAnchor: “middle”,
+fontSize: 9,
+fill: “#5a7a9a”
+}, d.age);
+}),
+// Line
+React.createElement(“polyline”, {
+points: points,
+fill: “none”,
+stroke: “#a855f7”,
+strokeWidth: 2.5,
+strokeLinejoin: “round”
+}),
+// Dots at start and end
+React.createElement(“circle”, {
+cx: pad.l,
+cy: pad.t + chartH,
+r: 3,
+fill: “#a855f7”
+}), React.createElement(“circle”, {
+cx: pad.l + chartW,
+cy: pad.t + chartH - (data[data.length - 1].balance - minVal) / (maxVal - minVal) * chartH,
+r: 4,
+fill: “#a855f7”
+}));
+}
+const STORAGE_KEY = “compound_v1”;
 const defaultData = {
-  income: { monthly: "" },
-  debts: [],
-  budget: { categories: [] },
-  emergency: { goal: "", current: "", monthly: "" },
-  retirement: { monthlyContrib: "", employerMatch: "", currentBalance: "", targetAge: "65", currentAge: "" },
-  savings: { monthlySavings: "", monthlyInvest: "" },
-  settings: { incomeBasis: "gross", matchInIncome: false },
-};
-
-const formatCurrency = (v) => {
-  const n = parseFloat(v) || 0;
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-};
-
-const Input = ({ label, value, onChange, type = "text", prefix, suffix, placeholder }) => (
-  <div style={{ marginBottom: 12 }}>
-    {label && <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" }}>{label}</div>}
-    <div style={{ display: "flex", alignItems: "center", background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 8, overflow: "hidden" }}>
-      {prefix && <span style={{ padding: "0 10px", color: "#4a7fa5", fontSize: 14, fontWeight: 600 }}>{prefix}</span>}
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "0"}
-        style={{ flex: 1, background: "transparent", border: "none", outline: "none", padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace" }} />
-      {suffix && <span style={{ padding: "0 10px", color: "#4a7fa5", fontSize: 13 }}>{suffix}</span>}
-    </div>
-  </div>
-);
-
-const Card = ({ children, style }) => (
-  <div style={{ background: "linear-gradient(145deg, #111c28 0%, #0d1620 100%)", border: "1px solid #1a2840", borderRadius: 16, padding: 24, ...style }}>{children}</div>
-);
-
-const SectionTitle = ({ children, accent }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-    <div style={{ width: 4, height: 22, borderRadius: 2, background: accent || "#3b82f6" }} />
-    <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif" }}>{children}</h2>
-  </div>
-);
-
-const StatBadge = ({ label, value, color }) => {
-  const borderColor = "1px solid " + color + "22";
-  return (
-    <div style={{ background: "#0a1520", borderRadius: 10, padding: "12px 16px", border: borderColor }}>
-      <div style={{ fontSize: 11, color: "#8b9cb5", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: color || "#e8f0f8", fontFamily: "'DM Mono', monospace" }}>{value}</div>
-    </div>
-  );
-};
-
-const DEBT_COLORS = ["#f97316","#ef4444","#a855f7","#3b82f6","#14b8a6","#eab308"];
-const BUDGET_COLORS = ["#3b82f6","#10b981","#f59e0b","#ef4444","#a855f7","#06b6d4","#f97316","#84cc16"];
-
-function App() {
-  const [data, setData] = useState(() => {
-    try { const s = localStorage.getItem(STORAGE_KEY); return s ? { ...defaultData, ...JSON.parse(s) } : defaultData; }
-    catch { return defaultData; }
-  });
-  const [tab, setTab] = useState("overview");
-  const [debtMethod, setDebtMethod] = useState("avalanche");
-  const [newDebt, setNewDebt] = useState({ name: "", balance: "", rate: "", minPayment: "" });
-  const [newBudget, setNewBudget] = useState({ name: "", budgeted: "", spent: "" });
-  const [extraPayment, setExtraPayment] = useState("");
-  const [importMsg, setImportMsg] = useState("");
-
-  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }, [data]);
-  const update = useCallback((section, key, value) => setData(d => ({ ...d, [section]: { ...d[section], [key]: value } })), []);
-
-  const income = parseFloat(data.income.monthly) || 0;
-  const totalDebt = data.debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0);
-  const totalBudgeted = data.budget.categories.reduce((s, c) => s + (parseFloat(c.budgeted) || 0), 0);
-  const totalSpent = data.budget.categories.reduce((s, c) => s + (parseFloat(c.spent) || 0), 0);
-  const emergencyGoal = parseFloat(data.emergency.goal) || 0;
-  const emergencyCurrent = parseFloat(data.emergency.current) || 0;
-  const emergencyPct = emergencyGoal > 0 ? Math.min(100, (emergencyCurrent / emergencyGoal) * 100) : 0;
-  const monthlySavings = parseFloat(data.savings.monthlySavings) || 0;
-  const monthlyInvest = parseFloat(data.savings.monthlyInvest) || 0;
-  const ret401kContrib = parseFloat(data.retirement.monthlyContrib) || 0;
-  const ret401kMatchPct = parseFloat(data.retirement.employerMatch) || 0;
-  const monthlyMatch = ret401kContrib * ret401kMatchPct / 100;
-  const effectiveIncome = data.settings.matchInIncome ? income + monthlyMatch : income;
-  const totalMonthlySaved = monthlySavings + monthlyInvest + ret401kContrib + monthlyMatch;
-  const savingsRate = effectiveIncome > 0 ? ((monthlySavings / effectiveIncome) * 100).toFixed(1) : 0;
-  const investRate = effectiveIncome > 0 ? (((monthlyInvest + ret401kContrib + monthlyMatch) / effectiveIncome) * 100).toFixed(1) : 0;
-  const totalSavingsRate = effectiveIncome > 0 ? ((totalMonthlySaved / effectiveIncome) * 100).toFixed(1) : 0;
-  const totalMinPayment = data.debts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0);
-  const extra = parseFloat(extraPayment) || 0;
-
-  const sortedDebts = [...data.debts].sort((a, b) => {
-    if (debtMethod === "avalanche") return (parseFloat(b.rate)||0) - (parseFloat(a.rate)||0);
-    if (debtMethod === "snowball") return (parseFloat(a.balance)||0) - (parseFloat(b.balance)||0);
-    return 0;
-  });
-
-  const handleExport = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "compound-backup-" + new Date().toISOString().slice(0,10) + ".json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try { setData({ ...defaultData, ...JSON.parse(ev.target.result) }); setImportMsg("✓ Imported!"); setTimeout(() => setImportMsg(""), 3000); }
-      catch { setImportMsg("✗ Invalid file"); setTimeout(() => setImportMsg(""), 3000); }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const calcPayoffMonths = (balance, rate, payment) => {
-    if (!balance || !payment || payment <= 0) return null;
-    const r = rate / 100 / 12;
-    if (r === 0) return Math.ceil(balance / payment);
-    if (payment <= balance * r) return null;
-    return Math.ceil(-Math.log(1 - (balance * r) / payment) / Math.log(1 + r));
-  };
-
-  const retMonthly = parseFloat(data.retirement.monthlyContrib) || 0;
-  const retMatch = parseFloat(data.retirement.employerMatch) || 0;
-  const retBalance = parseFloat(data.retirement.currentBalance) || 0;
-  const retTargetAge = parseInt(data.retirement.targetAge) || 65;
-  const retCurrentAge = parseInt(data.retirement.currentAge) || 30;
-  const retYears = Math.max(0, retTargetAge - retCurrentAge);
-  const mRate = 0.07 / 12;
-  const totalMonthly = retMonthly + (retMonthly * retMatch / 100);
-  const projectedBalance = retBalance * Math.pow(1 + mRate, retYears * 12) + (totalMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate);
-  const retChartData = Array.from({ length: retYears + 1 }, (_, i) => ({
-    age: retCurrentAge + i,
-    balance: Math.round(retBalance * Math.pow(1 + mRate, i * 12) + (totalMonthly * (Math.pow(1 + mRate, i * 12) - 1) / mRate)),
-  }));
-  const budgetChartData = data.budget.categories.map(c => ({ name: c.name, Budgeted: parseFloat(c.budgeted)||0, Spent: parseFloat(c.spent)||0 }));
-
-  const tabs = [
-    { id: "overview", label: "Overview" }, { id: "debts", label: "Debts" }, { id: "budget", label: "Budget" },
-    { id: "emergency", label: "Emergency" }, { id: "retirement", label: "Retirement" },
-    { id: "savings", label: "Savings Rate" }, { id: "settings", label: "Settings" },
-  ];
-
-  const btnStyle = (active) => ({ marginRight: 8, marginBottom: 8, padding: "7px 14px", background: active ? "#1d4ed8" : "#0f1923", color: active ? "#fff" : "#5a7a9a", border: "1px solid " + (active ? "#1d4ed8" : "#1e2d3d"), borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" });
-  const radioOpt = (selected, accentColor, onClick, label, desc) => (
-    <div onClick={onClick} style={{ display: "flex", gap: 12, padding: "12px 14px", background: selected ? "#0d1a2e" : "#0a1520", border: "1px solid " + (selected ? "#1e3a5f" : "#1a2840"), borderRadius: 10, marginBottom: 8, cursor: "pointer" }}>
-      <div style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0, border: "2px solid " + (selected ? accentColor : "#2a4060"), display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-        {selected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: accentColor }} />}
-      </div>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#e8f0f8", marginBottom: 3 }}>{label}</div>
-        <div style={{ fontSize: 12, color: "#8b9cb5", lineHeight: 1.5 }}>{desc}</div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#070e16", fontFamily: "'DM Sans', sans-serif", color: "#e8f0f8" }}>
-
-      {/* Header */}
-      <div style={{ borderBottom: "1px solid #111f30", padding: "0 20px", background: "#080f19" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #1d4ed8, #0ea5e9)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>📈</div>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em" }}>Compound</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {importMsg && <span style={{ fontSize: 11, color: importMsg.startsWith("✓") ? "#10b981" : "#ef4444", fontWeight: 600 }}>{importMsg}</span>}
-            <button onClick={handleExport} style={{ padding: "6px 12px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 7, color: "#60a5fa", fontSize: 11, fontWeight: 600 }}>⬇ Export</button>
-            <label style={{ padding: "6px 12px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 7, color: "#a78bfa", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-              ⬆ Import <input type="file" accept=".json" onChange={handleImport} style={{ display: "none" }} />
-            </label>
-            <div style={{ display: "flex", alignItems: "center", background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 7, overflow: "hidden" }}>
-              <span style={{ padding: "0 8px", color: "#4a7fa5", fontSize: 13 }}>$</span>
-              <input type="number" value={data.income.monthly} onChange={e => update("income","monthly",e.target.value)} placeholder="Income" style={{ background: "transparent", border: "none", outline: "none", padding: "7px 8px 7px 0", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", width: 100 }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <div style={{ borderBottom: "1px solid #111f30", background: "#080f19", overflowX: "auto" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", padding: "0 20px" }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ background: "none", border: "none", padding: "13px 13px", color: tab === t.id ? "#60a5fa" : "#5a7a9a", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 12, borderBottom: "2px solid " + (tab === t.id ? "#60a5fa" : "transparent"), whiteSpace: "nowrap" }}>{t.label}</button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
-
-        {tab === "overview" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Financial Overview</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Your complete picture at a glance.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 18 }}>
-              <StatBadge label={(data.settings.incomeBasis === "gross" ? "Gross" : "Net") + " Income"} value={formatCurrency(income)} color="#60a5fa" />
-              <StatBadge label="Total Debt" value={formatCurrency(totalDebt)} color="#f97316" />
-              <StatBadge label="Emergency Fund" value={emergencyPct.toFixed(0) + "%"} color="#10b981" />
-              <StatBadge label="Total Savings Rate" value={totalSavingsRate + "%"} color="#a78bfa" />
-              <StatBadge label="Retire+Invest Rate" value={investRate + "%"} color="#34d399" />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Card>
-                <SectionTitle accent="#f97316">Debt Breakdown</SectionTitle>
-                {data.debts.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No debts added yet</div> : (
-                  <div style={{ display: "flex", justifyContent: "center", padding: "10px 0" }}>
-                    <SVGDonut data={data.debts.map(function(d) { return { name: d.name, value: parseFloat(d.balance)||0 }; })} colors={DEBT_COLORS} />
-                  </div>
-                )}
-              </Card>
-              <Card>
-                <SectionTitle accent="#3b82f6">Budget vs Spent</SectionTitle>
-                {data.budget.categories.length === 0 ? <div style={{ color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No categories yet</div> : (
-                  <SVGBarChart data={budgetChartData} height={180} />
-                )}
-              </Card>
-              <Card style={{ gridColumn: "1 / -1" }}>
-                <SectionTitle accent="#10b981">Key Ratios</SectionTitle>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-                  {[
-                    { label: "Housing (<28%)", value: effectiveIncome > 0 ? ((parseFloat(data.budget.categories.find(c => c.name?.toLowerCase().includes("hous")||c.name?.toLowerCase().includes("rent"))?.spent||0) / effectiveIncome)*100).toFixed(1)+"%" : "—", color: "#3b82f6" },
-                    { label: "Debt-to-Income", value: effectiveIncome > 0 ? ((totalMinPayment/effectiveIncome)*100).toFixed(1)+"%" : "—", color: "#f97316" },
-                    { label: "Total Savings", value: effectiveIncome > 0 ? totalSavingsRate+"%" : "—", color: "#10b981" },
-                  ].map(r => (
-                    <div key={r.label} style={{ background: "#0a1520", borderRadius: 10, padding: "12px 14px" }}>
-                      <div style={{ fontSize: 10, color: "#5a7a9a", marginBottom: 4 }}>{r.label}</div>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: r.color, fontFamily: "'DM Mono', monospace" }}>{r.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {tab === "debts" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Debt Payoff Tracker</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Track debts and build your payoff strategy.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-              <Card>
-                <SectionTitle accent="#f97316">Add a Debt</SectionTitle>
-                <Input label="Name" value={newDebt.name} onChange={v => setNewDebt(d => ({...d, name: v}))} placeholder="e.g. Student Loan" />
-                <Input label="Balance" value={newDebt.balance} onChange={v => setNewDebt(d => ({...d, balance: v}))} prefix="$" type="number" />
-                <Input label="Interest Rate (APR)" value={newDebt.rate} onChange={v => setNewDebt(d => ({...d, rate: v}))} suffix="%" type="number" />
-                <Input label="Minimum Payment" value={newDebt.minPayment} onChange={v => setNewDebt(d => ({...d, minPayment: v}))} prefix="$" type="number" />
-                <button onClick={() => { if (!newDebt.name||!newDebt.balance) return; setData(d => ({...d, debts: [...d.debts, {...newDebt, id: Date.now()}]})); setNewDebt({name:"",balance:"",rate:"",minPayment:""}); }}
-                  style={{ width: "100%", padding: "11px", background: "linear-gradient(135deg,#1d4ed8,#1e40af)", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>Add Debt</button>
-              </Card>
-              <Card>
-                <SectionTitle accent="#a855f7">Payoff Strategy</SectionTitle>
-                <div style={{ marginBottom: 14 }}>
-                  {["avalanche","snowball","custom"].map(m => <button key={m} onClick={() => setDebtMethod(m)} style={btnStyle(debtMethod===m)}>{m.charAt(0).toUpperCase()+m.slice(1)}</button>)}
-                  <div style={{ fontSize: 11, color: "#4a7fa5", marginTop: 4 }}>
-                    {debtMethod==="avalanche" && "Highest interest first — saves most money."}
-                    {debtMethod==="snowball" && "Smallest balance first — builds momentum."}
-                    {debtMethod==="custom" && "Order you added them."}
-                  </div>
-                </div>
-                <Input label="Extra Monthly Payment" value={extraPayment} onChange={setExtraPayment} prefix="$" type="number" />
-                <div style={{ background: "#0a1520", borderRadius: 10, padding: 12, marginTop: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>Total Debt</span><span style={{ fontFamily: "'DM Mono',monospace", color: "#f97316", fontWeight: 600 }}>{formatCurrency(totalDebt)}</span></div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>Min Payments/mo</span><span style={{ fontFamily: "'DM Mono',monospace", color: "#e8f0f8", fontWeight: 600 }}>{formatCurrency(totalMinPayment)}</span></div>
-                </div>
-              </Card>
-            </div>
-            {sortedDebts.length > 0 && (
-              <Card>
-                <SectionTitle accent="#f97316">Payoff Order</SectionTitle>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {sortedDebts.map((debt, i) => {
-                    const balance = parseFloat(debt.balance)||0, rate = parseFloat(debt.rate)||0, minPay = parseFloat(debt.minPayment)||0;
-                    const effectivePay = i===0 ? minPay+extra : minPay;
-                    const months = calcPayoffMonths(balance, rate, effectivePay);
-                    const color = DEBT_COLORS[i % DEBT_COLORS.length];
-                    return (
-                      <div key={debt.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0a1520", borderRadius: 10, padding: "12px 14px" }}>
-                        <div style={{ width: 26, height: 26, borderRadius: "50%", background: color+"22", color, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{debt.name}</div>
-                          <div style={{ fontSize: 10, color: "#4a7fa5" }}>{rate}% APR · {formatCurrency(effectivePay)}/mo</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontFamily: "'DM Mono',monospace", color, fontWeight: 600, fontSize: 13 }}>{formatCurrency(balance)}</div>
-                          <div style={{ fontSize: 10, color: months ? "#10b981" : "#ef4444" }}>{months ? (months + " mo · " + new Date(Date.now()+months*30*24*60*60*1000).toLocaleDateString("en-US",{month:"short",year:"numeric"})) : "∞"}</div>
-                        </div>
-                        <button onClick={() => setData(d => ({...d, debts: d.debts.filter(x => x.id!==debt.id)}))} style={{ background: "none", border: "none", color: "#3a5a7a", fontSize: 16, padding: "2px 6px" }}>✕</button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {tab === "budget" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Monthly Budget</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Track spending vs. your targets.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 14 }}>
-              <div>
-                <Card style={{ marginBottom: 14 }}>
-                  <SectionTitle accent="#3b82f6">Add Category</SectionTitle>
-                  <Input label="Category Name" value={newBudget.name} onChange={v => setNewBudget(b => ({...b, name: v}))} placeholder="e.g. Groceries" />
-                  <Input label="Monthly Budget" value={newBudget.budgeted} onChange={v => setNewBudget(b => ({...b, budgeted: v}))} prefix="$" type="number" />
-                  <Input label="Spent This Month" value={newBudget.spent} onChange={v => setNewBudget(b => ({...b, spent: v}))} prefix="$" type="number" />
-                  <button onClick={() => { if (!newBudget.name) return; setData(d => ({...d, budget: {categories: [...d.budget.categories, {...newBudget, id: Date.now()}]}})); setNewBudget({name:"",budgeted:"",spent:""}); }}
-                    style={{ width: "100%", padding: "11px", background: "linear-gradient(135deg,#1d4ed8,#1e40af)", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, fontFamily: "'DM Sans',sans-serif", marginTop: 4 }}>Add Category</button>
-                </Card>
-                <Card>
-                  {[["Budgeted","#3b82f6",totalBudgeted],["Spent","#f97316",totalSpent]].map(([l,c,v]) => (
-                    <div key={l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>{l}</span><span style={{ fontFamily: "'DM Mono',monospace", color: c, fontWeight: 600 }}>{formatCurrency(v)}</span></div>
-                  ))}
-                  <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>Remaining</span><span style={{ fontFamily: "'DM Mono',monospace", color: totalBudgeted-totalSpent>=0?"#10b981":"#ef4444", fontWeight: 600 }}>{formatCurrency(totalBudgeted-totalSpent)}</span></div>
-                </Card>
-              </div>
-              <div>
-                {data.budget.categories.map((cat, i) => {
-                  const budgeted = parseFloat(cat.budgeted)||0, spent = parseFloat(cat.spent)||0;
-                  const pct = budgeted > 0 ? Math.min(100, (spent/budgeted)*100) : 0;
-                  const over = spent > budgeted;
-                  return (
-                    <div key={cat.id} style={{ background: "#0d1820", border: "1px solid #1a2840", borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: BUDGET_COLORS[i%BUDGET_COLORS.length] }} />
-                          <span style={{ fontWeight: 600, fontSize: 13 }}>{cat.name}</span>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, color: over?"#ef4444":"#10b981" }}>{formatCurrency(spent)} / {formatCurrency(budgeted)}</span>
-                          <button onClick={() => setData(d => ({...d, budget: {categories: d.budget.categories.filter(x => x.id!==cat.id)}}))} style={{ background: "none", border: "none", color: "#3a5a7a", fontSize: 14 }}>✕</button>
-                        </div>
-                      </div>
-                      <div style={{ height: 5, background: "#0a1520", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: pct + "%", background: over?"#ef4444":BUDGET_COLORS[i%BUDGET_COLORS.length], borderRadius: 3 }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "emergency" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Emergency Fund</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Aim for 3–6 months of expenses as a safety net.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 14 }}>
-              <Card>
-                <SectionTitle accent="#10b981">Fund Details</SectionTitle>
-                <Input label="Goal Amount" value={data.emergency.goal} onChange={v => update("emergency","goal",v)} prefix="$" type="number" />
-                <Input label="Current Balance" value={data.emergency.current} onChange={v => update("emergency","current",v)} prefix="$" type="number" />
-                <Input label="Monthly Contribution" value={data.emergency.monthly} onChange={v => update("emergency","monthly",v)} prefix="$" type="number" />
-                <div style={{ marginTop: 8, fontSize: 12, color: "#4a7fa5", background: "#0a1520", borderRadius: 8, padding: 12 }}>
-                  💡 3× monthly income as starting goal: {formatCurrency((parseFloat(data.income.monthly)||0)*3)}
-                </div>
-              </Card>
-              <Card>
-                <SectionTitle accent="#10b981">Progress</SectionTitle>
-                <div style={{ textAlign: "center", marginBottom: 20 }}>
-                  <svg width={170} height={170}>
-                    <circle cx={85} cy={85} r={68} fill="none" stroke="#0a1520" strokeWidth={13} />
-                    <circle cx={85} cy={85} r={68} fill="none" stroke={emergencyPct>=100?"#10b981":emergencyPct>50?"#f59e0b":"#3b82f6"} strokeWidth={13}
-                      strokeDasharray={String(2*Math.PI*68)} strokeDashoffset={String(2*Math.PI*68*(1-emergencyPct/100))} strokeLinecap="round" transform="rotate(-90 85 85)" />
-                    <text x={85} y={81} textAnchor="middle" fill="#e8f0f8" fontSize={24} fontWeight={700} fontFamily="DM Mono">{emergencyPct.toFixed(0)}%</text>
-                    <text x={85} y={100} textAnchor="middle" fill="#5a7a9a" fontSize={11}>funded</text>
-                  </svg>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <StatBadge label="Current" value={formatCurrency(emergencyCurrent)} color="#3b82f6" />
-                  <StatBadge label="Goal" value={formatCurrency(emergencyGoal)} color="#10b981" />
-                  <StatBadge label="Remaining" value={formatCurrency(Math.max(0,emergencyGoal-emergencyCurrent))} color="#f59e0b" />
-                  <StatBadge label="Months Left" value={(() => { const m=parseFloat(data.emergency.monthly)||0; const r=Math.max(0,emergencyGoal-emergencyCurrent); return m>0?Math.ceil(r/m)+" mo":"—"; })()} color="#a78bfa" />
-                </div>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {tab === "retirement" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Retirement Planner</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Projected at 7% avg annual return.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 14 }}>
-              <Card>
-                <SectionTitle accent="#a855f7">Your Info</SectionTitle>
-                <Input label="Current Age" value={data.retirement.currentAge} onChange={v => update("retirement","currentAge",v)} type="number" />
-                <Input label="Target Retirement Age" value={data.retirement.targetAge} onChange={v => update("retirement","targetAge",v)} type="number" />
-                <Input label="Current Balance" value={data.retirement.currentBalance} onChange={v => update("retirement","currentBalance",v)} prefix="$" type="number" />
-                <Input label="Monthly Contribution" value={data.retirement.monthlyContrib} onChange={v => update("retirement","monthlyContrib",v)} prefix="$" type="number" />
-                <Input label="Employer Match %" value={data.retirement.employerMatch} onChange={v => update("retirement","employerMatch",v)} suffix="%" type="number" />
-                <div style={{ background: "#0a1520", borderRadius: 10, padding: 12, marginTop: 8 }}>
-                  {[["Your contribution",formatCurrency(retMonthly),"#a855f7"],["Employer match",formatCurrency(retMonthly*retMatch/100),"#10b981"]].map(([l,v,c]) => (
-                    <div key={l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>{l}</span><span style={{ fontFamily: "'DM Mono',monospace", color: c }}>{v}/mo</span></div>
-                  ))}
-                  <div style={{ borderTop: "1px solid #1e2d3d", paddingTop: 6, display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 12, color: "#5a7a9a" }}>Total/mo</span><span style={{ fontFamily: "'DM Mono',monospace", color: "#e8f0f8", fontWeight: 700 }}>{formatCurrency(totalMonthly)}/mo</span></div>
-                </div>
-              </Card>
-              <div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-                  <StatBadge label="Projected at Retirement" value={formatCurrency(projectedBalance)} color="#a855f7" />
-                  <StatBadge label="Years to Retirement" value={retYears + " yrs"} color="#60a5fa" />
-                  <StatBadge label="Monthly Income (4% rule)" value={formatCurrency(projectedBalance*0.04/12)} color="#10b981" />
-                  <StatBadge label="Annual Income (4% rule)" value={formatCurrency(projectedBalance*0.04)} color="#f59e0b" />
-                </div>
-                <Card>
-                  <SectionTitle accent="#a855f7">Projected Balance Growth</SectionTitle>
-                  <SVGLineChart data={retChartData} height={200} />
-                </Card>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "savings" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Savings & Investment Rate</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>
-              {"vs. " + data.settings.incomeBasis + " income" + (data.settings.matchInIncome?" (total comp)":"") + ". "}
-              <button onClick={() => setTab("settings")} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 13, padding: 0, textDecoration: "underline", cursor: "pointer" }}>Change methodology</button>
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 14 }}>
-              <Card>
-                <SectionTitle accent="#34d399">Monthly Flows</SectionTitle>
-                <Input label="Monthly Savings (liquid)" value={data.savings.monthlySavings} onChange={v => update("savings","monthlySavings",v)} prefix="$" type="number" />
-                <Input label="Monthly Investments (taxable, IRA)" value={data.savings.monthlyInvest} onChange={v => update("savings","monthlyInvest",v)} prefix="$" type="number" />
-                <Input label={(data.settings.incomeBasis==="gross"?"Gross":"Net") + " Monthly Income"} value={data.income.monthly} onChange={v => update("income","monthly",v)} prefix="$" type="number" />
-                <div style={{ background: "#0a1520", borderRadius: 10, padding: 12, marginTop: 8, fontSize: 12, color: "#5a7a9a" }}>
-                  <div style={{ fontWeight: 600, color: "#8b9cb5", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10 }}>What Counts as Savings</div>
-                  {[["Liquid savings",formatCurrency(monthlySavings),null],["Investments",formatCurrency(monthlyInvest),null],["401k contribution",formatCurrency(ret401kContrib),null],["Employer match",formatCurrency(monthlyMatch),"#10b981"]].map(([l,v,c]) => (
-                    <div key={l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span>{l}</span><span style={{ fontFamily: "'DM Mono',monospace", color: c||undefined }}>{v}</span></div>
-                  ))}
-                  <div style={{ borderTop: "1px solid #1e2d3d", paddingTop: 5, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "#e8f0f8" }}>Total monthly</span>
-                    <span style={{ fontFamily: "'DM Mono',monospace", color: "#34d399", fontWeight: 700 }}>{formatCurrency(totalMonthlySaved)}</span>
-                  </div>
-                </div>
-              </Card>
-              <div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-                  <StatBadge label="Liquid Savings Rate" value={savingsRate + "%"} color="#34d399" />
-                  <StatBadge label="Retirement + Invest" value={investRate + "%"} color="#60a5fa" />
-                  <StatBadge label="Total Savings Rate" value={totalSavingsRate + "%"} color="#a78bfa" />
-                  <StatBadge label="Monthly Total" value={formatCurrency(totalMonthlySaved)} color="#f59e0b" />
-                </div>
-                <Card>
-                  <SectionTitle accent="#34d399">How You Stack Up</SectionTitle>
-                  <div style={{ fontSize: 11, color: "#5a7a9a", marginBottom: 10, marginTop: -12 }}>Based on total savings rate ({totalSavingsRate}%)</div>
-                  {[
-                    {label:"Survival mode",pct:0,desc:"No savings — any emergency is a crisis",color:"#ef4444"},
-                    {label:"Getting started",pct:5,desc:"Better than nothing — build the habit",color:"#f97316"},
-                    {label:"On track",pct:10,desc:"Solid foundation for financial stability",color:"#f59e0b"},
-                    {label:"Good",pct:15,desc:"Comfortable trajectory for long-term wealth",color:"#84cc16"},
-                    {label:"Great",pct:20,desc:"Well ahead of most people your age",color:"#10b981"},
-                    {label:"Excellent",pct:30,desc:"Accelerated path — wealth-building mode",color:"#34d399"},
-                  ].map(tier => {
-                    const achieved = (parseFloat(totalSavingsRate)||0) >= tier.pct;
-                    return (
-                      <div key={tier.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", background: achieved?tier.color+"11":"transparent", borderRadius: 10, marginBottom: 5, border: "1px solid " + (achieved?tier.color+"33":"transparent") }}>
-                        <div style={{ width: 36, fontFamily: "'DM Mono',monospace", fontSize: 12, color: tier.color, fontWeight: 700 }}>{tier.pct + "%+"}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: achieved?"#e8f0f8":"#4a7fa5" }}>{tier.label}</div>
-                          <div style={{ fontSize: 11, color: achieved?"#8b9cb5":"#2a4060" }}>{tier.desc}</div>
-                        </div>
-                        {achieved && <div>✓</div>}
-                      </div>
-                    );
-                  })}
-                </Card>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "settings" && (
-          <div>
-            <h1 style={{ margin: "0 0 4px", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24 }}>Settings</h1>
-            <p style={{ margin: "0 0 20px", color: "#5a7a9a", fontSize: 13 }}>Adjust how rates and ratios are calculated.</p>
-            <div style={{ display: "grid", gap: 14, maxWidth: 680 }}>
-              <Card>
-                <SectionTitle accent="#60a5fa">Income Basis</SectionTitle>
-                <p style={{ fontSize: 13, color: "#8b9cb5", margin: "0 0 14px", lineHeight: 1.6 }}>Calculate rates against gross (pre-tax) or net (take-home) income.</p>
-                {radioOpt(data.settings.incomeBasis==="gross","#60a5fa",()=>update("settings","incomeBasis","gross"),"Gross income (recommended)","Pre-tax. Matches standard rules like \"save 15% of income\". Stable benchmark.")}
-                {radioOpt(data.settings.incomeBasis==="net","#60a5fa",()=>update("settings","incomeBasis","net"),"Net income","Take-home pay only. Won't match published savings rate guidelines.")}
-              </Card>
-              <Card>
-                <SectionTitle accent="#a855f7">401k Match Treatment</SectionTitle>
-                <p style={{ fontSize: 13, color: "#8b9cb5", margin: "0 0 14px", lineHeight: 1.6 }}>Match always counts as savings. Also add it to income (total comp view)?</p>
-                {radioOpt(data.settings.matchInIncome===false,"#a855f7",()=>update("settings","matchInIncome",false),"Match in savings only (recommended)","Rewards capturing the full match — your savings rate visibly increases when you do.")}
-                {radioOpt(data.settings.matchInIncome===true,"#a855f7",()=>update("settings","matchInIncome",true),"Match in both income and savings","Total compensation view. More technically accurate, but rates appear lower.")}
-              </Card>
-              <Card>
-                <SectionTitle accent="#10b981">Live Preview</SectionTitle>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <StatBadge label="Effective Income" value={formatCurrency(effectiveIncome)} color="#60a5fa" />
-                  <StatBadge label="Total Saved/mo" value={formatCurrency(totalMonthlySaved)} color="#34d399" />
-                  <StatBadge label="Total Savings Rate" value={totalSavingsRate + "%"} color="#a78bfa" />
-                  <StatBadge label="Retire+Invest Rate" value={investRate + "%"} color="#f59e0b" />
-                </div>
-              </Card>
-              <Card>
-                <SectionTitle accent="#f97316">Reset Data</SectionTitle>
-                <p style={{ fontSize: 13, color: "#8b9cb5", margin: "0 0 12px" }}>Wipes all data. Export first if you want a backup.</p>
-                <button onClick={() => { if (window.confirm("Reset all data? Cannot be undone.")) setData(defaultData); }}
-                  style={{ padding: "10px 20px", background: "#1a0e10", border: "1px solid #4a1a1f", color: "#ef4444", borderRadius: 8, fontWeight: 600, fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>Reset All Data</button>
-              </Card>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
+income: {
+monthly: “”
+},
+debts: [],
+budget: {
+categories: []
+},
+emergency: {
+goal: “”,
+current: “”,
+monthly: “”
+},
+retirement: {
+monthlyContrib: “”,
+employerMatch: “”,
+currentBalance: “”,
+targetAge: “65”,
+currentAge: “”
+},
+savings: {
+monthlySavings: “”,
+monthlyInvest: “”
+},
+settings: {
+incomeBasis: “gross”,
+matchInIncome: false
 }
+};
+const formatCurrency = v => {
+const n = parseFloat(v) || 0;
+return new Intl.NumberFormat(“en-US”, {
+style: “currency”,
+currency: “USD”,
+maximumFractionDigits: 0
+}).format(n);
+};
+const Input = _ref4 => {
+let label = _ref4.label,
+value = _ref4.value,
+onChange = _ref4.onChange,
+_ref4$type = _ref4.type,
+type = _ref4$type === void 0 ? “text” : _ref4$type,
+prefix = _ref4.prefix,
+suffix = _ref4.suffix,
+placeholder = _ref4.placeholder;
+return /*#**PURE***/React.createElement(“div”, {
+style: {
+marginBottom: 12
+}
+}, label && /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 11,
+fontWeight: 600,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 4,
+textTransform: “uppercase”
+}
+}, label), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+background: “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 8,
+overflow: “hidden”
+}
+}, prefix && /*#**PURE***/React.createElement(“span”, {
+style: {
+padding: “0 10px”,
+color: “#4a7fa5”,
+fontSize: 14,
+fontWeight: 600
+}
+}, prefix), /*#**PURE***/React.createElement(“input”, {
+type: type,
+value: value,
+onChange: e => onChange(e.target.value),
+placeholder: placeholder || “0”,
+style: {
+flex: 1,
+background: “transparent”,
+border: “none”,
+outline: “none”,
+padding: “10px 12px”,
+color: “#e8f0f8”,
+fontSize: 14,
+fontFamily: “‘DM Mono’, monospace”
+}
+}), suffix && /*#**PURE***/React.createElement(“span”, {
+style: {
+padding: “0 10px”,
+color: “#4a7fa5”,
+fontSize: 13
+}
+}, suffix)));
+};
+const Card = _ref5 => {
+let children = _ref5.children,
+style = _ref5.style;
+return /*#**PURE***/React.createElement(“div”, {
+style: _objectSpread({
+background: “linear-gradient(145deg, #111c28 0%, #0d1620 100%)”,
+border: “1px solid #1a2840”,
+borderRadius: 16,
+padding: 24
+}, style)
+}, children);
+};
+const SectionTitle = _ref6 => {
+let children = _ref6.children,
+accent = _ref6.accent;
+return /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+marginBottom: 20
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 4,
+height: 22,
+borderRadius: 2,
+background: accent || “#3b82f6”
+}
+}), /*#**PURE***/React.createElement(“h2”, {
+style: {
+margin: 0,
+fontSize: 16,
+fontWeight: 700,
+color: “#e8f0f8”,
+fontFamily: “‘Syne’, sans-serif”
+}
+}, children));
+};
+const StatBadge = _ref7 => {
+let label = _ref7.label,
+value = _ref7.value,
+color = _ref7.color;
+const borderColor = “1px solid “ + color + “22”;
+return /*#**PURE***/React.createElement(“div”, {
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: “12px 16px”,
+border: borderColor
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 11,
+color: “#8b9cb5”,
+letterSpacing: “0.08em”,
+textTransform: “uppercase”,
+marginBottom: 4
+}
+}, label), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 20,
+fontWeight: 700,
+color: color || “#e8f0f8”,
+fontFamily: “‘DM Mono’, monospace”
+}
+}, value));
+};
+const DEBT_COLORS = [”#f97316”, “#ef4444”, “#a855f7”, “#3b82f6”, “#14b8a6”, “#eab308”];
+const BUDGET_COLORS = [”#3b82f6”, “#10b981”, “#f59e0b”, “#ef4444”, “#a855f7”, “#06b6d4”, “#f97316”, “#84cc16”];
+function App() {
+var _data$budget$categori;
+const _useState = useState(() => {
+try {
+const s = localStorage.getItem(STORAGE_KEY);
+return s ? _objectSpread(_objectSpread({}, defaultData), JSON.parse(s)) : defaultData;
+} catch (_unused) {
+return defaultData;
+}
+}),
+_useState2 = _slicedToArray(_useState, 2),
+data = _useState2[0],
+setData = _useState2[1];
+const _useState3 = useState(“overview”),
+_useState4 = _slicedToArray(_useState3, 2),
+tab = _useState4[0],
+setTab = _useState4[1];
+const _useState5 = useState(“avalanche”),
+_useState6 = _slicedToArray(_useState5, 2),
+debtMethod = _useState6[0],
+setDebtMethod = _useState6[1];
+const _useState7 = useState({
+name: “”,
+balance: “”,
+rate: “”,
+minPayment: “”
+}),
+_useState8 = _slicedToArray(_useState7, 2),
+newDebt = _useState8[0],
+setNewDebt = _useState8[1];
+const _useState9 = useState({
+name: “”,
+budgeted: “”,
+spent: “”
+}),
+_useState0 = _slicedToArray(_useState9, 2),
+newBudget = _useState0[0],
+setNewBudget = _useState0[1];
+const _useState1 = useState(””),
+_useState10 = _slicedToArray(_useState1, 2),
+extraPayment = _useState10[0],
+setExtraPayment = _useState10[1];
+const _useState11 = useState(””),
+_useState12 = _slicedToArray(_useState11, 2),
+importMsg = _useState12[0],
+setImportMsg = _useState12[1];
+useEffect(() => {
+try {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+} catch (_unused2) {}
+}, [data]);
+const update = useCallback((section, key, value) => setData(d => _objectSpread(_objectSpread({}, d), {}, {
+[section]: _objectSpread(_objectSpread({}, d[section]), {}, {
+[key]: value
+})
+})), []);
+const income = parseFloat(data.income.monthly) || 0;
+const totalDebt = data.debts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0);
+const totalBudgeted = data.budget.categories.reduce((s, c) => s + (parseFloat(c.budgeted) || 0), 0);
+const totalSpent = data.budget.categories.reduce((s, c) => s + (parseFloat(c.spent) || 0), 0);
+const emergencyGoal = parseFloat(data.emergency.goal) || 0;
+const emergencyCurrent = parseFloat(data.emergency.current) || 0;
+const emergencyPct = emergencyGoal > 0 ? Math.min(100, emergencyCurrent / emergencyGoal * 100) : 0;
+const monthlySavings = parseFloat(data.savings.monthlySavings) || 0;
+const monthlyInvest = parseFloat(data.savings.monthlyInvest) || 0;
+const ret401kContrib = parseFloat(data.retirement.monthlyContrib) || 0;
+const ret401kMatchPct = parseFloat(data.retirement.employerMatch) || 0;
+const monthlyMatch = ret401kContrib * ret401kMatchPct / 100;
+const effectiveIncome = data.settings.matchInIncome ? income + monthlyMatch : income;
+const totalMonthlySaved = monthlySavings + monthlyInvest + ret401kContrib + monthlyMatch;
+const savingsRate = effectiveIncome > 0 ? (monthlySavings / effectiveIncome * 100).toFixed(1) : 0;
+const investRate = effectiveIncome > 0 ? ((monthlyInvest + ret401kContrib + monthlyMatch) / effectiveIncome * 100).toFixed(1) : 0;
+const totalSavingsRate = effectiveIncome > 0 ? (totalMonthlySaved / effectiveIncome * 100).toFixed(1) : 0;
+const totalMinPayment = data.debts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0);
+const extra = parseFloat(extraPayment) || 0;
+const sortedDebts = […data.debts].sort((a, b) => {
+if (debtMethod === “avalanche”) return (parseFloat(b.rate) || 0) - (parseFloat(a.rate) || 0);
+if (debtMethod === “snowball”) return (parseFloat(a.balance) || 0) - (parseFloat(b.balance) || 0);
+return 0;
+});
+const handleExport = () => {
+const blob = new Blob([JSON.stringify(data, null, 2)], {
+type: “application/json”
+});
+const url = URL.createObjectURL(blob);
+const a = document.createElement(“a”);
+a.href = url;
+a.download = “compound-backup-” + new Date().toISOString().slice(0, 10) + “.json”;
+a.click();
+URL.revokeObjectURL(url);
+};
+const handleImport = e => {
+const file = e.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = ev => {
+try {
+setData(_objectSpread(_objectSpread({}, defaultData), JSON.parse(ev.target.result)));
+setImportMsg(“✓ Imported!”);
+setTimeout(() => setImportMsg(””), 3000);
+} catch (*unused3) {
+setImportMsg(“✗ Invalid file”);
+setTimeout(() => setImportMsg(””), 3000);
+}
+};
+reader.readAsText(file);
+e.target.value = “”;
+};
+const calcPayoffMonths = (balance, rate, payment) => {
+if (!balance || !payment || payment <= 0) return null;
+const r = rate / 100 / 12;
+if (r === 0) return Math.ceil(balance / payment);
+if (payment <= balance * r) return null;
+return Math.ceil(-Math.log(1 - balance * r / payment) / Math.log(1 + r));
+};
+const retMonthly = parseFloat(data.retirement.monthlyContrib) || 0;
+const retMatch = parseFloat(data.retirement.employerMatch) || 0;
+const retBalance = parseFloat(data.retirement.currentBalance) || 0;
+const retTargetAge = parseInt(data.retirement.targetAge) || 65;
+const retCurrentAge = parseInt(data.retirement.currentAge) || 30;
+const retYears = Math.max(0, retTargetAge - retCurrentAge);
+const mRate = 0.07 / 12;
+const totalMonthly = retMonthly + retMonthly * retMatch / 100;
+const projectedBalance = retBalance * Math.pow(1 + mRate, retYears * 12) + totalMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate;
+const retChartData = Array.from({
+length: retYears + 1
+}, (*, i) => ({
+age: retCurrentAge + i,
+balance: Math.round(retBalance * Math.pow(1 + mRate, i * 12) + totalMonthly * (Math.pow(1 + mRate, i * 12) - 1) / mRate)
+}));
+const budgetChartData = data.budget.categories.map(c => ({
+name: c.name,
+Budgeted: parseFloat(c.budgeted) || 0,
+Spent: parseFloat(c.spent) || 0
+}));
+const tabs = [{
+id: “overview”,
+label: “Overview”
+}, {
+id: “debts”,
+label: “Debts”
+}, {
+id: “budget”,
+label: “Budget”
+}, {
+id: “emergency”,
+label: “Emergency”
+}, {
+id: “retirement”,
+label: “Retirement”
+}, {
+id: “savings”,
+label: “Savings Rate”
+}, {
+id: “settings”,
+label: “Settings”
+}];
+const btnStyle = active => ({
+marginRight: 8,
+marginBottom: 8,
+padding: “7px 14px”,
+background: active ? “#1d4ed8” : “#0f1923”,
+color: active ? “#fff” : “#5a7a9a”,
+border: “1px solid “ + (active ? “#1d4ed8” : “#1e2d3d”),
+borderRadius: 20,
+fontSize: 12,
+fontWeight: 600,
+cursor: “pointer”
+});
+const radioOpt = (selected, accentColor, onClick, label, desc) => /*#**PURE***/React.createElement(“div”, {
+onClick: onClick,
+style: {
+display: “flex”,
+gap: 12,
+padding: “12px 14px”,
+background: selected ? “#0d1a2e” : “#0a1520”,
+border: “1px solid “ + (selected ? “#1e3a5f” : “#1a2840”),
+borderRadius: 10,
+marginBottom: 8,
+cursor: “pointer”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 18,
+height: 18,
+borderRadius: “50%”,
+flexShrink: 0,
+border: “2px solid “ + (selected ? accentColor : “#2a4060”),
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+marginTop: 2
+}
+}, selected && /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 8,
+height: 8,
+borderRadius: “50%”,
+background: accentColor
+}
+})), /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 13,
+fontWeight: 600,
+color: “#e8f0f8”,
+marginBottom: 3
+}
+}, label), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 12,
+color: “#8b9cb5”,
+lineHeight: 1.5
+}
+}, desc)));
+return /*#**PURE***/React.createElement(“div”, {
+style: {
+minHeight: “100vh”,
+background: “#070e16”,
+fontFamily: “‘DM Sans’, sans-serif”,
+color: “#e8f0f8”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+borderBottom: “1px solid #111f30”,
+padding: “0 20px”,
+background: “#080f19”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+maxWidth: 1100,
+margin: “0 auto”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “space-between”,
+height: 60
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 30,
+height: 30,
+borderRadius: 8,
+background: “linear-gradient(135deg, #1d4ed8, #0ea5e9)”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+fontSize: 15
+}
+}, “\uD83D\uDCC8”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 18,
+letterSpacing: “-0.02em”
+}
+}, “Compound”)), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 8
+}
+}, importMsg && /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 11,
+color: importMsg.startsWith(“✓”) ? “#10b981” : “#ef4444”,
+fontWeight: 600
+}
+}, importMsg), /*#**PURE***/React.createElement(“button”, {
+onClick: handleExport,
+style: {
+padding: “6px 12px”,
+background: “#0f1923”,
+border: “1px solid #1e3a5f”,
+borderRadius: 7,
+color: “#60a5fa”,
+fontSize: 11,
+fontWeight: 600
+}
+}, “\u2B07 Export”), /*#**PURE***/React.createElement(“label”, {
+style: {
+padding: “6px 12px”,
+background: “#0f1923”,
+border: “1px solid #1e3a5f”,
+borderRadius: 7,
+color: “#a78bfa”,
+fontSize: 11,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, “\u2B06 Import “, /*#**PURE***/React.createElement(“input”, {
+type: “file”,
+accept: “.json”,
+onChange: handleImport,
+style: {
+display: “none”
+}
+})), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+background: “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 7,
+overflow: “hidden”
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+padding: “0 8px”,
+color: “#4a7fa5”,
+fontSize: 13
+}
+}, “$”), /*#**PURE***/React.createElement(“input”, {
+type: “number”,
+value: data.income.monthly,
+onChange: e => update(“income”, “monthly”, e.target.value),
+placeholder: “Income”,
+style: {
+background: “transparent”,
+border: “none”,
+outline: “none”,
+padding: “7px 8px 7px 0”,
+color: “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Mono’, monospace”,
+width: 100
+}
+}))))), /*#**PURE***/React.createElement(“div”, {
+style: {
+borderBottom: “1px solid #111f30”,
+background: “#080f19”,
+overflowX: “auto”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+maxWidth: 1100,
+margin: “0 auto”,
+display: “flex”,
+padding: “0 20px”
+}
+}, tabs.map(t => /*#**PURE***/React.createElement(“button”, {
+key: t.id,
+onClick: () => setTab(t.id),
+style: {
+background: “none”,
+border: “none”,
+padding: “13px 13px”,
+color: tab === t.id ? “#60a5fa” : “#5a7a9a”,
+fontFamily: “‘DM Sans’, sans-serif”,
+fontWeight: 600,
+fontSize: 12,
+borderBottom: “2px solid “ + (tab === t.id ? “#60a5fa” : “transparent”),
+whiteSpace: “nowrap”
+}
+}, t.label)))), /*#**PURE***/React.createElement(“div”, {
+style: {
+maxWidth: 1100,
+margin: “0 auto”,
+padding: “24px 20px”
+}
+}, tab === “overview” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Financial Overview”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Your complete picture at a glance.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “repeat(auto-fit, minmax(140px, 1fr))”,
+gap: 10,
+marginBottom: 18
+}
+}, /*#**PURE***/React.createElement(StatBadge, {
+label: (data.settings.incomeBasis === “gross” ? “Gross” : “Net”) + “ Income”,
+value: formatCurrency(income),
+color: “#60a5fa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Total Debt”,
+value: formatCurrency(totalDebt),
+color: “#f97316”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Emergency Fund”,
+value: emergencyPct.toFixed(0) + “%”,
+color: “#10b981”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Total Savings Rate”,
+value: totalSavingsRate + “%”,
+color: “#a78bfa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Retire+Invest Rate”,
+value: investRate + “%”,
+color: “#34d399”
+})), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#f97316”
+}, “Debt Breakdown”), data.debts.length === 0 ? /*#**PURE***/React.createElement(“div”, {
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “20px 0”
+}
+}, “No debts added yet”) : /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+justifyContent: “center”,
+padding: “10px 0”
+}
+}, /*#**PURE***/React.createElement(SVGDonut, {
+data: data.debts.map(function (d) {
+return {
+name: d.name,
+value: parseFloat(d.balance) || 0
+};
+}),
+colors: DEBT_COLORS
+}))), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#3b82f6”
+}, “Budget vs Spent”), data.budget.categories.length === 0 ? /*#**PURE***/React.createElement(“div”, {
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “20px 0”
+}
+}, “No categories yet”) : /*#**PURE***/React.createElement(SVGBarChart, {
+data: budgetChartData,
+height: 180
+})), /*#**PURE***/React.createElement(Card, {
+style: {
+gridColumn: “1 / -1”
+}
+}, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#10b981”
+}, “Key Ratios”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “repeat(3, 1fr)”,
+gap: 12
+}
+}, [{
+label: “Housing (<28%)”,
+value: effectiveIncome > 0 ? (parseFloat(((_data$budget$categori = data.budget.categories.find(c => {
+var _c$name, _c$name2;
+return ((_c$name = c.name) === null || _c$name === void 0 ? void 0 : _c$name.toLowerCase().includes(“hous”)) || ((_c$name2 = c.name) === null || _c$name2 === void 0 ? void 0 : _c$name2.toLowerCase().includes(“rent”));
+})) === null || _data$budget$categori === void 0 ? void 0 : _data$budget$categori.spent) || 0) / effectiveIncome * 100).toFixed(1) + “%” : “—”,
+color: “#3b82f6”
+}, {
+label: “Debt-to-Income”,
+value: effectiveIncome > 0 ? (totalMinPayment / effectiveIncome * 100).toFixed(1) + “%” : “—”,
+color: “#f97316”
+}, {
+label: “Total Savings”,
+value: effectiveIncome > 0 ? totalSavingsRate + “%” : “—”,
+color: “#10b981”
+}].map(r => /*#**PURE***/React.createElement(“div”, {
+key: r.label,
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: “12px 14px”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 4
+}
+}, r.label), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 22,
+fontWeight: 700,
+color: r.color,
+fontFamily: “‘DM Mono’, monospace”
+}
+}, r.value))))))), tab === “debts” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Debt Payoff Tracker”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Track debts and build your payoff strategy.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14,
+marginBottom: 14
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#f97316”
+}, “Add a Debt”), /*#**PURE***/React.createElement(Input, {
+label: “Name”,
+value: newDebt.name,
+onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+name: v
+})),
+placeholder: “e.g. Student Loan”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Balance”,
+value: newDebt.balance,
+onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+balance: v
+})),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Interest Rate (APR)”,
+value: newDebt.rate,
+onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+rate: v
+})),
+suffix: “%”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Minimum Payment”,
+value: newDebt.minPayment,
+onChange: v => setNewDebt(d => _objectSpread(_objectSpread({}, d), {}, {
+minPayment: v
+})),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(“button”, {
+onClick: () => {
+if (!newDebt.name || !newDebt.balance) return;
+setData(d => _objectSpread(_objectSpread({}, d), {}, {
+debts: […d.debts, _objectSpread(_objectSpread({}, newDebt), {}, {
+id: Date.now()
+})]
+}));
+setNewDebt({
+name: “”,
+balance: “”,
+rate: “”,
+minPayment: “”
+});
+},
+style: {
+width: “100%”,
+padding: “11px”,
+background: “linear-gradient(135deg,#1d4ed8,#1e40af)”,
+color: “#fff”,
+border: “none”,
+borderRadius: 8,
+fontWeight: 600,
+fontSize: 14,
+fontFamily: “‘DM Sans’,sans-serif”,
+marginTop: 4
+}
+}, “Add Debt”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#a855f7”
+}, “Payoff Strategy”), /*#**PURE***/React.createElement(“div”, {
+style: {
+marginBottom: 14
+}
+}, [“avalanche”, “snowball”, “custom”].map(m => /*#**PURE***/React.createElement(“button”, {
+key: m,
+onClick: () => setDebtMethod(m),
+style: btnStyle(debtMethod === m)
+}, m.charAt(0).toUpperCase() + m.slice(1))), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 4
+}
+}, debtMethod === “avalanche” && “Highest interest first — saves most money.”, debtMethod === “snowball” && “Smallest balance first — builds momentum.”, debtMethod === “custom” && “Order you added them.”)), /*#**PURE***/React.createElement(Input, {
+label: “Extra Monthly Payment”,
+value: extraPayment,
+onChange: setExtraPayment,
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: 12,
+marginTop: 8
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+marginBottom: 6
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, “Total Debt”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: “#f97316”,
+fontWeight: 600
+}
+}, formatCurrency(totalDebt))), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+justifyContent: “space-between”
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, “Min Payments/mo”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: “#e8f0f8”,
+fontWeight: 600
+}
+}, formatCurrency(totalMinPayment)))))), sortedDebts.length > 0 && /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#f97316”
+}, “Payoff Order”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+flexDirection: “column”,
+gap: 8
+}
+}, sortedDebts.map((debt, i) => {
+const balance = parseFloat(debt.balance) || 0,
+rate = parseFloat(debt.rate) || 0,
+minPay = parseFloat(debt.minPayment) || 0;
+const effectivePay = i === 0 ? minPay + extra : minPay;
+const months = calcPayoffMonths(balance, rate, effectivePay);
+const color = DEBT_COLORS[i % DEBT_COLORS.length];
+return /*#**PURE***/React.createElement(“div”, {
+key: debt.id,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+background: “#0a1520”,
+borderRadius: 10,
+padding: “12px 14px”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 26,
+height: 26,
+borderRadius: “50%”,
+background: color + “22”,
+color,
+fontSize: 11,
+fontWeight: 700,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+flexShrink: 0
+}
+}, i + 1), /*#**PURE***/React.createElement(“div”, {
+style: {
+flex: 1
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontWeight: 600,
+fontSize: 13
+}
+}, debt.name), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 10,
+color: “#4a7fa5”
+}
+}, rate, “% APR \xB7 “, formatCurrency(effectivePay), “/mo”)), /*#**PURE***/React.createElement(“div”, {
+style: {
+textAlign: “right”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color,
+fontWeight: 600,
+fontSize: 13
+}
+}, formatCurrency(balance)), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 10,
+color: months ? “#10b981” : “#ef4444”
+}
+}, months ? months + “ mo · “ + new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(“en-US”, {
+month: “short”,
+year: “numeric”
+}) : “∞”)), /*#**PURE***/React.createElement(“button”, {
+onClick: () => setData(d => _objectSpread(_objectSpread({}, d), {}, {
+debts: d.debts.filter(x => x.id !== debt.id)
+})),
+style: {
+background: “none”,
+border: “none”,
+color: “#3a5a7a”,
+fontSize: 16,
+padding: “2px 6px”
+}
+}, “\u2715”));
+})))), tab === “budget” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Monthly Budget”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Track spending vs. your targets.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “300px 1fr”,
+gap: 14
+}
+}, /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(Card, {
+style: {
+marginBottom: 14
+}
+}, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#3b82f6”
+}, “Add Category”), /*#**PURE***/React.createElement(Input, {
+label: “Category Name”,
+value: newBudget.name,
+onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+name: v
+})),
+placeholder: “e.g. Groceries”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Monthly Budget”,
+value: newBudget.budgeted,
+onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+budgeted: v
+})),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Spent This Month”,
+value: newBudget.spent,
+onChange: v => setNewBudget(b => _objectSpread(_objectSpread({}, b), {}, {
+spent: v
+})),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(“button”, {
+onClick: () => {
+if (!newBudget.name) return;
+setData(d => _objectSpread(_objectSpread({}, d), {}, {
+budget: {
+categories: […d.budget.categories, _objectSpread(_objectSpread({}, newBudget), {}, {
+id: Date.now()
+})]
+}
+}));
+setNewBudget({
+name: “”,
+budgeted: “”,
+spent: “”
+});
+},
+style: {
+width: “100%”,
+padding: “11px”,
+background: “linear-gradient(135deg,#1d4ed8,#1e40af)”,
+color: “#fff”,
+border: “none”,
+borderRadius: 8,
+fontWeight: 600,
+fontSize: 14,
+fontFamily: “‘DM Sans’,sans-serif”,
+marginTop: 4
+}
+}, “Add Category”)), /*#**PURE***/React.createElement(Card, null, [[“Budgeted”, “#3b82f6”, totalBudgeted], [“Spent”, “#f97316”, totalSpent]].map(_ref8 => {
+let _ref9 = _slicedToArray(_ref8, 3),
+l = _ref9[0],
+c = _ref9[1],
+v = _ref9[2];
+return /*#**PURE***/React.createElement(“div”, {
+key: l,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+marginBottom: 6
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, l), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: c,
+fontWeight: 600
+}
+}, formatCurrency(v)));
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+justifyContent: “space-between”
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, “Remaining”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: totalBudgeted - totalSpent >= 0 ? “#10b981” : “#ef4444”,
+fontWeight: 600
+}
+}, formatCurrency(totalBudgeted - totalSpent))))), /*#**PURE***/React.createElement(“div”, null, data.budget.categories.map((cat, i) => {
+const budgeted = parseFloat(cat.budgeted) || 0,
+spent = parseFloat(cat.spent) || 0;
+const pct = budgeted > 0 ? Math.min(100, spent / budgeted * 100) : 0;
+const over = spent > budgeted;
+return /*#**PURE***/React.createElement(“div”, {
+key: cat.id,
+style: {
+background: “#0d1820”,
+border: “1px solid #1a2840”,
+borderRadius: 12,
+padding: “12px 14px”,
+marginBottom: 8
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+marginBottom: 8
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 8
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 8,
+height: 8,
+borderRadius: “50%”,
+background: BUDGET_COLORS[i % BUDGET_COLORS.length]
+}
+}), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontWeight: 600,
+fontSize: 13
+}
+}, cat.name)), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+fontSize: 12,
+color: over ? “#ef4444” : “#10b981”
+}
+}, formatCurrency(spent), “ / “, formatCurrency(budgeted)), /*#**PURE***/React.createElement(“button”, {
+onClick: () => setData(d => _objectSpread(_objectSpread({}, d), {}, {
+budget: {
+categories: d.budget.categories.filter(x => x.id !== cat.id)
+}
+})),
+style: {
+background: “none”,
+border: “none”,
+color: “#3a5a7a”,
+fontSize: 14
+}
+}, “\u2715”))), /*#**PURE***/React.createElement(“div”, {
+style: {
+height: 5,
+background: “#0a1520”,
+borderRadius: 3,
+overflow: “hidden”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+height: “100%”,
+width: pct + “%”,
+background: over ? “#ef4444” : BUDGET_COLORS[i % BUDGET_COLORS.length],
+borderRadius: 3
+}
+})));
+})))), tab === “emergency” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Emergency Fund”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Aim for 3\u20136 months of expenses as a safety net.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “320px 1fr”,
+gap: 14
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#10b981”
+}, “Fund Details”), /*#**PURE***/React.createElement(Input, {
+label: “Goal Amount”,
+value: data.emergency.goal,
+onChange: v => update(“emergency”, “goal”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Current Balance”,
+value: data.emergency.current,
+onChange: v => update(“emergency”, “current”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Monthly Contribution”,
+value: data.emergency.monthly,
+onChange: v => update(“emergency”, “monthly”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+marginTop: 8,
+fontSize: 12,
+color: “#4a7fa5”,
+background: “#0a1520”,
+borderRadius: 8,
+padding: 12
+}
+}, “\uD83D\uDCA1 3\xD7 monthly income as starting goal: “, formatCurrency((parseFloat(data.income.monthly) || 0) * 3))), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#10b981”
+}, “Progress”), /*#**PURE***/React.createElement(“div”, {
+style: {
+textAlign: “center”,
+marginBottom: 20
+}
+}, /*#**PURE***/React.createElement(“svg”, {
+width: 170,
+height: 170
+}, /*#**PURE***/React.createElement(“circle”, {
+cx: 85,
+cy: 85,
+r: 68,
+fill: “none”,
+stroke: “#0a1520”,
+strokeWidth: 13
+}), /*#**PURE***/React.createElement(“circle”, {
+cx: 85,
+cy: 85,
+r: 68,
+fill: “none”,
+stroke: emergencyPct >= 100 ? “#10b981” : emergencyPct > 50 ? “#f59e0b” : “#3b82f6”,
+strokeWidth: 13,
+strokeDasharray: String(2 * Math.PI * 68),
+strokeDashoffset: String(2 * Math.PI * 68 * (1 - emergencyPct / 100)),
+strokeLinecap: “round”,
+transform: “rotate(-90 85 85)”
+}), /*#**PURE***/React.createElement(“text”, {
+x: 85,
+y: 81,
+textAnchor: “middle”,
+fill: “#e8f0f8”,
+fontSize: 24,
+fontWeight: 700,
+fontFamily: “DM Mono”
+}, emergencyPct.toFixed(0), “%”), /*#**PURE***/React.createElement(“text”, {
+x: 85,
+y: 100,
+textAnchor: “middle”,
+fill: “#5a7a9a”,
+fontSize: 11
+}, “funded”))), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10
+}
+}, /*#**PURE***/React.createElement(StatBadge, {
+label: “Current”,
+value: formatCurrency(emergencyCurrent),
+color: “#3b82f6”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Goal”,
+value: formatCurrency(emergencyGoal),
+color: “#10b981”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Remaining”,
+value: formatCurrency(Math.max(0, emergencyGoal - emergencyCurrent)),
+color: “#f59e0b”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Months Left”,
+value: (() => {
+const m = parseFloat(data.emergency.monthly) || 0;
+const r = Math.max(0, emergencyGoal - emergencyCurrent);
+return m > 0 ? Math.ceil(r / m) + “ mo” : “—”;
+})(),
+color: “#a78bfa”
+}))))), tab === “retirement” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Retirement Planner”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Projected at 7% avg annual return.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “320px 1fr”,
+gap: 14
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#a855f7”
+}, “Your Info”), /*#**PURE***/React.createElement(Input, {
+label: “Current Age”,
+value: data.retirement.currentAge,
+onChange: v => update(“retirement”, “currentAge”, v),
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Target Retirement Age”,
+value: data.retirement.targetAge,
+onChange: v => update(“retirement”, “targetAge”, v),
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Current Balance”,
+value: data.retirement.currentBalance,
+onChange: v => update(“retirement”, “currentBalance”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Monthly Contribution”,
+value: data.retirement.monthlyContrib,
+onChange: v => update(“retirement”, “monthlyContrib”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Employer Match %”,
+value: data.retirement.employerMatch,
+onChange: v => update(“retirement”, “employerMatch”, v),
+suffix: “%”,
+type: “number”
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: 12,
+marginTop: 8
+}
+}, [[“Your contribution”, formatCurrency(retMonthly), “#a855f7”], [“Employer match”, formatCurrency(retMonthly * retMatch / 100), “#10b981”]].map(_ref0 => {
+let _ref1 = _slicedToArray(_ref0, 3),
+l = _ref1[0],
+v = _ref1[1],
+c = _ref1[2];
+return /*#**PURE***/React.createElement(“div”, {
+key: l,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+marginBottom: 6
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, l), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: c
+}
+}, v, “/mo”));
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+borderTop: “1px solid #1e2d3d”,
+paddingTop: 6,
+display: “flex”,
+justifyContent: “space-between”
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, “Total/mo”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: “#e8f0f8”,
+fontWeight: 700
+}
+}, formatCurrency(totalMonthly), “/mo”)))), /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10,
+marginBottom: 14
+}
+}, /*#**PURE***/React.createElement(StatBadge, {
+label: “Projected at Retirement”,
+value: formatCurrency(projectedBalance),
+color: “#a855f7”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Years to Retirement”,
+value: retYears + “ yrs”,
+color: “#60a5fa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Monthly Income (4% rule)”,
+value: formatCurrency(projectedBalance * 0.04 / 12),
+color: “#10b981”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Annual Income (4% rule)”,
+value: formatCurrency(projectedBalance * 0.04),
+color: “#f59e0b”
+})), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#a855f7”
+}, “Projected Balance Growth”), /*#**PURE***/React.createElement(SVGLineChart, {
+data: retChartData,
+height: 200
+}))))), tab === “savings” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Savings & Investment Rate”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “vs. “ + data.settings.incomeBasis + “ income” + (data.settings.matchInIncome ? “ (total comp)” : “”) + “. “, /*#**PURE***/React.createElement(“button”, {
+onClick: () => setTab(“settings”),
+style: {
+background: “none”,
+border: “none”,
+color: “#60a5fa”,
+fontSize: 13,
+padding: 0,
+textDecoration: “underline”,
+cursor: “pointer”
+}
+}, “Change methodology”)), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “320px 1fr”,
+gap: 14
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#34d399”
+}, “Monthly Flows”), /*#**PURE***/React.createElement(Input, {
+label: “Monthly Savings (liquid)”,
+value: data.savings.monthlySavings,
+onChange: v => update(“savings”, “monthlySavings”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: “Monthly Investments (taxable, IRA)”,
+value: data.savings.monthlyInvest,
+onChange: v => update(“savings”, “monthlyInvest”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(Input, {
+label: (data.settings.incomeBasis === “gross” ? “Gross” : “Net”) + “ Monthly Income”,
+value: data.income.monthly,
+onChange: v => update(“income”, “monthly”, v),
+prefix: “$”,
+type: “number”
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: 12,
+marginTop: 8,
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontWeight: 600,
+color: “#8b9cb5”,
+marginBottom: 6,
+textTransform: “uppercase”,
+letterSpacing: “0.05em”,
+fontSize: 10
+}
+}, “What Counts as Savings”), [[“Liquid savings”, formatCurrency(monthlySavings), null], [“Investments”, formatCurrency(monthlyInvest), null], [“401k contribution”, formatCurrency(ret401kContrib), null], [“Employer match”, formatCurrency(monthlyMatch), “#10b981”]].map(_ref10 => {
+let _ref11 = _slicedToArray(_ref10, 3),
+l = _ref11[0],
+v = _ref11[1],
+c = _ref11[2];
+return /*#**PURE***/React.createElement(“div”, {
+key: l,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+marginBottom: 4
+}
+}, /*#**PURE***/React.createElement(“span”, null, l), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: c || undefined
+}
+}, v));
+}), /*#**PURE***/React.createElement(“div”, {
+style: {
+borderTop: “1px solid #1e2d3d”,
+paddingTop: 5,
+marginTop: 4,
+display: “flex”,
+justifyContent: “space-between”
+}
+}, /*#**PURE***/React.createElement(“span”, {
+style: {
+fontWeight: 600,
+color: “#e8f0f8”
+}
+}, “Total monthly”), /*#**PURE***/React.createElement(“span”, {
+style: {
+fontFamily: “‘DM Mono’,monospace”,
+color: “#34d399”,
+fontWeight: 700
+}
+}, formatCurrency(totalMonthlySaved))))), /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10,
+marginBottom: 14
+}
+}, /*#**PURE***/React.createElement(StatBadge, {
+label: “Liquid Savings Rate”,
+value: savingsRate + “%”,
+color: “#34d399”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Retirement + Invest”,
+value: investRate + “%”,
+color: “#60a5fa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Total Savings Rate”,
+value: totalSavingsRate + “%”,
+color: “#a78bfa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Monthly Total”,
+value: formatCurrency(totalMonthlySaved),
+color: “#f59e0b”
+})), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#34d399”
+}, “How You Stack Up”), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 11,
+color: “#5a7a9a”,
+marginBottom: 10,
+marginTop: -12
+}
+}, “Based on total savings rate (”, totalSavingsRate, “%)”), [{
+label: “Survival mode”,
+pct: 0,
+desc: “No savings — any emergency is a crisis”,
+color: “#ef4444”
+}, {
+label: “Getting started”,
+pct: 5,
+desc: “Better than nothing — build the habit”,
+color: “#f97316”
+}, {
+label: “On track”,
+pct: 10,
+desc: “Solid foundation for financial stability”,
+color: “#f59e0b”
+}, {
+label: “Good”,
+pct: 15,
+desc: “Comfortable trajectory for long-term wealth”,
+color: “#84cc16”
+}, {
+label: “Great”,
+pct: 20,
+desc: “Well ahead of most people your age”,
+color: “#10b981”
+}, {
+label: “Excellent”,
+pct: 30,
+desc: “Accelerated path — wealth-building mode”,
+color: “#34d399”
+}].map(tier => {
+const achieved = (parseFloat(totalSavingsRate) || 0) >= tier.pct;
+return /*#**PURE***/React.createElement(“div”, {
+key: tier.label,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 12,
+padding: “9px 12px”,
+background: achieved ? tier.color + “11” : “transparent”,
+borderRadius: 10,
+marginBottom: 5,
+border: “1px solid “ + (achieved ? tier.color + “33” : “transparent”)
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+width: 36,
+fontFamily: “‘DM Mono’,monospace”,
+fontSize: 12,
+color: tier.color,
+fontWeight: 700
+}
+}, tier.pct + “%+”), /*#**PURE***/React.createElement(“div”, {
+style: {
+flex: 1
+}
+}, /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 12,
+fontWeight: 600,
+color: achieved ? “#e8f0f8” : “#4a7fa5”
+}
+}, tier.label), /*#**PURE***/React.createElement(“div”, {
+style: {
+fontSize: 11,
+color: achieved ? “#8b9cb5” : “#2a4060”
+}
+}, tier.desc)), achieved && /*#**PURE***/React.createElement(“div”, null, “\u2713”));
+}))))), tab === “settings” && /*#**PURE***/React.createElement(“div”, null, /*#**PURE***/React.createElement(“h1”, {
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Settings”), /*#**PURE***/React.createElement(“p”, {
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Adjust how rates and ratios are calculated.”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gap: 14,
+maxWidth: 680
+}
+}, /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#60a5fa”
+}, “Income Basis”), /*#**PURE***/React.createElement(“p”, {
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Calculate rates against gross (pre-tax) or net (take-home) income.”), radioOpt(data.settings.incomeBasis === “gross”, “#60a5fa”, () => update(“settings”, “incomeBasis”, “gross”), “Gross income (recommended)”, “Pre-tax. Matches standard rules like "save 15% of income". Stable benchmark.”), radioOpt(data.settings.incomeBasis === “net”, “#60a5fa”, () => update(“settings”, “incomeBasis”, “net”), “Net income”, “Take-home pay only. Won’t match published savings rate guidelines.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#a855f7”
+}, “401k Match Treatment”), /*#**PURE***/React.createElement(“p”, {
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Match always counts as savings. Also add it to income (total comp view)?”), radioOpt(data.settings.matchInIncome === false, “#a855f7”, () => update(“settings”, “matchInIncome”, false), “Match in savings only (recommended)”, “Rewards capturing the full match — your savings rate visibly increases when you do.”), radioOpt(data.settings.matchInIncome === true, “#a855f7”, () => update(“settings”, “matchInIncome”, true), “Match in both income and savings”, “Total compensation view. More technically accurate, but rates appear lower.”)), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#10b981”
+}, “Live Preview”), /*#**PURE***/React.createElement(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10
+}
+}, /*#**PURE***/React.createElement(StatBadge, {
+label: “Effective Income”,
+value: formatCurrency(effectiveIncome),
+color: “#60a5fa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Total Saved/mo”,
+value: formatCurrency(totalMonthlySaved),
+color: “#34d399”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Total Savings Rate”,
+value: totalSavingsRate + “%”,
+color: “#a78bfa”
+}), /*#**PURE***/React.createElement(StatBadge, {
+label: “Retire+Invest Rate”,
+value: investRate + “%”,
+color: “#f59e0b”
+}))), /*#**PURE***/React.createElement(Card, null, /*#**PURE***/React.createElement(SectionTitle, {
+accent: “#f97316”
+}, “Reset Data”), /*#**PURE***/React.createElement(“p”, {
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+margin: “0 0 12px”
+}
+}, “Wipes all data. Export first if you want a backup.”), /*#**PURE***/React.createElement(“button”, {
+onClick: () => {
+if (window.confirm(“Reset all data? Cannot be undone.”)) setData(defaultData);
+},
+style: {
+padding: “10px 20px”,
+background: “#1a0e10”,
+border: “1px solid #4a1a1f”,
+color: “#ef4444”,
+borderRadius: 8,
+fontWeight: 600,
+fontSize: 13,
+fontFamily: “‘DM Sans’,sans-serif”
+}
+}, “Reset All Data”))))));
+}
+ReactDOM.createRoot(document.getElementById(“root”)).render(/*#**PURE***/React.createElement(App, null));
+</script>
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-```
-
-  </script>
 </body>
 </html>

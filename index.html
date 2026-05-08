@@ -183,7 +183,8 @@ function makeDefault() {
       notes: ""
     },
     settings: {
-      incomeBasis: "gross"
+      incomeBasis: "gross",
+      debtStrategy: "avalanche"
     },
     plan: {
       essentials: {},
@@ -4626,6 +4627,78 @@ function App() {
       maxWidth: 680
     }
   }, [El(Card, {
+    key: "debt-strategy"
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#f97316"
+  }, "Debt Payoff Strategy"), [{
+    id: "avalanche",
+    label: "Avalanche (recommended)",
+    desc: "Minimizes total interest paid. Best for saving the most money overall."
+  }, {
+    id: "snowball",
+    label: "Snowball",
+    desc: "Quick wins keep you motivated. Slightly more interest paid but psychologically effective."
+  }, {
+    id: "custom",
+    label: "Custom",
+    desc: "Drag to set your own payoff priority in the Plan tab."
+  }].map(function (opt) {
+    var sel = data.settings.debtStrategy === opt.id;
+    return El("div", {
+      key: opt.id,
+      onClick: function onClick() {
+        updateSettings("debtStrategy", opt.id);
+      },
+      style: {
+        display: "flex",
+        gap: 12,
+        padding: "12px 14px",
+        background: sel ? "#1a0e06" : "#0a1520",
+        border: "1px solid " + (sel ? "#4a2a0a" : "#1a2840"),
+        borderRadius: 10,
+        marginBottom: 8,
+        cursor: "pointer"
+      }
+    }, [El("div", {
+      key: "radio",
+      style: {
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        flexShrink: 0,
+        border: "2px solid " + (sel ? "#f97316" : "#2a4060"),
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 2
+      }
+    }, sel && El("div", {
+      style: {
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        background: "#f97316"
+      }
+    })), El("div", {
+      key: "text"
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: "#e8f0f8",
+        marginBottom: 3
+      }
+    }, opt.label), El("div", {
+      key: "desc",
+      style: {
+        fontSize: 12,
+        color: "#8b9cb5",
+        lineHeight: 1.5
+      }
+    }, opt.desc)])]);
+  })])), El(Card, {
     key: "basis"
   }, El("div", null, [El(SectionTitle, {
     key: "st",

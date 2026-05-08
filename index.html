@@ -1,0 +1,3841 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Compound - your financial literacy journey starts here." />
+  <title>Compound</title>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Compound" />
+  <meta name="theme-color" content="#070e16" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    html, body, #root { margin: 0; padding: 0; min-height: 100vh; background: #070e16; }
+    * { box-sizing: border-box; }
+    input::placeholder { color: #2a4060; }
+    textarea::placeholder { color: #2a4060; }
+    button { cursor: pointer; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 0.3; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var _React = React;
+var useState = _React.useState;
+var useEffect = _React.useEffect;
+var useCallback = _React.useCallback;
+var useRef = _React.useRef;
+var STORAGE_KEY = "compound_v3";
+var ESSENTIAL_DEFAULTS = [{
+  id: "housing",
+  name: "Housing",
+  amount: 2200
+}, {
+  id: "groceries",
+  name: "Groceries",
+  amount: 600
+}, {
+  id: "utilities",
+  name: "Utilities",
+  amount: 180
+}, {
+  id: "transportation",
+  name: "Transportation",
+  amount: 350
+}, {
+  id: "car_insurance",
+  name: "Car Insurance",
+  amount: 280
+}, {
+  id: "phone",
+  name: "Phone",
+  amount: 90
+}, {
+  id: "subscriptions",
+  name: "Subscriptions",
+  amount: 60
+}];
+var DISC_SUGGESTIONS = [{
+  group: "Dining and Social",
+  items: ["Dining Out", "Coffee Shops", "Bars and Nightlife"]
+}, {
+  group: "Personal",
+  items: ["Personal Care", "Clothing and Shopping", "Gym and Fitness"]
+}, {
+  group: "Life Admin",
+  items: ["Car Maintenance", "Medical and Dental", "Pet Expenses"]
+}, {
+  group: "Entertainment",
+  items: ["Entertainment", "Travel and Vacation", "Hobbies"]
+}];
+var FREQ_OPTIONS = [{
+  id: "weekly",
+  label: "Weekly",
+  perYear: 52
+}, {
+  id: "biweekly",
+  label: "Biweekly",
+  perYear: 26
+}, {
+  id: "semimonthly",
+  label: "Semi-monthly",
+  perYear: 24
+}, {
+  id: "monthly",
+  label: "Monthly",
+  perYear: 12
+}];
+function makeDefault() {
+  return {
+    income: {
+      frequency: "biweekly",
+      grossPerPaycheck: "",
+      healthInsurance: "",
+      fsa: "",
+      otherPreTax: "",
+      federalTax: "",
+      stateTax: "",
+      otherPostTax: ""
+    },
+    debts: [],
+    budget: {
+      essentials: ESSENTIAL_DEFAULTS.map(function (e) {
+        return {
+          id: e.id,
+          name: e.name,
+          reality: String(e.amount),
+          plan: String(e.amount)
+        };
+      }),
+      discretionary: []
+    },
+    retirement: {
+      traditional401k: {
+        monthly: "",
+        employerMatchPct: "",
+        currentBalance: ""
+      },
+      roth401k: {
+        monthly: "",
+        currentBalance: ""
+      },
+      rothIra: {
+        monthly: "",
+        currentBalance: ""
+      },
+      hsa: {
+        monthly: "",
+        currentBalance: "",
+        familyCoverage: false
+      },
+      targetAge: "65",
+      currentAge: ""
+    },
+    savings: {
+      emergencyFund: {
+        current: "",
+        goal: "",
+        monthly: ""
+      },
+      generalSavings: {
+        monthly: "",
+        goal: ""
+      }
+    },
+    invest: {
+      monthly: "",
+      currentBalance: "",
+      notes: ""
+    },
+    settings: {
+      incomeBasis: "gross"
+    }
+  };
+}
+var defaultData = makeDefault();
+function fmt(v) {
+  var n = parseFloat(v) || 0;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(n);
+}
+function fmtShort(v) {
+  var n = parseFloat(v) || 0;
+  if (n >= 1000000) return "$" + (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000) return "$" + (n / 1000).toFixed(0) + "k";
+  return fmt(n);
+}
+function fmtDec(v) {
+  var n = parseFloat(v) || 0;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(n);
+}
+
+// –– UI primitives ––
+
+function El(tag, props, children) {
+var args = [tag, props].concat(Array.isArray(children) ? children : children !== undefined ? [children] : []);
+return React.createElement.apply(React, args);
+}
+function Input(props) {
+return El(“div”, {
+style: {
+marginBottom: props.small ? 6 : 12
+}
+}, [props.label && El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 4,
+textTransform: “uppercase”
+}
+}, props.label), El(“div”, {
+key: “wrap”,
+style: {
+display: “flex”,
+alignItems: “center”,
+background: props.readOnly ? “#060e18” : “#0f1923”,
+border: “1px solid “ + (props.highlight ? props.highlight + “44” : “#1e2d3d”),
+borderRadius: 8,
+overflow: “hidden”
+}
+}, [props.prefix && El(“span”, {
+key: “pre”,
+style: {
+padding: “0 10px”,
+color: “#4a7fa5”,
+fontSize: 13,
+fontWeight: 600
+}
+}, props.prefix), El(“input”, {
+key: “inp”,
+type: props.type || “text”,
+value: props.value,
+readOnly: props.readOnly,
+onChange: function onChange(e) {
+if (props.onChange) props.onChange(e.target.value);
+},
+placeholder: props.placeholder || “0”,
+style: {
+flex: 1,
+background: “transparent”,
+border: “none”,
+outline: “none”,
+padding: props.small ? “8px 10px” : “10px 12px”,
+color: props.readOnly ? “#5a7a9a” : “#e8f0f8”,
+fontSize: props.small ? 13 : 14,
+fontFamily: “‘DM Mono’, monospace”
+}
+}), props.suffix && El(“span”, {
+key: “suf”,
+style: {
+padding: “0 10px”,
+color: “#4a7fa5”,
+fontSize: 12
+}
+}, props.suffix)])]);
+}
+function Card(props) {
+return El(“div”, {
+style: Object.assign({
+background: “linear-gradient(145deg, #111c28 0%, #0d1620 100%)”,
+border: “1px solid #1a2840”,
+borderRadius: 16,
+padding: 20
+}, props.style || {})
+}, props.children);
+}
+function SectionTitle(props) {
+return El(“div”, {
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+marginBottom: 16
+}
+}, [El(“div”, {
+key: “bar”,
+style: {
+width: 4,
+height: 20,
+borderRadius: 2,
+background: props.accent || “#3b82f6”,
+flexShrink: 0
+}
+}), El(“h2”, {
+key: “txt”,
+style: {
+margin: 0,
+fontSize: 15,
+fontWeight: 700,
+color: “#e8f0f8”,
+fontFamily: “‘Syne’, sans-serif”
+}
+}, props.children)]);
+}
+function Badge(props) {
+var color = props.color || “#3b82f6”;
+return El(“div”, {
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: “12px 14px”,
+border: “1px solid “ + color + “22”
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+color: “#8b9cb5”,
+letterSpacing: “0.08em”,
+textTransform: “uppercase”,
+marginBottom: 4
+}
+}, props.label), El(“div”, {
+key: “val”,
+style: {
+fontSize: props.large ? 24 : 20,
+fontWeight: 700,
+color: color,
+fontFamily: “‘DM Mono’, monospace”
+}
+}, props.value), props.sub && El(“div”, {
+key: “sub”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 2
+}
+}, props.sub)]);
+}
+function InfoPill(props) {
+return El(“div”, {
+style: {
+display: “inline-flex”,
+alignItems: “center”,
+gap: 6,
+padding: “4px 10px”,
+background: “#0a1520”,
+border: “1px solid #1e3a5f”,
+borderRadius: 20,
+fontSize: 11,
+color: “#4a7fa5”,
+marginBottom: 12
+}
+}, [El(“span”, {
+key: “icon”,
+style: {
+fontSize: 12
+}
+}, “i”), El(“span”, {
+key: “txt”
+}, props.children)]);
+}
+function RowHeader() {
+return El(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr 1fr auto”,
+gap: 8,
+padding: “4px 12px”,
+marginBottom: 4
+}
+}, [El(“div”, {
+key: “a”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Category”), El(“div”, {
+key: “b”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Reality”), El(“div”, {
+key: “c”,
+style: {
+fontSize: 10,
+color: “#60a5fa”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Plan”), El(“div”, {
+key: “d”
+})]);
+}
+function BudgetRow(props) {
+var color = props.color || “#3b82f6”;
+return El(“div”, {
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr 1fr auto”,
+gap: 8,
+alignItems: “center”,
+padding: “8px 12px”,
+background: “#0a1520”,
+borderRadius: 10,
+marginBottom: 6,
+borderLeft: “3px solid “ + color
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 12,
+fontWeight: 600,
+color: “#e8f0f8”,
+lineHeight: 1.3
+}
+}, props.label), El(“input”, {
+key: “r”,
+type: “number”,
+value: props.reality,
+readOnly: props.readOnly,
+onChange: function onChange(e) {
+if (props.onRealityChange) props.onRealityChange(e.target.value);
+},
+style: {
+width: “100%”,
+background: props.readOnly ? “#060e18” : “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 6,
+padding: “6px 8px”,
+color: props.readOnly ? “#5a7a9a” : “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Mono’, monospace”,
+outline: “none”,
+boxSizing: “border-box”
+}
+}), El(“input”, {
+key: “p”,
+type: “number”,
+value: props.plan,
+onChange: function onChange(e) {
+if (props.onPlanChange) props.onPlanChange(e.target.value);
+},
+style: {
+width: “100%”,
+background: “#0f1923”,
+border: “1px solid “ + color + “44”,
+borderRadius: 6,
+padding: “6px 8px”,
+color: “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Mono’, monospace”,
+outline: “none”,
+boxSizing: “border-box”
+}
+}), El(“div”, {
+key: “del”,
+style: {
+width: 24
+}
+}, props.onDelete && El(“button”, {
+onClick: props.onDelete,
+style: {
+background: “none”,
+border: “none”,
+color: “#3a5a7a”,
+fontSize: 15,
+padding: “2px”,
+cursor: “pointer”
+}
+}, “x”))]);
+}
+function LineChart(props) {
+var data = props.data;
+var h = props.height || 200;
+var w = 400;
+var pad = {
+t: 10,
+r: 20,
+b: 30,
+l: 55
+};
+var chartW = w - pad.l - pad.r;
+var chartH = h - pad.t - pad.b;
+if (!data || data.length < 2) {
+return El(“div”, {
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “40px 0”
+}
+}, “Enter your age and target age to see projections”);
+}
+var maxVal = Math.max.apply(null, data.map(function (d) {
+return d.balance;
+})) || 1;
+var xStep = chartW / (data.length - 1);
+var points = data.map(function (d, i) {
+return pad.l + i * xStep + “,” + (pad.t + chartH - d.balance / maxVal * chartH);
+}).join(” “);
+return El(“svg”, {
+width: “100%”,
+viewBox: “0 0 “ + w + “ “ + h
+}, [[0, 1, 2, 3, 4].map(function (i) {
+var v = Math.round(maxVal / 4 * i);
+var y = pad.t + chartH - v / maxVal * chartH;
+return El(“g”, {
+key: i
+}, [El(“line”, {
+key: “l”,
+x1: pad.l,
+y1: y,
+x2: pad.l + chartW,
+y2: y,
+stroke: “#1a2840”,
+strokeWidth: 1,
+strokeDasharray: “4 4”
+}), El(“text”, {
+key: “t”,
+x: pad.l - 4,
+y: y + 4,
+textAnchor: “end”,
+fontSize: 9,
+fill: “#5a7a9a”
+}, “$” + Math.round(v / 1000) + “k”)]);
+}), data.filter(function (d, i) {
+return i === 0 || i === data.length - 1 || d.age % 10 === 0;
+}).map(function (d) {
+var idx = data.indexOf(d);
+return El(“text”, {
+key: “x” + idx,
+x: pad.l + idx * xStep,
+y: h - 6,
+textAnchor: “middle”,
+fontSize: 9,
+fill: “#5a7a9a”
+}, d.age);
+}), El(“polyline”, {
+key: “line”,
+points: points,
+fill: “none”,
+stroke: “#a855f7”,
+strokeWidth: 2.5,
+strokeLinejoin: “round”
+}), El(“circle”, {
+key: “s”,
+cx: pad.l,
+cy: pad.t + chartH,
+r: 3,
+fill: “#a855f7”
+}), El(“circle”, {
+key: “e”,
+cx: pad.l + chartW,
+cy: pad.t + chartH - data[data.length - 1].balance / maxVal * chartH,
+r: 4,
+fill: “#a855f7”
+})]);
+}
+
+// –– Main App ––
+
+function App() {
+var _s = useState(function () {
+try {
+var s = localStorage.getItem(STORAGE_KEY);
+if (s) {
+var parsed = JSON.parse(s);
+var def = makeDefault();
+return {
+income: Object.assign({}, def.income, parsed.income || {}),
+debts: parsed.debts || [],
+budget: {
+essentials: parsed.budget && parsed.budget.essentials ? parsed.budget.essentials : def.budget.essentials,
+discretionary: parsed.budget && parsed.budget.discretionary ? parsed.budget.discretionary : []
+},
+retirement: Object.assign({}, def.retirement, parsed.retirement || {}),
+savings: Object.assign({}, def.savings, parsed.savings || {}),
+invest: Object.assign({}, def.invest, parsed.invest || {}),
+settings: Object.assign({}, def.settings, parsed.settings || {})
+};
+}
+return makeDefault();
+} catch (e) {
+return makeDefault();
+}
+});
+var data = _s[0];
+var setData = _s[1];
+var _tab = useState(“overview”);
+var tab = _tab[0];
+var setTab = _tab[1];
+var _showSugg = useState(false);
+var showSugg = _showSugg[0];
+var setShowSugg = _showSugg[1];
+var _newDebt = useState({
+name: “”,
+balance: “”,
+rate: “”,
+minPayment: “”
+});
+var newDebt = _newDebt[0];
+var setNewDebt = _newDebt[1];
+var _newDisc = useState({
+name: “”,
+reality: “”,
+plan: “”
+});
+var newDisc = _newDisc[0];
+var setNewDisc = _newDisc[1];
+var _importMsg = useState(””);
+var importMsg = _importMsg[0];
+var setImportMsg = _importMsg[1];
+useEffect(function () {
+try {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+} catch (e) {}
+}, [data]);
+
+// Income calculations
+var freqObj = FREQ_OPTIONS.find(function (f) {
+return f.id === data.income.frequency;
+}) || FREQ_OPTIONS[1];
+var perYear = freqObj.perYear;
+var grossPerPaycheck = parseFloat(data.income.grossPerPaycheck) || 0;
+var grossMonthly = grossPerPaycheck * perYear / 12;
+
+// Pre-tax deductions (per paycheck -> monthly)
+var trad401kMonthly = parseFloat(data.retirement.traditional401k.monthly) || 0;
+var hsaMonthly = parseFloat(data.retirement.hsa.monthly) || 0;
+var healthInsMonthly = parseFloat(data.income.healthInsurance) || 0;
+var fsaMonthly = parseFloat(data.income.fsa) || 0;
+var otherPreTaxMonthly = parseFloat(data.income.otherPreTax) || 0;
+var totalPreTaxMonthly = trad401kMonthly + hsaMonthly + healthInsMonthly + fsaMonthly + otherPreTaxMonthly;
+
+// Taxes (monthly)
+var federalTaxMonthly = parseFloat(data.income.federalTax) || 0;
+var stateTaxMonthly = parseFloat(data.income.stateTax) || 0;
+var ficaMonthly = grossMonthly * 0.0765;
+var totalTaxMonthly = federalTaxMonthly + stateTaxMonthly + ficaMonthly;
+
+// Post-tax deductions
+var roth401kMonthly = parseFloat(data.retirement.roth401k.monthly) || 0;
+var otherPostTaxMonthly = parseFloat(data.income.otherPostTax) || 0;
+var totalPostTaxMonthly = roth401kMonthly + otherPostTaxMonthly;
+var netMonthly = grossMonthly - totalPreTaxMonthly - totalTaxMonthly - totalPostTaxMonthly;
+var netPerPaycheck = netMonthly * 12 / perYear;
+
+// Budget
+var essTotalR = data.budget.essentials.reduce(function (s, e) {
+return s + (parseFloat(e.reality) || 0);
+}, 0);
+var essTotalP = data.budget.essentials.reduce(function (s, e) {
+return s + (parseFloat(e.plan) || 0);
+}, 0);
+var debtMinTotal = data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.minPayment) || 0);
+}, 0);
+var debtPlanTotal = data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.planPayment) || parseFloat(d.minPayment) || 0);
+}, 0);
+var discRealTotal = data.budget.discretionary.reduce(function (s, d) {
+return s + (parseFloat(d.reality) || 0);
+}, 0);
+var discPlanTotal = data.budget.discretionary.reduce(function (s, d) {
+return s + (parseFloat(d.plan) || 0);
+}, 0);
+var realityTotal = essTotalR + debtMinTotal + discRealTotal;
+var planTotal = essTotalP + debtPlanTotal + discPlanTotal;
+var realitySurplus = netMonthly - realityTotal;
+var planSurplus = netMonthly - planTotal;
+
+// Savings
+var efMonthly = parseFloat(data.savings.emergencyFund.monthly) || 0;
+var genMonthly = parseFloat(data.savings.generalSavings.monthly) || 0;
+var liquidSavingsMonthly = efMonthly + genMonthly;
+
+// Retirement
+var employerMatch = trad401kMonthly * (parseFloat(data.retirement.traditional401k.employerMatchPct) || 0) / 100;
+var rothIraMonthly = parseFloat(data.retirement.rothIra.monthly) || 0;
+var totalRetirementMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + hsaMonthly + employerMatch;
+
+// Invest
+var investMonthly = parseFloat(data.invest.monthly) || 0;
+
+// Total saved
+var totalSavedMonthly = liquidSavingsMonthly + totalRetirementMonthly + investMonthly;
+var savingsRate = grossMonthly > 0 ? (totalSavedMonthly / grossMonthly * 100).toFixed(1) : “0”;
+var retireRate = grossMonthly > 0 ? (totalRetirementMonthly / grossMonthly * 100).toFixed(1) : “0”;
+
+// DTI and housing
+var dti = grossMonthly > 0 ? (debtMinTotal / grossMonthly * 100).toFixed(1) : “0”;
+var housingItem = data.budget.essentials.find(function (e) {
+return e.id === “housing”;
+});
+var housingAmt = parseFloat(housingItem ? housingItem.plan : 0) || 0;
+var housingPct = grossMonthly > 0 ? (housingAmt / grossMonthly * 100).toFixed(1) : “0”;
+var DEBT_COLORS = [”#f97316”, “#ef4444”, “#a855f7”, “#3b82f6”, “#14b8a6”, “#eab308”];
+function calcPayoffMonths(balance, rate, payment) {
+if (!balance || !payment || payment <= 0) return null;
+var r = rate / 100 / 12;
+if (r === 0) return Math.ceil(balance / payment);
+if (payment <= balance * r) return null;
+return Math.ceil(-Math.log(1 - balance * r / payment) / Math.log(1 + r));
+}
+function payoffDate(months) {
+if (!months) return “Never”;
+var d = new Date();
+d.setMonth(d.getMonth() + months);
+return d.toLocaleDateString(“en-US”, {
+month: “short”,
+year: “numeric”
+});
+}
+
+// Retirement projection
+var retCurrentAge = parseInt(data.retirement.currentAge) || 30;
+var retTargetAge = parseInt(data.retirement.targetAge) || 65;
+var retYears = Math.max(0, retTargetAge - retCurrentAge);
+var mRate = 0.07 / 12;
+var allRetBalances = (parseFloat(data.retirement.traditional401k.currentBalance) || 0) + (parseFloat(data.retirement.roth401k.currentBalance) || 0) + (parseFloat(data.retirement.rothIra.currentBalance) || 0);
+var contribMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + employerMatch;
+var projBal = allRetBalances * Math.pow(1 + mRate, retYears * 12) + contribMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate;
+var retChartData = Array.from({
+length: retYears + 1
+}, function (_, i) {
+return {
+age: retCurrentAge + i,
+balance: Math.round(allRetBalances * Math.pow(1 + mRate, i * 12) + contribMonthly * (Math.pow(1 + mRate, i * 12) - 1) / mRate)
+};
+});
+function updateIncome(key, val) {
+setData(function (d) {
+return Object.assign({}, d, {
+income: Object.assign({}, d.income, _defineProperty({}, key, val))
+});
+});
+}
+function updateRetirement(section, key, val) {
+setData(function (d) {
+var ret = Object.assign({}, d.retirement);
+if (key === undefined) {
+ret[section] = val;
+} else {
+ret[section] = Object.assign({}, ret[section], _defineProperty({}, key, val));
+}
+return Object.assign({}, d, {
+retirement: ret
+});
+});
+}
+function updateSavings(section, key, val) {
+setData(function (d) {
+var sav = Object.assign({}, d.savings);
+sav[section] = Object.assign({}, sav[section], _defineProperty({}, key, val));
+return Object.assign({}, d, {
+savings: sav
+});
+});
+}
+function updateInvest(key, val) {
+setData(function (d) {
+return Object.assign({}, d, {
+invest: Object.assign({}, d.invest, _defineProperty({}, key, val))
+});
+});
+}
+function updateSettings(key, val) {
+setData(function (d) {
+return Object.assign({}, d, {
+settings: Object.assign({}, d.settings, _defineProperty({}, key, val))
+});
+});
+}
+function handleExport() {
+var blob = new Blob([JSON.stringify(data, null, 2)], {
+type: “application/json”
+});
+var url = URL.createObjectURL(blob);
+var a = document.createElement(“a”);
+a.href = url;
+a.download = “compound-backup-” + new Date().toISOString().slice(0, 10) + “.json”;
+a.click();
+URL.revokeObjectURL(url);
+}
+function handleImport(e) {
+var file = e.target.files[0];
+if (!file) return;
+var reader = new FileReader();
+reader.onload = function (ev) {
+try {
+setData(Object.assign({}, makeDefault(), JSON.parse(ev.target.result)));
+setImportMsg(“Imported!”);
+setTimeout(function () {
+setImportMsg(””);
+}, 3000);
+} catch (err) {
+setImportMsg(“Invalid file”);
+setTimeout(function () {
+setImportMsg(””);
+}, 3000);
+}
+};
+reader.readAsText(file);
+e.target.value = “”;
+}
+var tabs = [“overview”, “income”, “debts”, “budget”, “savings”, “retirement”, “invest”, “settings”];
+var tabLabels = {
+overview: “Overview”,
+income: “Income”,
+debts: “Debts”,
+budget: “Budget”,
+savings: “Savings”,
+retirement: “Retirement”,
+invest: “Invest”,
+settings: “Settings”
+};
+
+// Row for income breakdown
+function IncomeRow(label, value, color, indent) {
+return El(“div”, {
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+padding: indent ? “5px 0 5px 16px” : “5px 0”,
+borderBottom: “1px solid #0d1a26”
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+fontSize: 12,
+color: color || “#8b9cb5”
+}
+}, label), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 13,
+color: color || “#e8f0f8”,
+fontWeight: color ? 600 : 400
+}
+}, value)]);
+}
+return El(“div”, {
+style: {
+minHeight: “100vh”,
+background: “#070e16”,
+fontFamily: “‘DM Sans’, sans-serif”,
+color: “#e8f0f8”
+}
+}, [
+// Header
+El(“div”, {
+key: “hdr”,
+style: {
+borderBottom: “1px solid #111f30”,
+padding: “0 20px”,
+background: “#080f19”
+}
+}, El(“div”, {
+style: {
+maxWidth: 1200,
+margin: “0 auto”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “space-between”,
+height: 56
+}
+}, [El(“div”, {
+key: “logo”,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10
+}
+}, [El(“div”, {
+key: “icon”,
+style: {
+width: 28,
+height: 28,
+borderRadius: 7,
+background: “linear-gradient(135deg, #1d4ed8, #0ea5e9)”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+fontSize: 14,
+fontWeight: 800,
+color: “#fff”,
+fontFamily: “‘Syne’, sans-serif”
+}
+}, “C”), El(“span”, {
+key: “name”,
+style: {
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 18,
+letterSpacing: “-0.02em”
+}
+}, “Compound”)]), El(“div”, {
+key: “right”,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 8
+}
+}, [importMsg && El(“span”, {
+key: “msg”,
+style: {
+fontSize: 11,
+color: “#10b981”,
+fontWeight: 600
+}
+}, importMsg), El(“button”, {
+key: “exp”,
+onClick: handleExport,
+style: {
+padding: “6px 12px”,
+background: “#0f1923”,
+border: “1px solid #1e3a5f”,
+borderRadius: 7,
+color: “#60a5fa”,
+fontSize: 11,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, “Export”), El(“label”, {
+key: “imp”,
+style: {
+padding: “6px 12px”,
+background: “#0f1923”,
+border: “1px solid #1e3a5f”,
+borderRadius: 7,
+color: “#a78bfa”,
+fontSize: 11,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, [“Import”, El(“input”, {
+key: “fi”,
+type: “file”,
+accept: “.json”,
+onChange: handleImport,
+style: {
+display: “none”
+}
+})]), El(“div”, {
+key: “inc”,
+style: {
+display: “flex”,
+alignItems: “center”,
+background: “#0a1520”,
+border: “1px solid #1e2d3d”,
+borderRadius: 7,
+padding: “4px 10px”,
+gap: 6
+}
+}, [El(“span”, {
+key: “gl”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Gross”), El(“span”, {
+key: “gv”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 13,
+color: “#60a5fa”,
+fontWeight: 700
+}
+}, fmt(grossMonthly)), El(“span”, {
+key: “sep”,
+style: {
+color: “#1a2840”
+}
+}, “|”), El(“span”, {
+key: “nl”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Net”), El(“span”, {
+key: “nv”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 13,
+color: “#10b981”,
+fontWeight: 700
+}
+}, fmt(netMonthly))])])])),
+// Nav
+El(“div”, {
+key: “nav”,
+style: {
+borderBottom: “1px solid #111f30”,
+background: “#080f19”,
+overflowX: “auto”
+}
+}, El(“div”, {
+style: {
+maxWidth: 1200,
+margin: “0 auto”,
+display: “flex”,
+padding: “0 20px”
+}
+}, tabs.map(function (t) {
+return El(“button”, {
+key: t,
+onClick: function onClick() {
+setTab(t);
+},
+style: {
+background: “none”,
+border: “none”,
+padding: “12px 13px”,
+color: tab === t ? “#60a5fa” : “#5a7a9a”,
+fontFamily: “‘DM Sans’, sans-serif”,
+fontWeight: 600,
+fontSize: 12,
+borderBottom: “2px solid “ + (tab === t ? “#60a5fa” : “transparent”),
+whiteSpace: “nowrap”,
+cursor: “pointer”
+}
+}, tabLabels[t]);
+}))),
+// Content
+El(“div”, {
+key: “content”,
+style: {
+maxWidth: 1200,
+margin: “0 auto”,
+padding: “24px 20px”
+}
+}, [
+// ===== OVERVIEW =====
+tab === “overview” && El(“div”, {
+key: “ov”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Financial Overview”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Your complete picture at a glance.”), El(“div”, {
+key: “stats”,
+style: {
+display: “grid”,
+gridTemplateColumns: “repeat(auto-fit, minmax(140px, 1fr))”,
+gap: 10,
+marginBottom: 18
+}
+}, [El(Badge, {
+key: “gi”,
+label: “Gross Income”,
+value: fmt(grossMonthly),
+color: “#60a5fa”,
+sub: “/month”
+}), El(Badge, {
+key: “ni”,
+label: “Take-Home”,
+value: fmt(netMonthly),
+color: “#10b981”,
+sub: “/month”
+}), El(Badge, {
+key: “td”,
+label: “Total Debt”,
+value: fmtShort(data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.balance) || 0);
+}, 0)),
+color: “#f97316”
+}), El(Badge, {
+key: “hp”,
+label: “Housing %”,
+value: housingPct + “%”,
+color: parseFloat(housingPct) > 28 ? “#f97316” : “#10b981”,
+sub: parseFloat(housingPct) > 28 ? “above 28% rule” : “within 28% rule”
+}), El(Badge, {
+key: “dti”,
+label: “Debt-to-Income”,
+value: dti + “%”,
+color: parseFloat(dti) > 36 ? “#ef4444” : parseFloat(dti) > 20 ? “#f97316” : “#10b981”,
+sub: parseFloat(dti) > 36 ? “high” : parseFloat(dti) > 20 ? “moderate” : “healthy”
+}), El(Badge, {
+key: “sr”,
+label: “Total Savings Rate”,
+value: savingsRate + “%”,
+color: “#a78bfa”
+}), El(Badge, {
+key: “rr”,
+label: “Retirement Rate”,
+value: retireRate + “%”,
+color: “#34d399”
+})]), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14
+}
+}, [
+// Debt payoff
+El(Card, {
+key: “debt”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Debt Payoff Timeline”), data.debts.length === 0 ? El(“div”, {
+key: “empty”,
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “20px 0”
+}
+}, “No debts added yet. Add them in the Debts tab.”) : El(“div”, {
+key: “list”
+}, [data.debts.map(function (debt, i) {
+var balance = parseFloat(debt.balance) || 0;
+var rate = parseFloat(debt.rate) || 0;
+var payment = parseFloat(debt.planPayment) || parseFloat(debt.minPayment) || 0;
+var months = calcPayoffMonths(balance, rate, payment);
+var color = DEBT_COLORS[i % DEBT_COLORS.length];
+return El(“div”, {
+key: debt.id,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+padding: “10px 12px”,
+background: “#0a1520”,
+borderRadius: 10,
+marginBottom: 6,
+borderLeft: “3px solid “ + color
+}
+}, [El(“div”, {
+key: “l”
+}, [El(“div”, {
+key: “n”,
+style: {
+fontSize: 13,
+fontWeight: 600
+}
+}, debt.name), El(“div”, {
+key: “d”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”
+}
+}, fmt(balance) + “ at “ + rate + “% APR”)]), El(“div”, {
+key: “r”,
+style: {
+textAlign: “right”
+}
+}, [El(“div”, {
+key: “dt”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 13,
+color: months ? “#10b981” : “#ef4444”,
+fontWeight: 700
+}
+}, months ? payoffDate(months) : “Never”), El(“div”, {
+key: “mo”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”
+}
+}, months ? months + “ mo at “ + fmt(payment) + “/mo” : “increase payment”)])]);
+}), function () {
+var maxMonths = Math.max.apply(null, data.debts.map(function (debt) {
+return calcPayoffMonths(parseFloat(debt.balance) || 0, parseFloat(debt.rate) || 0, parseFloat(debt.planPayment) || parseFloat(debt.minPayment) || 0) || 0;
+}));
+return maxMonths > 0 ? El(“div”, {
+key: “dfd”,
+style: {
+marginTop: 10,
+padding: “10px 14px”,
+background: “linear-gradient(135deg, #0d1f10, #0a1c14)”,
+border: “1px solid #10b98133”,
+borderRadius: 10,
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+fontWeight: 600
+}
+}, “Debt-Free Date”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+color: “#10b981”,
+fontWeight: 700
+}
+}, payoffDate(maxMonths))]) : null;
+}()])])),
+// Right col
+El(“div”, {
+key: “right”
+}, [El(Card, {
+key: “sav”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#34d399”
+}, “Monthly Savings”), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10
+}
+}, [El(Badge, {
+key: “ef”,
+label: “Emergency Fund”,
+value: fmt(efMonthly),
+color: “#60a5fa”,
+sub: “/month”
+}), El(Badge, {
+key: “ret”,
+label: “Retirement”,
+value: fmt(totalRetirementMonthly),
+color: “#a78bfa”,
+sub: “/month”
+}), El(Badge, {
+key: “inv”,
+label: “Brokerage”,
+value: fmt(investMonthly),
+color: “#34d399”,
+sub: “/month”
+}), El(Badge, {
+key: “gen”,
+label: “General”,
+value: fmt(genMonthly),
+color: “#f59e0b”,
+sub: “/month”
+})])])), El(Card, {
+key: “bud”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#a78bfa”
+}, “Budget Summary (Plan)”), [[“Essentials”, fmt(essTotalP), “#60a5fa”], [“Debt Payments”, fmt(debtPlanTotal), “#f97316”], [“Discretionary”, fmt(discPlanTotal), “#f59e0b”], [“All Savings”, fmt(totalSavedMonthly), “#10b981”]].map(function (row) {
+return El(“div”, {
+key: row[0],
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+marginBottom: 8
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+fontSize: 13,
+color: “#8b9cb5”
+}
+}, row[0]), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 13,
+color: row[2],
+fontWeight: 600
+}
+}, row[1])]);
+}), El(“div”, {
+key: “rem”,
+style: {
+borderTop: “1px solid #1e2d3d”,
+paddingTop: 8,
+marginTop: 4,
+display: “flex”,
+justifyContent: “space-between”
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+fontSize: 13,
+fontWeight: 700,
+color: “#e8f0f8”
+}
+}, “Remaining”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+fontWeight: 700,
+color: planSurplus >= 0 ? “#10b981” : “#ef4444”
+}
+}, fmt(planSurplus))])]))])])]),
+// ===== INCOME =====
+tab === “income” && El(“div”, {
+key: “income”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Income”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Your paycheck breakdown from gross to take-home.”), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14
+}
+}, [
+// Left: inputs
+El(“div”, {
+key: “left”
+}, [El(Card, {
+key: “pay”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#60a5fa”
+}, “Pay Details”),
+// Frequency
+El(“div”, {
+key: “freq”,
+style: {
+marginBottom: 14
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 8,
+textTransform: “uppercase”
+}
+}, “Pay Frequency”), El(“div”, {
+key: “opts”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 6
+}
+}, FREQ_OPTIONS.map(function (f) {
+var sel = data.income.frequency === f.id;
+return El(“button”, {
+key: f.id,
+onClick: function onClick() {
+updateIncome(“frequency”, f.id);
+},
+style: {
+padding: “8px 12px”,
+background: sel ? “#1d4ed8” : “#0f1923”,
+border: “1px solid “ + (sel ? “#1d4ed8” : “#1e2d3d”),
+borderRadius: 8,
+color: sel ? “#fff” : “#5a7a9a”,
+fontSize: 12,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, f.label);
+}))]), El(Input, {
+key: “gross”,
+label: “Gross Pay Per “ + freqObj.label.replace(“ly”, “”).replace(“Semi-m”, “Semi-m”),
+value: data.income.grossPerPaycheck,
+onChange: function onChange(v) {
+updateIncome(“grossPerPaycheck”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “calc”,
+style: {
+background: “#0a1520”,
+borderRadius: 8,
+padding: “10px 12px”,
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, “Monthly gross: “ + El(“span”, {
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#60a5fa”,
+fontWeight: 700
+}
+}, fmt(grossMonthly)))])), El(Card, {
+key: “pretax”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#10b981”
+}, “Pre-Tax Deductions”), El(“div”, {
+key: “trad”,
+style: {
+marginBottom: 12,
+padding: “10px 12px”,
+background: “#0a1520”,
+borderRadius: 8,
+border: “1px solid #1e3a5f”
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 2,
+textTransform: “uppercase”
+}
+}, “Traditional 401k”), El(“div”, {
+key: “val”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+color: “#10b981”,
+fontWeight: 700
+}
+}, fmt(trad401kMonthly) + “/mo”), El(“div”, {
+key: “src”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 2
+}
+}, “Set in Retirement tab”)]), El(“div”, {
+key: “hsa”,
+style: {
+marginBottom: 12,
+padding: “10px 12px”,
+background: “#0a1520”,
+borderRadius: 8,
+border: “1px solid #1e3a5f”
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 2,
+textTransform: “uppercase”
+}
+}, “HSA”), El(“div”, {
+key: “val”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+color: “#10b981”,
+fontWeight: 700
+}
+}, fmt(hsaMonthly) + “/mo”), El(“div”, {
+key: “src”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 2
+}
+}, “Set in Retirement tab”)]), El(Input, {
+key: “health”,
+label: “Health Insurance Premium”,
+value: data.income.healthInsurance,
+onChange: function onChange(v) {
+updateIncome(“healthInsurance”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “fsa”,
+label: “FSA”,
+value: data.income.fsa,
+onChange: function onChange(v) {
+updateIncome(“fsa”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “other”,
+label: “Other Pre-Tax”,
+value: data.income.otherPreTax,
+onChange: function onChange(v) {
+updateIncome(“otherPreTax”, v);
+},
+prefix: “$”,
+type: “number”
+})]))]),
+// Right: taxes, post-tax, summary
+El(“div”, {
+key: “right”
+}, [El(Card, {
+key: “tax”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#ef4444”
+}, “Taxes”), El(Input, {
+key: “fed”,
+label: “Federal Income Tax (monthly)”,
+value: data.income.federalTax,
+onChange: function onChange(v) {
+updateIncome(“federalTax”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “state”,
+label: “State Income Tax (monthly)”,
+value: data.income.stateTax,
+onChange: function onChange(v) {
+updateIncome(“stateTax”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “fica”,
+style: {
+background: “#0a1520”,
+borderRadius: 8,
+padding: “10px 12px”,
+marginBottom: 12
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 2,
+textTransform: “uppercase”
+}
+}, “FICA (Auto-calculated)”), El(“div”, {
+key: “val”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+color: “#ef4444”,
+fontWeight: 700
+}
+}, fmt(ficaMonthly) + “/mo”), El(“div”, {
+key: “note”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 2
+}
+}, “7.65% of gross (Social Security + Medicare)”)]), El(“div”, {
+key: “fl”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+background: “#0a1520”,
+borderRadius: 8,
+padding: 10
+}
+}, “Florida has no state income tax. Set state tax to $0.”)])), El(Card, {
+key: “posttax”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#a78bfa”
+}, “Post-Tax Deductions”), El(“div”, {
+key: “roth401k”,
+style: {
+marginBottom: 12,
+padding: “10px 12px”,
+background: “#0a1520”,
+borderRadius: 8,
+border: “1px solid #1e3a5f”
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 2,
+textTransform: “uppercase”
+}
+}, “Roth 401k”), El(“div”, {
+key: “val”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 15,
+color: “#a78bfa”,
+fontWeight: 700
+}
+}, fmt(roth401kMonthly) + “/mo”), El(“div”, {
+key: “src”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginTop: 2
+}
+}, “Set in Retirement tab”)]), El(Input, {
+key: “other”,
+label: “Other Post-Tax Deductions”,
+value: data.income.otherPostTax,
+onChange: function onChange(v) {
+updateIncome(“otherPostTax”, v);
+},
+prefix: “$”,
+type: “number”
+})])),
+// Take-home summary
+El(Card, {
+key: “summary”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#10b981”
+}, “Paycheck Summary”), El(“div”, {
+key: “rows”
+}, [IncomeRow(“Gross Pay”, fmt(grossMonthly), “#60a5fa”), IncomeRow(“Pre-Tax Deductions”, “- “ + fmt(totalPreTaxMonthly), “#ef4444”), IncomeRow(“Traditional 401k”, “- “ + fmt(trad401kMonthly), “#5a7a9a”, true), IncomeRow(“HSA”, “- “ + fmt(hsaMonthly), “#5a7a9a”, true), IncomeRow(“Health + Other”, “- “ + fmt(healthInsMonthly + fsaMonthly + otherPreTaxMonthly), “#5a7a9a”, true), IncomeRow(“Taxes”, “- “ + fmt(totalTaxMonthly), “#ef4444”), IncomeRow(“Federal”, “- “ + fmt(federalTaxMonthly), “#5a7a9a”, true), IncomeRow(“State”, “- “ + fmt(stateTaxMonthly), “#5a7a9a”, true), IncomeRow(“FICA”, “- “ + fmt(ficaMonthly), “#5a7a9a”, true), IncomeRow(“Post-Tax Deductions”, “- “ + fmt(totalPostTaxMonthly), “#ef4444”)]), El(“div”, {
+key: “net”,
+style: {
+marginTop: 10,
+padding: “12px 14px”,
+background: “linear-gradient(135deg, #0d1f10, #0a1c14)”,
+border: “1px solid #10b98133”,
+borderRadius: 10
+}
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 4
+}
+}, “Monthly Take-Home”), El(“div”, {
+key: “val”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 26,
+fontWeight: 700,
+color: “#10b981”
+}
+}, fmt(netMonthly)), El(“div”, {
+key: “pp”,
+style: {
+fontSize: 12,
+color: “#4a7fa5”,
+marginTop: 4
+}
+}, fmtDec(netPerPaycheck) + “ per “ + freqObj.label.replace(“ly”, “”).toLowerCase() + “ paycheck”)])]))])])]),
+// ===== DEBTS =====
+tab === “debts” && El(“div”, {
+key: “debts”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Debts”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Add your debts here. Set plan payments in the Budget tab.”), El(“div”, {
+key: “top”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14,
+marginBottom: 14
+}
+}, [El(Card, {
+key: “add”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Add a Debt”), El(Input, {
+key: “name”,
+label: “Name”,
+value: newDebt.name,
+onChange: function onChange(v) {
+setNewDebt(function (d) {
+return Object.assign({}, d, {
+name: v
+});
+});
+},
+placeholder: “e.g. Student Loan”
+}), El(Input, {
+key: “bal”,
+label: “Balance”,
+value: newDebt.balance,
+onChange: function onChange(v) {
+setNewDebt(function (d) {
+return Object.assign({}, d, {
+balance: v
+});
+});
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “rate”,
+label: “Interest Rate (APR)”,
+value: newDebt.rate,
+onChange: function onChange(v) {
+setNewDebt(function (d) {
+return Object.assign({}, d, {
+rate: v
+});
+});
+},
+suffix: “%”,
+type: “number”
+}), El(Input, {
+key: “min”,
+label: “Minimum Payment”,
+value: newDebt.minPayment,
+onChange: function onChange(v) {
+setNewDebt(function (d) {
+return Object.assign({}, d, {
+minPayment: v
+});
+});
+},
+prefix: “$”,
+type: “number”
+}), El(“button”, {
+key: “btn”,
+onClick: function onClick() {
+if (!newDebt.name || !newDebt.balance) return;
+setData(function (d) {
+return Object.assign({}, d, {
+debts: d.debts.concat([Object.assign({}, newDebt, {
+id: Date.now(),
+planPayment: newDebt.minPayment
+})])
+});
+});
+setNewDebt({
+name: “”,
+balance: “”,
+rate: “”,
+minPayment: “”
+});
+},
+style: {
+width: “100%”,
+padding: “11px”,
+background: “linear-gradient(135deg,#1d4ed8,#1e40af)”,
+color: “#fff”,
+border: “none”,
+borderRadius: 8,
+fontWeight: 600,
+fontSize: 14,
+fontFamily: “‘DM Sans’,sans-serif”,
+marginTop: 4,
+cursor: “pointer”
+}
+}, “Add Debt”)])), El(Card, {
+key: “sum”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Summary”), El(“div”, {
+key: “td”,
+style: {
+marginBottom: 12
+}
+}, El(Badge, {
+label: “Total Debt”,
+value: fmt(data.debts.reduce(function (s, d) {
+return s + (parseFloat(d.balance) || 0);
+}, 0)),
+color: “#f97316”
+})), El(“div”, {
+key: “mp”,
+style: {
+marginBottom: 12
+}
+}, El(Badge, {
+label: “Total Min Payments/mo”,
+value: fmt(debtMinTotal),
+color: “#60a5fa”
+})), El(Badge, {
+key: “dti”,
+label: “Debt-to-Income”,
+value: dti + “%”,
+color: parseFloat(dti) > 36 ? “#ef4444” : “#10b981”,
+sub: parseFloat(dti) > 36 ? “Above 36% - high risk” : “Healthy range”
+}), El(“div”, {
+key: “note”,
+style: {
+marginTop: 14,
+padding: 12,
+background: “#0a1520”,
+borderRadius: 8,
+fontSize: 12,
+color: “#5a7a9a”,
+lineHeight: 1.6
+}
+}, [“Set plan payments in the “, El(“button”, {
+key: “lnk”,
+onClick: function onClick() {
+setTab(“budget”);
+},
+style: {
+background: “none”,
+border: “none”,
+color: “#60a5fa”,
+fontSize: 12,
+padding: 0,
+textDecoration: “underline”,
+cursor: “pointer”
+}
+}, “Budget tab”), “ to see updated payoff dates.”])]))]), data.debts.length > 0 && El(Card, {
+key: “proj”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Payoff Projections”), El(“div”, {
+key: “list”,
+style: {
+display: “flex”,
+flexDirection: “column”,
+gap: 10
+}
+}, data.debts.map(function (debt, i) {
+var balance = parseFloat(debt.balance) || 0;
+var rate = parseFloat(debt.rate) || 0;
+var minPay = parseFloat(debt.minPayment) || 0;
+var planPay = debt.planPayment !== undefined ? parseFloat(debt.planPayment) || minPay : minPay;
+var monthsMin = calcPayoffMonths(balance, rate, minPay);
+var monthsPlan = calcPayoffMonths(balance, rate, planPay);
+var saved = monthsMin && monthsPlan ? monthsMin - monthsPlan : 0;
+var color = DEBT_COLORS[i % DEBT_COLORS.length];
+return El(“div”, {
+key: debt.id,
+style: {
+background: “#0a1520”,
+borderRadius: 12,
+padding: “14px 16px”,
+borderLeft: “3px solid “ + color
+}
+}, [El(“div”, {
+key: “top”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “flex-start”,
+marginBottom: 10
+}
+}, [El(“div”, {
+key: “info”
+}, [El(“div”, {
+key: “n”,
+style: {
+fontWeight: 700,
+fontSize: 14
+}
+}, debt.name), El(“div”, {
+key: “d”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”
+}
+}, fmt(balance) + “ at “ + rate + “% APR”)]), El(“button”, {
+key: “del”,
+onClick: function onClick() {
+setData(function (d) {
+return Object.assign({}, d, {
+debts: d.debts.filter(function (x) {
+return x.id !== debt.id;
+})
+});
+});
+},
+style: {
+background: “none”,
+border: “none”,
+color: “#3a5a7a”,
+fontSize: 16,
+padding: “2px 6px”,
+cursor: “pointer”
+}
+}, “x”)]), El(“div”, {
+key: “cols”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr 1fr”,
+gap: 10
+}
+}, [El(“div”, {
+key: “min”,
+style: {
+background: “#070e16”,
+borderRadius: 8,
+padding: “10px 12px”
+}
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 3
+}
+}, “MIN PAYMENT”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#8b9cb5”,
+fontWeight: 600
+}
+}, fmt(minPay) + “/mo”), El(“div”, {
+key: “d”,
+style: {
+fontSize: 11,
+color: “#5a7a9a”,
+marginTop: 2
+}
+}, monthsMin ? payoffDate(monthsMin) : “Never”)]), El(“div”, {
+key: “plan”,
+style: {
+background: “#070e16”,
+borderRadius: 8,
+padding: “10px 12px”,
+border: “1px solid “ + color + “44”
+}
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 3
+}
+}, “PLAN PAYMENT”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: color,
+fontWeight: 700
+}
+}, fmt(planPay) + “/mo”), El(“div”, {
+key: “d”,
+style: {
+fontSize: 11,
+color: “#5a7a9a”,
+marginTop: 2
+}
+}, monthsPlan ? payoffDate(monthsPlan) : “Never”)]), El(“div”, {
+key: “saved”,
+style: {
+background: “#070e16”,
+borderRadius: 8,
+padding: “10px 12px”
+}
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 3
+}
+}, “TIME SAVED”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: saved > 0 ? “#10b981” : “#5a7a9a”,
+fontWeight: 700
+}
+}, saved > 0 ? saved + “ mo” : “–”), El(“div”, {
+key: “d”,
+style: {
+fontSize: 11,
+color: “#5a7a9a”,
+marginTop: 2
+}
+}, saved > 0 ? “faster payoff” : “at minimum”)])])]);
+}))]))]),
+// ===== BUDGET =====
+tab === “budget” && El(“div”, {
+key: “budget”
+}, [El(“div”, {
+key: “hdr”,
+style: {
+display: “flex”,
+alignItems: “flex-start”,
+justifyContent: “space-between”,
+marginBottom: 20,
+flexWrap: “wrap”,
+gap: 12
+}
+}, [El(“div”, {
+key: “titles”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Budget”), El(“p”, {
+key: “p”,
+style: {
+margin: 0,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Reality is where you are. Plan is where you want to be.”)])]),
+// Summary bar
+El(“div”, {
+key: “bar”,
+style: {
+background: “#0a1520”,
+borderRadius: 12,
+padding: “14px 18px”,
+marginBottom: 18,
+border: “1px solid #1a2840”,
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+flexWrap: “wrap”,
+gap: 12
+}
+}, [El(“div”, {
+key: “net”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 2
+}
+}, “Monthly Take-Home”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 20,
+fontWeight: 700,
+color: “#10b981”
+}
+}, fmt(netMonthly))]), El(“div”, {
+key: “rr”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 2
+}
+}, “Reality Total”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 18,
+fontWeight: 700,
+color: “#f97316”
+}
+}, fmt(realityTotal))]), El(“div”, {
+key: “pt”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 2
+}
+}, “Plan Total”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 18,
+fontWeight: 700,
+color: “#a78bfa”
+}
+}, fmt(planTotal))]), El(“div”, {
+key: “ps”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 2
+}
+}, “Plan Surplus”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 20,
+fontWeight: 700,
+color: planSurplus >= 0 ? “#10b981” : “#ef4444”
+}
+}, fmt(planSurplus))])]),
+// Essentials
+El(Card, {
+key: “ess”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#60a5fa”
+}, “Essentials”), El(RowHeader, {
+key: “rh”
+}), data.budget.essentials.map(function (item) {
+return El(BudgetRow, {
+key: item.id,
+label: item.name,
+reality: item.reality,
+plan: item.plan,
+color: “#60a5fa”,
+onRealityChange: function onRealityChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+essentials: d.budget.essentials.map(function (e) {
+return e.id === item.id ? Object.assign({}, e, {
+reality: v
+}) : e;
+})
+})
+});
+});
+},
+onPlanChange: function onPlanChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+essentials: d.budget.essentials.map(function (e) {
+return e.id === item.id ? Object.assign({}, e, {
+plan: v
+}) : e;
+})
+})
+});
+});
+}
+});
+}), El(“div”, {
+key: “tots”,
+style: {
+display: “flex”,
+justifyContent: “flex-end”,
+gap: 24,
+padding: “8px 12px”,
+borderTop: “1px solid #1e2d3d”,
+marginTop: 4
+}
+}, [El(“div”, {
+key: “r”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Reality: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#60a5fa”
+}
+}, fmt(essTotalR))]), El(“div”, {
+key: “p”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Plan: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#60a5fa”
+}
+}, fmt(essTotalP))])])])),
+// Debts
+El(Card, {
+key: “debtbud”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Debt Obligations”), data.debts.length === 0 ? El(“div”, {
+key: “empty”,
+style: {
+color: “#3a5a7a”,
+fontSize: 13,
+textAlign: “center”,
+padding: “16px 0”
+}
+}, “Add debts in the Debts tab to see them here.”) : El(“div”, {
+key: “rows”
+}, [El(RowHeader, {
+key: “rh”
+}), data.debts.map(function (debt, i) {
+var color = DEBT_COLORS[i % DEBT_COLORS.length];
+return El(BudgetRow, {
+key: debt.id,
+label: debt.name + “ (min: “ + fmt(debt.minPayment) + “)”,
+reality: debt.minPayment,
+plan: debt.planPayment !== undefined ? debt.planPayment : debt.minPayment,
+color: color,
+readOnly: true,
+onPlanChange: function onPlanChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+debts: d.debts.map(function (dbt) {
+return dbt.id === debt.id ? Object.assign({}, dbt, {
+planPayment: v
+}) : dbt;
+})
+});
+});
+}
+});
+}), El(“div”, {
+key: “tots”,
+style: {
+display: “flex”,
+justifyContent: “flex-end”,
+gap: 24,
+padding: “8px 12px”,
+borderTop: “1px solid #1e2d3d”,
+marginTop: 4
+}
+}, [El(“div”, {
+key: “r”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Minimums: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f97316”
+}
+}, fmt(debtMinTotal))]), El(“div”, {
+key: “p”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Plan: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f97316”
+}
+}, fmt(debtPlanTotal))])])])])),
+// Discretionary
+El(Card, {
+key: “disc”,
+style: {
+marginBottom: 14
+}
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f59e0b”
+}, “Discretionary”), data.budget.discretionary.length > 0 && El(RowHeader, {
+key: “rh”
+}), data.budget.discretionary.map(function (item) {
+return El(BudgetRow, {
+key: item.id,
+label: item.name,
+reality: item.reality,
+plan: item.plan,
+color: “#f59e0b”,
+onRealityChange: function onRealityChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+discretionary: d.budget.discretionary.map(function (di) {
+return di.id === item.id ? Object.assign({}, di, {
+reality: v
+}) : di;
+})
+})
+});
+});
+},
+onPlanChange: function onPlanChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+discretionary: d.budget.discretionary.map(function (di) {
+return di.id === item.id ? Object.assign({}, di, {
+plan: v
+}) : di;
+})
+})
+});
+});
+},
+onDelete: function onDelete() {
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+discretionary: d.budget.discretionary.filter(function (di) {
+return di.id !== item.id;
+})
+})
+});
+});
+}
+});
+}), data.budget.discretionary.length > 0 && El(“div”, {
+key: “tots”,
+style: {
+display: “flex”,
+justifyContent: “flex-end”,
+gap: 24,
+padding: “8px 12px”,
+borderTop: “1px solid #1e2d3d”,
+marginTop: 4,
+marginBottom: 12
+}
+}, [El(“div”, {
+key: “r”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Reality: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f59e0b”
+}
+}, fmt(discRealTotal))]), El(“div”, {
+key: “p”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”
+}
+}, [“Plan: “, El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f59e0b”
+}
+}, fmt(discPlanTotal))])]), El(“div”, {
+key: “add”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 90px 90px auto”,
+gap: 8,
+marginBottom: 12
+}
+}, [El(“input”, {
+key: “name”,
+value: newDisc.name,
+onChange: function onChange(e) {
+setNewDisc(function (n) {
+return Object.assign({}, n, {
+name: e.target.value
+});
+});
+},
+placeholder: “Category name”,
+style: {
+background: “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 7,
+padding: “8px 10px”,
+color: “#e8f0f8”,
+fontSize: 13,
+outline: “none”,
+boxSizing: “border-box”
+}
+}), El(“input”, {
+key: “real”,
+type: “number”,
+value: newDisc.reality,
+onChange: function onChange(e) {
+setNewDisc(function (n) {
+return Object.assign({}, n, {
+reality: e.target.value
+});
+});
+},
+placeholder: “Reality”,
+style: {
+background: “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 7,
+padding: “8px 10px”,
+color: “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Mono’, monospace”,
+outline: “none”,
+boxSizing: “border-box”
+}
+}), El(“input”, {
+key: “plan”,
+type: “number”,
+value: newDisc.plan,
+onChange: function onChange(e) {
+setNewDisc(function (n) {
+return Object.assign({}, n, {
+plan: e.target.value
+});
+});
+},
+placeholder: “Plan”,
+style: {
+background: “#0f1923”,
+border: “1px solid #f59e0b44”,
+borderRadius: 7,
+padding: “8px 10px”,
+color: “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Mono’, monospace”,
+outline: “none”,
+boxSizing: “border-box”
+}
+}), El(“button”, {
+key: “btn”,
+onClick: function onClick() {
+if (!newDisc.name) return;
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+discretionary: d.budget.discretionary.concat([{
+id: Date.now(),
+name: newDisc.name,
+reality: newDisc.reality || “0”,
+plan: newDisc.plan || “0”
+}])
+})
+});
+});
+setNewDisc({
+name: “”,
+reality: “”,
+plan: “”
+});
+},
+style: {
+background: “#f59e0b”,
+border: “none”,
+borderRadius: 7,
+padding: “8px 14px”,
+color: “#000”,
+fontSize: 13,
+fontWeight: 700,
+cursor: “pointer”
+}
+}, “Add”)]), El(“button”, {
+key: “suggbtn”,
+onClick: function onClick() {
+setShowSugg(function (s) {
+return !s;
+});
+},
+style: {
+background: “none”,
+border: “1px solid #1e2d3d”,
+borderRadius: 7,
+padding: “6px 12px”,
+color: “#5a7a9a”,
+fontSize: 12,
+cursor: “pointer”,
+marginBottom: showSugg ? 12 : 0
+}
+}, showSugg ? “Hide suggestions” : “Quick-add suggestions”), showSugg && El(“div”, {
+key: “suggs”
+}, DISC_SUGGESTIONS.map(function (group) {
+return El(“div”, {
+key: group.group,
+style: {
+marginBottom: 10
+}
+}, [El(“div”, {
+key: “g”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 6
+}
+}, group.group), El(“div”, {
+key: “items”,
+style: {
+display: “flex”,
+flexWrap: “wrap”,
+gap: 6
+}
+}, group.items.map(function (item) {
+var exists = data.budget.discretionary.some(function (d) {
+return d.name === item;
+});
+return El(“button”, {
+key: item,
+onClick: function onClick() {
+if (exists) return;
+setData(function (d) {
+return Object.assign({}, d, {
+budget: Object.assign({}, d.budget, {
+discretionary: d.budget.discretionary.concat([{
+id: Date.now() + Math.random(),
+name: item,
+reality: “0”,
+plan: “0”
+}])
+})
+});
+});
+},
+style: {
+padding: “5px 12px”,
+background: exists ? “#0a1520” : “#0f1923”,
+border: “1px solid “ + (exists ? “#1a2840” : “#1e3a5f”),
+borderRadius: 20,
+color: exists ? “#2a4060” : “#8b9cb5”,
+fontSize: 12,
+cursor: exists ? “default” : “pointer”
+}
+}, exists ? “Added” : item);
+}))]);
+}))])),
+// Surplus
+El(“div”, {
+key: “surplus”,
+style: {
+padding: “14px 18px”,
+background: planSurplus >= 0 ? “linear-gradient(135deg, #0d1f10, #0a1c14)” : “linear-gradient(135deg, #1f0d0d, #1c0a0a)”,
+border: “1px solid “ + (planSurplus >= 0 ? “#10b98133” : “#ef444433”),
+borderRadius: 12,
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+flexWrap: “wrap”,
+gap: 12
+}
+}, [El(“div”, {
+key: “left”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 4
+}
+}, “Plan surplus - available for savings”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 24,
+fontWeight: 700,
+color: planSurplus >= 0 ? “#10b981” : “#ef4444”
+}
+}, fmt(planSurplus))]), planSurplus > 0 && El(“div”, {
+key: “right”,
+style: {
+textAlign: “right”
+}
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 11,
+color: “#5a7a9a”,
+marginBottom: 4
+}
+}, “Allocate this in the”), El(“button”, {
+key: “btn”,
+onClick: function onClick() {
+setTab(“savings”);
+},
+style: {
+padding: “8px 16px”,
+background: “#10b981”,
+border: “none”,
+borderRadius: 8,
+color: “#000”,
+fontSize: 13,
+fontWeight: 700,
+cursor: “pointer”
+}
+}, “Savings tab”)]), planSurplus < 0 && El(“div”, {
+key: “warn”,
+style: {
+fontSize: 12,
+color: “#ef4444”,
+maxWidth: 200,
+textAlign: “right”
+}
+}, “Plan expenses exceed take-home. Adjust your plan column.”)])]),
+// ===== SAVINGS =====
+tab === “savings” && El(“div”, {
+key: “savings”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Savings”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Emergency fund first, then general savings. Retirement and investing come later.”), El(“div”, {
+key: “surbar”,
+style: {
+background: planSurplus >= 0 ? “linear-gradient(135deg, #0d1f10, #0a1c14)” : “linear-gradient(135deg, #1f0d0d, #1c0a0a)”,
+border: “1px solid “ + (planSurplus >= 0 ? “#10b98133” : “#ef444433”),
+borderRadius: 12,
+padding: “14px 20px”,
+marginBottom: 20,
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+flexWrap: “wrap”,
+gap: 12
+}
+}, [El(“div”, {
+key: “a”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”,
+marginBottom: 4
+}
+}, “Budget plan surplus”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 22,
+fontWeight: 700,
+color: planSurplus >= 0 ? “#10b981” : “#ef4444”
+}
+}, fmt(planSurplus))]), El(“div”, {
+key: “b”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 4
+}
+}, “Liquid savings allocated”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 18,
+fontWeight: 700,
+color: “#60a5fa”
+}
+}, fmt(liquidSavingsMonthly))]), El(“div”, {
+key: “c”
+}, [El(“div”, {
+key: “l”,
+style: {
+fontSize: 10,
+color: “#5a7a9a”,
+marginBottom: 4
+}
+}, “Remaining”), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 18,
+fontWeight: 700,
+color: planSurplus - liquidSavingsMonthly >= 0 ? “#10b981” : “#ef4444”
+}
+}, fmt(planSurplus - liquidSavingsMonthly))])]), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14
+}
+}, [
+// Emergency Fund
+El(Card, {
+key: “ef”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#60a5fa”
+}, “Emergency Fund”), El(“p”, {
+key: “desc”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Target: 3-6 months of essential expenses (” + fmt(essTotalP * 3) + “ - “ + fmt(essTotalP * 6) + “)”), El(“p”, {
+key: “note”,
+style: {
+fontSize: 12,
+color: “#f59e0b”,
+margin: “0 0 14px”,
+lineHeight: 1.6,
+background: “#0a1520”,
+borderRadius: 8,
+padding: “8px 10px”
+}
+}, “Priority #1 before any other savings or investing. Aim for at least 1 month before paying extra on debt.”), El(Input, {
+key: “cur”,
+label: “Current Balance”,
+value: data.savings.emergencyFund.current,
+onChange: function onChange(v) {
+updateSavings(“emergencyFund”, “current”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “goal”,
+label: “Goal Amount”,
+value: data.savings.emergencyFund.goal,
+onChange: function onChange(v) {
+updateSavings(“emergencyFund”, “goal”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “mo”,
+label: “Monthly Contribution”,
+value: data.savings.emergencyFund.monthly,
+onChange: function onChange(v) {
+updateSavings(“emergencyFund”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), function () {
+var current = parseFloat(data.savings.emergencyFund.current) || 0;
+var goal = parseFloat(data.savings.emergencyFund.goal) || 0;
+var monthly = parseFloat(data.savings.emergencyFund.monthly) || 0;
+if (!goal) return null;
+var pct = Math.min(100, current / goal * 100);
+var remaining = Math.max(0, goal - current);
+var months = monthly > 0 ? Math.ceil(remaining / monthly) : null;
+return El(“div”, {
+key: “prog”,
+style: {
+marginTop: 8
+}
+}, [El(“div”, {
+key: “bar”,
+style: {
+height: 6,
+background: “#0a1520”,
+borderRadius: 3,
+overflow: “hidden”,
+marginBottom: 6
+}
+}, El(“div”, {
+style: {
+height: “100%”,
+width: pct + “%”,
+background: “#60a5fa”,
+borderRadius: 3
+}
+})), El(“div”, {
+key: “info”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 11,
+color: “#5a7a9a”
+}
+}, [El(“span”, {
+key: “l”
+}, pct.toFixed(0) + “% funded”), El(“span”, {
+key: “r”
+}, months ? “Fully funded “ + payoffDate(months) : “Set a monthly amount”)])]);
+}()])),
+// General Savings
+El(Card, {
+key: “gen”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f59e0b”
+}, “General Savings”), El(“p”, {
+key: “desc”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Short-term goals: vacation, car, down payment, or building your cushion beyond the emergency fund.”), El(Input, {
+key: “goal”,
+label: “Savings Goal (optional)”,
+value: data.savings.generalSavings.goal,
+onChange: function onChange(v) {
+updateSavings(“generalSavings”, “goal”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “mo”,
+label: “Monthly Savings”,
+value: data.savings.generalSavings.monthly,
+onChange: function onChange(v) {
+updateSavings(“generalSavings”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), (parseFloat(data.savings.generalSavings.monthly) || 0) > 0 && El(“div”, {
+key: “annual”,
+style: {
+marginTop: 8,
+background: “#0a1520”,
+borderRadius: 8,
+padding: 12
+}
+}, [El(“div”, {
+key: “r”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Annual savings”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f59e0b”
+}
+}, fmt((parseFloat(data.savings.generalSavings.monthly) || 0) * 12) + “/yr”)])]), El(“div”, {
+key: “order”,
+style: {
+marginTop: 14,
+background: “#0a1520”,
+borderRadius: 10,
+padding: 14
+}
+}, [El(“div”, {
+key: “ttl”,
+style: {
+fontSize: 11,
+fontWeight: 700,
+color: “#8b9cb5”,
+marginBottom: 10,
+textTransform: “uppercase”,
+letterSpacing: “0.06em”
+}
+}, “Recommended Priority Order”), [{
+step: “1”,
+label: “Emergency Fund (1 month min)”,
+color: “#60a5fa”
+}, {
+step: “2”,
+label: “401k up to employer match”,
+color: “#10b981”
+}, {
+step: “3”,
+label: “Full Emergency Fund (3-6 mo)”,
+color: “#60a5fa”
+}, {
+step: “4”,
+label: “Max Roth IRA ($583/mo)”,
+color: “#a78bfa”
+}, {
+step: “5”,
+label: “Max 401k ($1,916/mo)”,
+color: “#10b981”
+}, {
+step: “6”,
+label: “Taxable brokerage investing”,
+color: “#34d399”
+}].map(function (item) {
+return El(“div”, {
+key: item.step,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+marginBottom: 6
+}
+}, [El(“div”, {
+key: “num”,
+style: {
+width: 20,
+height: 20,
+borderRadius: “50%”,
+background: item.color + “22”,
+color: item.color,
+fontSize: 10,
+fontWeight: 700,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+flexShrink: 0
+}
+}, item.step), El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 12,
+color: “#8b9cb5”
+}
+}, item.label)]);
+})])]))])]),
+// ===== RETIREMENT =====
+tab === “retirement” && El(“div”, {
+key: “retirement”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Retirement”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Tax-advantaged accounts. Contributions here flow into your Income paycheck breakdown automatically.”), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14,
+marginBottom: 14
+}
+}, [
+// Traditional 401k
+El(Card, {
+key: “t401k”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#10b981”
+}, “Traditional 401k”), El(“div”, {
+key: “pill”,
+style: {
+display: “inline-flex”,
+alignItems: “center”,
+gap: 6,
+padding: “4px 10px”,
+background: “#0a1520”,
+border: “1px solid #10b98133”,
+borderRadius: 20,
+fontSize: 11,
+color: “#10b981”,
+marginBottom: 12
+}
+}, “Pre-tax - reduces taxable income”), El(Input, {
+key: “mo”,
+label: “Monthly Contribution”,
+value: data.retirement.traditional401k.monthly,
+onChange: function onChange(v) {
+updateRetirement(“traditional401k”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “match”,
+label: “Employer Match %”,
+value: data.retirement.traditional401k.employerMatchPct,
+onChange: function onChange(v) {
+updateRetirement(“traditional401k”, “employerMatchPct”, v);
+},
+suffix: “%”,
+type: “number”
+}), El(Input, {
+key: “bal”,
+label: “Current Balance”,
+value: data.retirement.traditional401k.currentBalance,
+onChange: function onChange(v) {
+updateRetirement(“traditional401k”, “currentBalance”, v);
+},
+prefix: “$”,
+type: “number”
+}), trad401kMonthly > 0 && El(“div”, {
+key: “summary”,
+style: {
+background: “#0a1520”,
+borderRadius: 8,
+padding: 12,
+marginTop: 4
+}
+}, [El(“div”, {
+key: “r1”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 4
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Your contribution”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#10b981”
+}
+}, fmt(trad401kMonthly) + “/mo”)]), El(“div”, {
+key: “r2”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 4
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Employer match”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#10b981”
+}
+}, fmt(employerMatch) + “/mo”)]), El(“div”, {
+key: “limit”,
+style: {
+fontSize: 11,
+color: trad401kMonthly * 12 > 23000 ? “#f97316” : “#4a7fa5”,
+marginTop: 4
+}
+}, trad401kMonthly * 12 > 23000 ? “Exceeds 2024 limit of $23,000/yr” : “2024 limit: $23,000/yr ($1,916/mo)”)])])),
+// Roth 401k
+El(Card, {
+key: “r401k”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#a78bfa”
+}, “Roth 401k”), El(“div”, {
+key: “pill”,
+style: {
+display: “inline-flex”,
+alignItems: “center”,
+gap: 6,
+padding: “4px 10px”,
+background: “#0a1520”,
+border: “1px solid #a78bfa33”,
+borderRadius: 20,
+fontSize: 11,
+color: “#a78bfa”,
+marginBottom: 12
+}
+}, “Post-tax - comes from take-home pay”), El(Input, {
+key: “mo”,
+label: “Monthly Contribution”,
+value: data.retirement.roth401k.monthly,
+onChange: function onChange(v) {
+updateRetirement(“roth401k”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “bal”,
+label: “Current Balance”,
+value: data.retirement.roth401k.currentBalance,
+onChange: function onChange(v) {
+updateRetirement(“roth401k”, “currentBalance”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “note”,
+style: {
+background: “#0a1520”,
+borderRadius: 8,
+padding: 12,
+marginTop: 4,
+fontSize: 12,
+color: “#5a7a9a”,
+lineHeight: 1.6
+}
+}, “Combined Traditional + Roth 401k limit is $23,000/year in 2024.”)])),
+// Roth IRA
+El(Card, {
+key: “rira”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#60a5fa”
+}, “Roth IRA”), El(“div”, {
+key: “pill”,
+style: {
+display: “inline-flex”,
+alignItems: “center”,
+gap: 6,
+padding: “4px 10px”,
+background: “#0a1520”,
+border: “1px solid #60a5fa33”,
+borderRadius: 20,
+fontSize: 11,
+color: “#60a5fa”,
+marginBottom: 12
+}
+}, “Post-tax - comes from take-home pay”), El(Input, {
+key: “mo”,
+label: “Monthly Contribution”,
+value: data.retirement.rothIra.monthly,
+onChange: function onChange(v) {
+updateRetirement(“rothIra”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “bal”,
+label: “Current Balance”,
+value: data.retirement.rothIra.currentBalance,
+onChange: function onChange(v) {
+updateRetirement(“rothIra”, “currentBalance”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “notes”,
+style: {
+background: “#0a1520”,
+borderRadius: 8,
+padding: 12,
+marginTop: 4,
+fontSize: 12,
+color: “#5a7a9a”,
+lineHeight: 1.6
+}
+}, [El(“div”, {
+key: “limit”,
+style: {
+marginBottom: 4,
+color: (parseFloat(data.retirement.rothIra.monthly) || 0) * 12 > 7000 ? “#f97316” : “#5a7a9a”
+}
+}, (parseFloat(data.retirement.rothIra.monthly) || 0) * 12 > 7000 ? “Exceeds 2024 limit of $7,000/yr” : “2024 limit: $7,000/yr ($583/mo)”), “Income phase-out: $146k-$161k single / $230k-$240k married in 2024.”])])),
+// HSA
+El(Card, {
+key: “hsa”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f59e0b”
+}, “HSA”), El(“div”, {
+key: “pill”,
+style: {
+display: “inline-flex”,
+alignItems: “center”,
+gap: 6,
+padding: “4px 10px”,
+background: “#0a1520”,
+border: “1px solid #f59e0b33”,
+borderRadius: 20,
+fontSize: 11,
+color: “#f59e0b”,
+marginBottom: 12
+}
+}, “Pre-tax - reduces taxable income”), El(“div”, {
+key: “triple”,
+style: {
+background: “linear-gradient(135deg, #1a1400, #120f00)”,
+border: “1px solid #f59e0b33”,
+borderRadius: 8,
+padding: “10px 12px”,
+marginBottom: 12,
+fontSize: 12,
+color: “#f59e0b”,
+lineHeight: 1.6
+}
+}, “Triple tax advantage: pre-tax contributions, tax-free growth, and tax-free withdrawals for medical expenses. Unused funds roll over forever.”), El(Input, {
+key: “mo”,
+label: “Monthly Contribution”,
+value: data.retirement.hsa.monthly,
+onChange: function onChange(v) {
+updateRetirement(“hsa”, “monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “bal”,
+label: “Current Balance”,
+value: data.retirement.hsa.currentBalance,
+onChange: function onChange(v) {
+updateRetirement(“hsa”, “currentBalance”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “coverage”,
+style: {
+display: “flex”,
+gap: 8,
+marginBottom: 12
+}
+}, [El(“button”, {
+key: “ind”,
+onClick: function onClick() {
+updateRetirement(“hsa”, “familyCoverage”, false);
+},
+style: {
+flex: 1,
+padding: “8px”,
+background: !data.retirement.hsa.familyCoverage ? “#1d4ed8” : “#0f1923”,
+border: “1px solid “ + (!data.retirement.hsa.familyCoverage ? “#1d4ed8” : “#1e2d3d”),
+borderRadius: 7,
+color: !data.retirement.hsa.familyCoverage ? “#fff” : “#5a7a9a”,
+fontSize: 12,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, “Individual”), El(“button”, {
+key: “fam”,
+onClick: function onClick() {
+updateRetirement(“hsa”, “familyCoverage”, true);
+},
+style: {
+flex: 1,
+padding: “8px”,
+background: data.retirement.hsa.familyCoverage ? “#1d4ed8” : “#0f1923”,
+border: “1px solid “ + (data.retirement.hsa.familyCoverage ? “#1d4ed8” : “#1e2d3d”),
+borderRadius: 7,
+color: data.retirement.hsa.familyCoverage ? “#fff” : “#5a7a9a”,
+fontSize: 12,
+fontWeight: 600,
+cursor: “pointer”
+}
+}, “Family”)]), El(“div”, {
+key: “limit”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”
+}
+}, “2024 limit: “ + (data.retirement.hsa.familyCoverage ? “$8,300/yr ($691/mo)” : “$4,150/yr ($345/mo)”))]))]),
+// Projection
+El(“div”, {
+key: “proj”,
+style: {
+display: “grid”,
+gridTemplateColumns: “280px 1fr”,
+gap: 14
+}
+}, [El(Card, {
+key: “info”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#a855f7”
+}, “Projection Settings”), El(Input, {
+key: “age”,
+label: “Current Age”,
+value: data.retirement.currentAge,
+onChange: function onChange(v) {
+updateRetirement(“currentAge”, undefined, v);
+setData(function (d) {
+return Object.assign({}, d, {
+retirement: Object.assign({}, d.retirement, {
+currentAge: v
+})
+});
+});
+},
+type: “number”
+}), El(Input, {
+key: “target”,
+label: “Target Retirement Age”,
+value: data.retirement.targetAge,
+onChange: function onChange(v) {
+setData(function (d) {
+return Object.assign({}, d, {
+retirement: Object.assign({}, d.retirement, {
+targetAge: v
+})
+});
+});
+},
+type: “number”
+}), El(“div”, {
+key: “summary”,
+style: {
+background: “#0a1520”,
+borderRadius: 10,
+padding: 12,
+marginTop: 4
+}
+}, [El(“div”, {
+key: “t1”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 6
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Traditional 401k”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#10b981”
+}
+}, fmt(trad401kMonthly + employerMatch) + “/mo”)]), El(“div”, {
+key: “t2”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 6
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Roth 401k”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#a78bfa”
+}
+}, fmt(roth401kMonthly) + “/mo”)]), El(“div”, {
+key: “t3”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 6
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “Roth IRA”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#60a5fa”
+}
+}, fmt(rothIraMonthly) + “/mo”)]), El(“div”, {
+key: “t4”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12,
+marginBottom: 6,
+paddingBottom: 6,
+borderBottom: “1px solid #1e2d3d”
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#5a7a9a”
+}
+}, “HSA (not projected)”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#f59e0b”
+}
+}, fmt(hsaMonthly) + “/mo”)]), El(“div”, {
+key: “tot”,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+fontSize: 12
+}
+}, [El(“span”, {
+key: “l”,
+style: {
+color: “#e8f0f8”,
+fontWeight: 600
+}
+}, “Total projected”), El(“span”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+color: “#e8f0f8”,
+fontWeight: 700
+}
+}, fmt(contribMonthly) + “/mo”)])]), El(“div”, {
+key: “hsa-note”,
+style: {
+marginTop: 8,
+fontSize: 11,
+color: “#4a7fa5”,
+background: “#0a1520”,
+borderRadius: 8,
+padding: 10,
+lineHeight: 1.5
+}
+}, “HSA shown separately - not included in projection to keep it simple. In practice, invested HSA funds compound similarly.”)])), El(“div”, {
+key: “right”
+}, [El(“div”, {
+key: “badges”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 10,
+marginBottom: 14
+}
+}, [El(Badge, {
+key: “pb”,
+label: “Projected Balance”,
+value: fmtShort(projBal),
+color: “#a855f7”
+}), El(Badge, {
+key: “ytr”,
+label: “Years to Retirement”,
+value: retYears + “ yrs”,
+color: “#60a5fa”
+}), El(Badge, {
+key: “mi”,
+label: “Monthly Income (4% rule)”,
+value: fmt(projBal * 0.04 / 12),
+color: “#10b981”,
+sub: “/month in retirement”
+}), El(Badge, {
+key: “ai”,
+label: “Annual Income (4% rule)”,
+value: fmtShort(projBal * 0.04),
+color: “#f59e0b”,
+sub: “/year in retirement”
+})]), El(Card, {
+key: “chart”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#a855f7”
+}, “Projected Balance Growth”), El(“div”, {
+key: “note”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”,
+marginBottom: 12,
+marginTop: -8
+}
+}, “7% avg annual return. Includes Traditional 401k, Roth 401k, and Roth IRA. Excludes HSA.”), El(LineChart, {
+key: “chart”,
+data: retChartData,
+height: 200
+})]))])])]),
+// ===== INVEST =====
+tab === “invest” && El(“div”, {
+key: “invest”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Taxable Investing”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Step 6 in the investment order - after tax-advantaged accounts are funded.”), El(“div”, {
+key: “prereq”,
+style: {
+background: “linear-gradient(135deg, #0d1a10, #0a1410)”,
+border: “1px solid #10b98133”,
+borderRadius: 12,
+padding: “16px 20px”,
+marginBottom: 20
+}
+}, [El(“div”, {
+key: “ttl”,
+style: {
+fontSize: 13,
+fontWeight: 700,
+color: “#10b981”,
+marginBottom: 12
+}
+}, “Before investing in a taxable brokerage, make sure you have:”), [{
+label: “Emergency fund funded (3-6 months)”,
+done: (parseFloat(data.savings.emergencyFund.current) || 0) >= (parseFloat(data.savings.emergencyFund.goal) || 1) && (parseFloat(data.savings.emergencyFund.goal) || 0) > 0
+}, {
+label: “401k funded to at least employer match”,
+done: trad401kMonthly > 0 && parseFloat(data.retirement.traditional401k.employerMatchPct) > 0
+}, {
+label: “Roth IRA being contributed to”,
+done: rothIraMonthly > 0
+}, {
+label: “High-interest debt paid off (>7% APR)”,
+done: data.debts.filter(function (d) {
+return (parseFloat(d.rate) || 0) > 7;
+}).length === 0
+}].map(function (item, i) {
+return El(“div”, {
+key: i,
+style: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+marginBottom: 8
+}
+}, [El(“div”, {
+key: “icon”,
+style: {
+width: 20,
+height: 20,
+borderRadius: “50%”,
+background: item.done ? “#10b981” : “#1e2d3d”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+fontSize: 11,
+color: item.done ? “#000” : “#3a5a7a”,
+fontWeight: 700,
+flexShrink: 0
+}
+}, item.done ? “v” : “?”), El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 13,
+color: item.done ? “#e8f0f8” : “#5a7a9a”
+}
+}, item.label)]);
+})]), El(“div”, {
+key: “grid”,
+style: {
+display: “grid”,
+gridTemplateColumns: “1fr 1fr”,
+gap: 14
+}
+}, [El(Card, {
+key: “inputs”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#34d399”
+}, “Brokerage Account”), El(“div”, {
+key: “note”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”,
+marginBottom: 14,
+lineHeight: 1.6,
+background: “#0a1520”,
+borderRadius: 8,
+padding: “10px 12px”
+}
+}, “Growth and dividends in a taxable brokerage are subject to capital gains tax. Low-cost index funds (e.g. VTI, VOO) are the standard recommendation.”), El(Input, {
+key: “mo”,
+label: “Monthly Investment”,
+value: data.invest.monthly,
+onChange: function onChange(v) {
+updateInvest(“monthly”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(Input, {
+key: “bal”,
+label: “Current Balance”,
+value: data.invest.currentBalance,
+onChange: function onChange(v) {
+updateInvest(“currentBalance”, v);
+},
+prefix: “$”,
+type: “number”
+}), El(“div”, {
+key: “lbl2”,
+style: {
+fontSize: 10,
+fontWeight: 700,
+letterSpacing: “0.08em”,
+color: “#8b9cb5”,
+marginBottom: 4,
+textTransform: “uppercase”
+}
+}, “Notes / Strategy”), El(“textarea”, {
+key: “notes”,
+value: data.invest.notes,
+onChange: function onChange(e) {
+updateInvest(“notes”, e.target.value);
+},
+placeholder: “e.g. 80% VTI, 20% VXUS - three fund portfolio”,
+style: {
+width: “100%”,
+background: “#0f1923”,
+border: “1px solid #1e2d3d”,
+borderRadius: 8,
+padding: “10px 12px”,
+color: “#e8f0f8”,
+fontSize: 13,
+fontFamily: “‘DM Sans’, sans-serif”,
+outline: “none”,
+resize: “vertical”,
+minHeight: 80,
+boxSizing: “border-box”
+}
+})])), El(Card, {
+key: “projection”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#34d399”
+}, “Simple Projection”), El(“p”, {
+key: “desc”,
+style: {
+fontSize: 12,
+color: “#5a7a9a”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Estimated growth at 7% average annual return. Subject to capital gains tax on withdrawal, unlike retirement accounts.”), function () {
+var monthly = parseFloat(data.invest.monthly) || 0;
+var balance = parseFloat(data.invest.currentBalance) || 0;
+var projections = [5, 10, 20, 30].map(function (years) {
+var proj = balance * Math.pow(1 + mRate, years * 12) + monthly * (Math.pow(1 + mRate, years * 12) - 1) / mRate;
+return {
+years: years,
+value: proj
+};
+});
+return El(“div”, {
+key: “projs”
+}, projections.map(function (p) {
+return El(“div”, {
+key: p.years,
+style: {
+display: “flex”,
+justifyContent: “space-between”,
+alignItems: “center”,
+padding: “10px 14px”,
+background: “#0a1520”,
+borderRadius: 10,
+marginBottom: 8
+}
+}, [El(“div”, {
+key: “l”
+}, [El(“div”, {
+key: “yr”,
+style: {
+fontSize: 13,
+fontWeight: 600,
+color: “#e8f0f8”
+}
+}, p.years + “ years”), El(“div”, {
+key: “note”,
+style: {
+fontSize: 11,
+color: “#4a7fa5”
+}
+}, “at $” + (monthly || 0) + “/mo + current balance”)]), El(“div”, {
+key: “v”,
+style: {
+fontFamily: “‘DM Mono’, monospace”,
+fontSize: 16,
+color: “#34d399”,
+fontWeight: 700
+}
+}, fmtShort(p.value))]);
+}));
+}()]))])]),
+// ===== SETTINGS =====
+tab === “settings” && El(“div”, {
+key: “settings”
+}, [El(“h1”, {
+key: “h”,
+style: {
+margin: “0 0 4px”,
+fontFamily: “‘Syne’, sans-serif”,
+fontWeight: 800,
+fontSize: 24
+}
+}, “Settings”), El(“p”, {
+key: “p”,
+style: {
+margin: “0 0 20px”,
+color: “#5a7a9a”,
+fontSize: 13
+}
+}, “Adjust how rates are calculated.”), El(“div”, {
+key: “cards”,
+style: {
+display: “grid”,
+gap: 14,
+maxWidth: 680
+}
+}, [El(Card, {
+key: “basis”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#60a5fa”
+}, “Savings Rate Calculation”), El(“p”, {
+key: “desc”,
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+margin: “0 0 14px”,
+lineHeight: 1.6
+}
+}, “Savings rate on the Overview is always calculated against gross income to match industry standards. This setting affects how rates are labeled and compared.”), [{
+id: “gross”,
+label: “Gross income (recommended)”,
+desc: “Pre-tax. Matches standard rules like save 15% of income. Stable benchmark that does not change with tax situation.”
+}, {
+id: “net”,
+label: “Net income”,
+desc: “Take-home pay only. Will not match published savings rate guidelines but reflects what you actually have available.”
+}].map(function (opt) {
+var sel = data.settings.incomeBasis === opt.id;
+return El(“div”, {
+key: opt.id,
+onClick: function onClick() {
+updateSettings(“incomeBasis”, opt.id);
+},
+style: {
+display: “flex”,
+gap: 12,
+padding: “12px 14px”,
+background: sel ? “#0d1a2e” : “#0a1520”,
+border: “1px solid “ + (sel ? “#1e3a5f” : “#1a2840”),
+borderRadius: 10,
+marginBottom: 8,
+cursor: “pointer”
+}
+}, [El(“div”, {
+key: “radio”,
+style: {
+width: 18,
+height: 18,
+borderRadius: “50%”,
+flexShrink: 0,
+border: “2px solid “ + (sel ? “#60a5fa” : “#2a4060”),
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+marginTop: 2
+}
+}, sel && El(“div”, {
+style: {
+width: 8,
+height: 8,
+borderRadius: “50%”,
+background: “#60a5fa”
+}
+})), El(“div”, {
+key: “text”
+}, [El(“div”, {
+key: “lbl”,
+style: {
+fontSize: 13,
+fontWeight: 600,
+color: “#e8f0f8”,
+marginBottom: 3
+}
+}, opt.label), El(“div”, {
+key: “desc”,
+style: {
+fontSize: 12,
+color: “#8b9cb5”,
+lineHeight: 1.5
+}
+}, opt.desc)])]);
+})])), El(Card, {
+key: “reset”
+}, El(“div”, null, [El(SectionTitle, {
+key: “st”,
+accent: “#f97316”
+}, “Reset Data”), El(“p”, {
+key: “desc”,
+style: {
+fontSize: 13,
+color: “#8b9cb5”,
+margin: “0 0 12px”
+}
+}, “Wipes all data from this browser. Export first if you want a backup.”), El(“button”, {
+key: “btn”,
+onClick: function onClick() {
+if (window.confirm(“Reset all data? Cannot be undone.”)) setData(makeDefault());
+},
+style: {
+padding: “10px 20px”,
+background: “#1a0e10”,
+border: “1px solid #4a1a1f”,
+color: “#ef4444”,
+borderRadius: 8,
+fontWeight: 600,
+fontSize: 13,
+fontFamily: “‘DM Sans’,sans-serif”,
+cursor: “pointer”
+}
+}, “Reset All Data”)]))])])])]);
+}
+ReactDOM.createRoot(document.getElementById(“root”)).render(React.createElement(App, null));
+</script>
+
+</body>
+</html>

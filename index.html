@@ -101,6 +101,17 @@ var FREQ_OPTIONS = [{
   short: "month",
   perYear: 12
 }];
+function calcPayoff(balance, annualRate, monthlyPayment) {
+  var b = parseFloat(balance) || 0;
+  var r = (parseFloat(annualRate) || 0) / 100 / 12;
+  var p = parseFloat(monthlyPayment) || 0;
+  if (b <= 0) return { months: 0, totalInterest: 0 };
+  if (p <= 0) return null;
+  if (r === 0) return { months: Math.ceil(b / p), totalInterest: 0 };
+  if (p <= b * r) return null; // payment can't cover interest
+  var months = Math.ceil(Math.log(p / (p - r * b)) / Math.log(1 + r));
+  return { months: months, totalInterest: Math.max(0, p * months - b) };
+}
 function makeDefault() {
   return {
     income: {
@@ -173,6 +184,12 @@ function makeDefault() {
     },
     settings: {
       incomeBasis: "gross"
+    },
+    plan: {
+      essentials: {},
+      discretionary: {},
+      debtPayments: {},
+      goals: []
     }
   };
 }
@@ -583,7 +600,13 @@ function App() {
           retirement: Object.assign({}, def.retirement, parsed.retirement || {}),
           savings: Object.assign({}, def.savings, parsed.savings || {}),
           invest: Object.assign({}, def.invest, parsed.invest || {}),
-          settings: Object.assign({}, def.settings, parsed.settings || {})
+          settings: Object.assign({}, def.settings, parsed.settings || {}),
+          plan: {
+            essentials: parsed.plan && parsed.plan.essentials ? parsed.plan.essentials : {},
+            discretionary: parsed.plan && parsed.plan.discretionary ? parsed.plan.discretionary : {},
+            debtPayments: parsed.plan && parsed.plan.debtPayments ? parsed.plan.debtPayments : {},
+            goals: parsed.plan && parsed.plan.goals ? parsed.plan.goals : []
+          }
         };
       }
       return makeDefault();
@@ -619,6 +642,13 @@ function App() {
   });
   var newDisc = _newDisc[0];
   var setNewDisc = _newDisc[1];
+  var _newPlanGoal = useState({
+    name: "",
+    target: "",
+    monthly: ""
+  });
+  var newPlanGoal = _newPlanGoal[0];
+  var setNewPlanGoal = _newPlanGoal[1];
   var _importMsg = useState("");
   var importMsg = _importMsg[0];
   var setImportMsg = _importMsg[1];
@@ -669,11 +699,11 @@ function App() {
     action: "Go to Debts",
     color: "#f97316"
   }, {
-    tab: "budget",
-    title: "Step 3 of 5 \u2014 Budget",
+    tab: "expenses",
+    title: "Step 3 of 5 \u2014 Expenses",
     headline: "Are you sinking or swimming?",
     body: "Fill in what you actually spend on essentials and discretionary items. This is your reality check \u2014 it shows how much breathing room you really have after your obligations. You can't make a plan without knowing this number.",
-    action: "Go to Budget",
+    action: "Go to Expenses",
     color: "#f59e0b"
   }, {
     tab: "savings",
@@ -842,21 +872,37 @@ function App() {
   var totalRetirementMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + hsaMonthly + employerMatch;
   var investMonthly = parseFloat(data.invest.monthly) || 0;
   var totalSavedMonthly = liquidSavingsMonthly + totalRetirementMonthly + investMonthly;
-  var savingsRate = grossMonthly > 0 ? (totalSavedMonthly / grossMonthly * 100).toFixed(1) : "0";
+  // Plan tab sandbox calculations (independent of Expenses tab plan columns)
+  var planTabEssTotal = data.budget.essentials.reduce(function (s, e) {
+    var v = data.plan && data.plan.essentials && data.plan.essentials[e.id] !== undefined ? data.plan.essentials[e.id] : e.baseline;
+    return s + (parseFloat(v) || 0);
+  }, 0);
+  var planTabDebtTotal = data.debts.reduce(function (s, d) {
+    if (d.isMortgage) return s;
+    var v = data.plan && data.plan.debtPayments && data.plan.debtPayments[d.id] !== undefined ? data.plan.debtPayments[d.id] : (d.minPayment || "0");
+    return s + (parseFloat(v) || 0);
+  }, 0);
+  var planTabDiscTotal = data.budget.discretionary.reduce(function (s, e) {
+    var v = data.plan && data.plan.discretionary && data.plan.discretionary[e.id] !== undefined ? data.plan.discretionary[e.id] : e.baseline;
+    return s + (parseFloat(v) || 0);
+  }, 0);
+  var planTabTotal = planTabEssTotal + planTabDebtTotal + planTabDiscTotal;
+  var planTabSurplus = netMonthly - planTabTotal;
+  var savingsRate = (data.settings.incomeBasis === "net" ? netMonthly : grossMonthly) > 0 ? (totalSavedMonthly / (data.settings.incomeBasis === "net" ? netMonthly : grossMonthly) * 100).toFixed(1) : "0";
   var retireRate = grossMonthly > 0 ? (totalRetirementMonthly / grossMonthly * 100).toFixed(1) : "0";
-  var dtiTotal = data.debts.reduce(function (s, d) {
-    return s + (parseFloat(d.minPayment) || 0);
-  }, 0);
-  var consumerDtiTotal = data.debts.reduce(function (s, d) {
-    return s + (!d.isMortgage ? parseFloat(d.minPayment) || 0 : 0);
-  }, 0);
-  var dti = grossMonthly > 0 ? (dtiTotal / grossMonthly * 100).toFixed(1) : "0";
-  var consumerDti = grossMonthly > 0 ? (consumerDtiTotal / grossMonthly * 100).toFixed(1) : "0";
   var housingItem = data.budget.essentials.find(function (e) {
     return e.id === "housing";
   });
   var housingAmt = parseFloat(housingItem ? (housingItem.plan !== "" ? housingItem.plan : housingItem.baseline) : 0) || 0;
   var housingPct = grossMonthly > 0 ? (housingAmt / grossMonthly * 100).toFixed(1) : "0";
+  var consumerDtiTotal = data.debts.reduce(function (s, d) {
+    return s + (!d.isMortgage ? parseFloat(d.minPayment) || 0 : 0);
+  }, 0);
+  var consumerDti = grossMonthly > 0 ? (consumerDtiTotal / grossMonthly * 100).toFixed(1) : "0";
+  var dtiTotal = housingAmt + data.debts.reduce(function (s, d) {
+    return s + (!d.isMortgage ? parseFloat(d.minPayment) || 0 : 0);
+  }, 0);
+  var dti = grossMonthly > 0 ? (dtiTotal / grossMonthly * 100).toFixed(1) : "0";
   var DEBT_COLORS = ["#f97316", "#ef4444", "#a855f7", "#3b82f6", "#14b8a6", "#eab308"];
   function getEffectiveRate(debt) {
     if (!debt.isPromo || !debt.promoEndDate) return parseFloat(debt.rate) || 0;
@@ -1001,16 +1047,17 @@ function App() {
     reader.readAsText(file);
     e.target.value = "";
   }
-  var tabs = ["overview", "income", "debts", "budget", "savings", "retirement", "invest", "settings"];
+  var tabs = ["overview", "income", "debts", "expenses", "savings", "retirement", "invest", "settings", "plan"];
   var tabLabels = {
     overview: "Overview",
     income: "Income",
     debts: "Debts",
-    budget: "Budget",
+    expenses: "Expenses",
     savings: "Savings",
     retirement: "Retirement",
     invest: "Invest",
-    settings: "Settings"
+    settings: "Settings",
+    plan: "Plan"
   };
   function IncomeRow(label, value, color, indent) {
     return El("div", {
@@ -1286,14 +1333,6 @@ function App() {
       return d.isMortgage;
     }) ? "excl. mortgage" : null
   }), El(Badge, {
-    key: "cdti",
-    label: "Consumer DTI",
-    value: consumerDti + "%",
-    color: parseFloat(consumerDti) > 36 ? "#ef4444" : parseFloat(consumerDti) > 20 ? "#f97316" : "#10b981",
-    sub: data.debts.some(function (d) {
-      return d.isMortgage;
-    }) ? "excl. mortgage" : null
-  }), El(Badge, {
     key: "hp",
     label: "Housing %",
     value: housingPct + "%",
@@ -1301,22 +1340,22 @@ function App() {
     sub: parseFloat(housingPct) > 28 ? "above 28% rule" : "within 28% rule"
   }), El(Badge, {
     key: "dti",
-    label: "Total DTI (incl. mortgage)",
+    label: "Total DTI",
     value: dti + "%",
     color: parseFloat(dti) > 36 ? "#ef4444" : parseFloat(dti) > 20 ? "#f97316" : "#10b981",
     sub: data.debts.some(function (d) {
       return d.isMortgage;
     }) ? "Consumer DTI " + consumerDti + "%" : parseFloat(dti) > 36 ? "high" : parseFloat(dti) > 20 ? "moderate" : "healthy"
   }), El(Badge, {
-    key: "sr",
-    label: "Total Savings Rate",
-    value: savingsRate + "%",
-    color: "#a78bfa"
-  }), El(Badge, {
     key: "rr",
     label: "Retirement Rate",
     value: retireRate + "%",
     color: "#34d399"
+  }), El(Badge, {
+    key: "sr",
+    label: "Total Savings Rate",
+    value: savingsRate + "%",
+    color: "#a78bfa"
   })]), El("div", {
     key: "grid",
     style: {
@@ -1530,9 +1569,9 @@ function App() {
       fontFamily: "'DM Mono', monospace",
       fontSize: 15,
       fontWeight: 700,
-      color: planSurplus >= 0 ? "#10b981" : "#ef4444"
+      color: (isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly) >= 0 ? "#10b981" : "#ef4444"
     }
-  }, fmt(planSurplus))])]))])])]),
+  }, fmt(isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly))])]))])])]),
   // ===== INCOME =====
   tab === "income" && El("div", {
     key: "income"
@@ -1639,7 +1678,7 @@ function App() {
     },
     prefix: "$",
     type: "number",
-    placeholder: "90000"
+    placeholder: "0"
   }),
   // Frequency picker for take-home
   El("div", {
@@ -2558,7 +2597,7 @@ function App() {
     color: "#60a5fa"
   })), El(Badge, {
     key: "dti",
-    label: "Total DTI (incl. mortgage)",
+    label: "Total DTI",
     value: dti + "%",
     color: parseFloat(dti) > 36 ? "#ef4444" : "#10b981",
     sub: data.debts.some(function (d) {
@@ -2578,7 +2617,7 @@ function App() {
   }, ["Set plan payments in the ", El("button", {
     key: "lnk",
     onClick: function onClick() {
-      setTab("budget");
+      setTab("expenses");
     },
     style: {
       background: "none",
@@ -2589,7 +2628,7 @@ function App() {
       textDecoration: "underline",
       cursor: "pointer"
     }
-  }, "Budget tab"), " to see updated payoff dates."])]))]), data.debts.length > 0 && El(Card, {
+  }, "Expenses tab"), " to see updated payoff dates."])]))]), data.debts.length > 0 && El(Card, {
     key: "proj"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
@@ -2805,9 +2844,9 @@ function App() {
       }
     }, usingMinPayment ? "Set a higher plan payment to compare" : saved > 0 ? "faster payoff" : "at minimum")])])]);
   }))]))]),
-  // ===== BUDGET =====
-  tab === "budget" && El("div", {
-    key: "budget"
+  // ===== EXPENSES =====
+  tab === "expenses" && El("div", {
+    key: "expenses"
   }, [El("h1", {
     key: "h",
     style: {
@@ -2816,7 +2855,7 @@ function App() {
       fontWeight: 800,
       fontSize: 24
     }
-  }, "Budget"), El("p", {
+  }, "Expenses"), El("p", {
     key: "p",
     style: {
       margin: "0 0 20px",
@@ -2876,6 +2915,25 @@ function App() {
       color: "#f97316"
     }
   }, fmt(realityTotal))]), El("div", {
+    key: "si"
+  }, [El("div", {
+    key: "l",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 2
+    }
+  }, [El("span", {key: "lbl"}, "Savings & Investing"), El("span", {key: "note", style: {fontSize: 9, color: "#3a5a7a", textTransform: "none", letterSpacing: 0, marginLeft: 5}}, isSimpleMode ? "(pre-tax, excluded from take-home calc)" : "(from Savings & Retirement tabs)")]), El("div", {
+    key: "v",
+    style: {
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 18,
+      fontWeight: 700,
+      color: isSimpleMode ? "#5a7a9a" : "#10b981"
+    }
+  }, fmt(totalSavedMonthly))]), El("div", {
     key: "pt"
   }, [El("div", {
     key: "l",
@@ -2894,7 +2952,7 @@ function App() {
       fontWeight: 700,
       color: "#a78bfa"
     }
-  }, fmt(planTotal))]), El("div", {
+  }, fmt(isSimpleMode ? planTotal : planTotal + totalSavedMonthly))]), El("div", {
     key: "ps"
   }, [El("div", {
     key: "l",
@@ -2911,9 +2969,9 @@ function App() {
       fontFamily: "'DM Mono', monospace",
       fontSize: 20,
       fontWeight: 700,
-      color: planSurplus >= 0 ? "#10b981" : "#ef4444"
+      color: (isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly) >= 0 ? "#10b981" : "#ef4444"
     }
-  }, fmt(planSurplus))])]), El(Card, {
+  }, fmt(isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly))])]), El(Card, {
     key: "ess",
     style: {
       marginBottom: 14
@@ -4755,7 +4813,807 @@ function App() {
       fontFamily: "'DM Sans',sans-serif",
       cursor: "pointer"
     }
-  }, "Reset All Data")]))])])]),
+  }, "Reset All Data")]))])])
+  // ===== PLAN =====
+  , tab === "plan" && El("div", {
+    key: "plan"
+  }, [El("h1", {
+    key: "h",
+    style: {
+      margin: "0 0 4px",
+      fontFamily: "'Syne', sans-serif",
+      fontWeight: 800,
+      fontSize: 24
+    }
+  }, "Plan"), El("p", {
+    key: "p",
+    style: {
+      margin: "0 0 16px",
+      color: "#5a7a9a",
+      fontSize: 13
+    }
+  }, "What-if sandbox. Adjust plan expenses, set savings goals, and model debt payoff scenarios without affecting your Expenses tab."), El("div", {
+    key: "reset-bar",
+    style: {
+      display: "flex",
+      justifyContent: "flex-end",
+      marginBottom: 16
+    }
+  }, El("button", {
+    key: "reset-btn",
+    onClick: function onClick() {
+      if (window.confirm("Reset all plan expense values to current baseline?")) {
+        setData(function (d) {
+          return Object.assign({}, d, {
+            plan: Object.assign({}, d.plan, {
+              essentials: {},
+              discretionary: {},
+              debtPayments: {}
+            })
+          });
+        });
+      }
+    },
+    style: {
+      padding: "8px 16px",
+      background: "#0a1520",
+      border: "1px solid #1a2840",
+      color: "#5a7a9a",
+      borderRadius: 8,
+      fontSize: 12,
+      fontWeight: 600,
+      fontFamily: "'DM Sans', sans-serif",
+      cursor: "pointer"
+    }
+  }, "Reset to Baseline")), El("div", {
+    key: "bar",
+    style: {
+      background: "#0a1520",
+      borderRadius: 12,
+      padding: "14px 18px",
+      marginBottom: 18,
+      border: "1px solid #1a2840",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12
+    }
+  }, [El("div", {
+    key: "th"
+  }, [El("div", {
+    key: "l",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 2
+    }
+  }, "Take-Home"), El("div", {
+    key: "v",
+    style: {
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 20,
+      fontWeight: 700,
+      color: "#10b981"
+    }
+  }, fmt(netMonthly))]), El("div", {
+    key: "pt"
+  }, [El("div", {
+    key: "l",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 2
+    }
+  }, "Plan Total"), El("div", {
+    key: "v",
+    style: {
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 18,
+      fontWeight: 700,
+      color: "#a78bfa"
+    }
+  }, fmt(planTabTotal))]), El("div", {
+    key: "ps"
+  }, [El("div", {
+    key: "l",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 2
+    }
+  }, "Plan Surplus"), El("div", {
+    key: "v",
+    style: {
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 20,
+      fontWeight: 700,
+      color: planTabSurplus >= 0 ? "#10b981" : "#ef4444"
+    }
+  }, fmt(planTabSurplus))])]), El(Card, {
+    key: "ess",
+    style: {
+      marginBottom: 14
+    }
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#60a5fa"
+  }, "Essentials"), El("div", {
+    key: "rh",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr auto",
+      gap: 8,
+      padding: "4px 12px",
+      marginBottom: 4
+    }
+  }, [El("div", {
+    key: "a",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Category"), El("div", {
+    key: "c",
+    style: {
+      fontSize: 10,
+      color: "#60a5fa",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Plan Amount"), El("div", {
+    key: "d"
+  })]), data.budget.essentials.map(function (item) {
+    var planVal = data.plan && data.plan.essentials && data.plan.essentials[item.id] !== undefined ? data.plan.essentials[item.id] : item.baseline;
+    return El("div", {
+      key: item.id,
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr auto",
+        gap: 8,
+        alignItems: "center",
+        padding: "8px 12px",
+        background: "#0a1520",
+        borderRadius: 10,
+        marginBottom: 6,
+        borderLeft: "3px solid #60a5fa"
+      }
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: "#e8f0f8"
+      }
+    }, item.name), El("input", {
+      key: "v",
+      type: "text",
+      inputMode: "decimal",
+      value: fmtCurrencyInput(planVal),
+      onChange: function onChange(e) {
+        var v = stripCommas(e.target.value);
+        var itemId = item.id;
+        setData(function (d) {
+          var newEss = Object.assign({}, d.plan && d.plan.essentials || {});
+          newEss[itemId] = v;
+          return Object.assign({}, d, {
+            plan: Object.assign({}, d.plan, {
+              essentials: newEss
+            })
+          });
+        });
+      },
+      style: {
+        width: "100%",
+        background: "#0f1923",
+        border: "1px solid #60a5fa44",
+        borderRadius: 6,
+        padding: "6px 8px",
+        color: "#e8f0f8",
+        fontSize: 13,
+        fontFamily: "'DM Mono', monospace",
+        outline: "none",
+        boxSizing: "border-box"
+      }
+    }), El("div", {
+      key: "sp",
+      style: {
+        width: 24
+      }
+    })]);
+  })])), El(Card, {
+    key: "debt",
+    style: {
+      marginBottom: 14
+    }
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#f97316"
+  }, "Debt Obligations"), data.debts.filter(function (d) {
+    return !d.isMortgage;
+  }).length === 0 && El("p", {
+    key: "empty",
+    style: {
+      color: "#5a7a9a",
+      fontSize: 13
+    }
+  }, "No debts added yet."), data.debts.filter(function (d) {
+    return !d.isMortgage;
+  }).length > 0 && El("div", {
+    key: "rh",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr auto",
+      gap: 8,
+      padding: "4px 12px",
+      marginBottom: 4
+    }
+  }, [El("div", {
+    key: "a",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Debt"), El("div", {
+    key: "c",
+    style: {
+      fontSize: 10,
+      color: "#f97316",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Plan Payment"), El("div", {
+    key: "d"
+  })]), data.debts.filter(function (d) {
+    return !d.isMortgage;
+  }).map(function (debt) {
+    var planPay = data.plan && data.plan.debtPayments && data.plan.debtPayments[debt.id] !== undefined ? data.plan.debtPayments[debt.id] : (debt.minPayment || "");
+    return El("div", {
+      key: debt.id,
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr auto",
+        gap: 8,
+        alignItems: "center",
+        padding: "8px 12px",
+        background: "#0a1520",
+        borderRadius: 10,
+        marginBottom: 6,
+        borderLeft: "3px solid #f97316"
+      }
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: "#e8f0f8"
+      }
+    }, debt.name), El("input", {
+      key: "v",
+      type: "text",
+      inputMode: "decimal",
+      value: fmtCurrencyInput(planPay),
+      onChange: function onChange(e) {
+        var v = stripCommas(e.target.value);
+        var debtId = debt.id;
+        setData(function (d) {
+          var newPay = Object.assign({}, d.plan && d.plan.debtPayments || {});
+          newPay[debtId] = v;
+          return Object.assign({}, d, {
+            plan: Object.assign({}, d.plan, {
+              debtPayments: newPay
+            })
+          });
+        });
+      },
+      style: {
+        width: "100%",
+        background: "#0f1923",
+        border: "1px solid #f9741644",
+        borderRadius: 6,
+        padding: "6px 8px",
+        color: "#e8f0f8",
+        fontSize: 13,
+        fontFamily: "'DM Mono', monospace",
+        outline: "none",
+        boxSizing: "border-box"
+      }
+    }), El("div", {
+      key: "sp",
+      style: {
+        width: 24
+      }
+    })]);
+  })])), El(Card, {
+    key: "disc",
+    style: {
+      marginBottom: 14
+    }
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#f59e0b"
+  }, "Discretionary"), data.budget.discretionary.length === 0 && El("p", {
+    key: "empty",
+    style: {
+      color: "#5a7a9a",
+      fontSize: 13
+    }
+  }, "No discretionary items added yet."), data.budget.discretionary.length > 0 && El("div", {
+    key: "rh",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr auto",
+      gap: 8,
+      padding: "4px 12px",
+      marginBottom: 4
+    }
+  }, [El("div", {
+    key: "a",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Category"), El("div", {
+    key: "c",
+    style: {
+      fontSize: 10,
+      color: "#f59e0b",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    }
+  }, "Plan Amount"), El("div", {
+    key: "d"
+  })]), data.budget.discretionary.map(function (item) {
+    var planVal = data.plan && data.plan.discretionary && data.plan.discretionary[item.id] !== undefined ? data.plan.discretionary[item.id] : item.baseline;
+    return El("div", {
+      key: item.id,
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr auto",
+        gap: 8,
+        alignItems: "center",
+        padding: "8px 12px",
+        background: "#0a1520",
+        borderRadius: 10,
+        marginBottom: 6,
+        borderLeft: "3px solid #f59e0b"
+      }
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 12,
+        fontWeight: 600,
+        color: "#e8f0f8"
+      }
+    }, item.name), El("input", {
+      key: "v",
+      type: "text",
+      inputMode: "decimal",
+      value: fmtCurrencyInput(planVal),
+      onChange: function onChange(e) {
+        var v = stripCommas(e.target.value);
+        var itemId = item.id;
+        setData(function (d) {
+          var nd = Object.assign({}, d.plan && d.plan.discretionary || {});
+          nd[itemId] = v;
+          return Object.assign({}, d, {
+            plan: Object.assign({}, d.plan, {
+              discretionary: nd
+            })
+          });
+        });
+      },
+      style: {
+        width: "100%",
+        background: "#0f1923",
+        border: "1px solid #f59e0b44",
+        borderRadius: 6,
+        padding: "6px 8px",
+        color: "#e8f0f8",
+        fontSize: 13,
+        fontFamily: "'DM Mono', monospace",
+        outline: "none",
+        boxSizing: "border-box"
+      }
+    }), El("div", {
+      key: "sp",
+      style: {
+        width: 24
+      }
+    })]);
+  })])), El(Card, {
+    key: "goals",
+    style: {
+      marginBottom: 14
+    }
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#34d399"
+  }, "Savings Goal Planner"), data.plan && data.plan.goals && data.plan.goals.length > 0 && El("div", {
+    key: "goals-list",
+    style: {
+      marginBottom: 14
+    }
+  }, data.plan.goals.map(function (goal) {
+    var monthly = parseFloat(goal.monthly) || 0;
+    var target = parseFloat(goal.target) || 0;
+    var months = monthly > 0 && target > 0 ? Math.ceil(target / monthly) : null;
+    var projDate = months ? payoffDate(months) : null;
+    return El("div", {
+      key: goal.id,
+      style: {
+        padding: "12px",
+        background: "#0a1520",
+        borderRadius: 10,
+        marginBottom: 8,
+        borderLeft: "3px solid #34d399",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        flexWrap: "wrap",
+        gap: 8
+      }
+    }, [El("div", {
+      key: "info"
+    }, [El("div", {
+      key: "name",
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: "#e8f0f8",
+        marginBottom: 4
+      }
+    }, goal.name || "Unnamed Goal"), El("div", {
+      key: "detail",
+      style: {
+        fontSize: 11,
+        color: "#5a7a9a"
+      }
+    }, fmt(monthly) + "/mo toward " + fmt(target)), months && El("div", {
+      key: "proj",
+      style: {
+        fontSize: 11,
+        color: "#34d399",
+        marginTop: 2
+      }
+    }, months + " months \u2192 " + projDate)]), El("button", {
+      key: "del",
+      onClick: function onClick() {
+        var goalId = goal.id;
+        setData(function (d) {
+          return Object.assign({}, d, {
+            plan: Object.assign({}, d.plan, {
+              goals: d.plan.goals.filter(function (g) {
+                return g.id !== goalId;
+              })
+            })
+          });
+        });
+      },
+      style: {
+        background: "none",
+        border: "none",
+        color: "#3a5a7a",
+        fontSize: 18,
+        padding: "2px",
+        cursor: "pointer"
+      }
+    }, "\xd7")]);
+  })), El("div", {
+    key: "add-goal",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "2fr 1fr 1fr auto",
+      gap: 8,
+      alignItems: "flex-end"
+    }
+  }, [El("div", {
+    key: "name-field"
+  }, [El("div", {
+    key: "lbl",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 4
+    }
+  }, "Goal Name"), El("input", {
+    key: "inp",
+    type: "text",
+    placeholder: "e.g. New Car",
+    value: newPlanGoal.name,
+    onChange: function onChange(e) {
+      var v = e.target.value;
+      setNewPlanGoal(function (g) {
+        return Object.assign({}, g, {
+          name: v
+        });
+      });
+    },
+    style: {
+      width: "100%",
+      background: "#0f1923",
+      border: "1px solid #1e2d3d",
+      borderRadius: 6,
+      padding: "6px 8px",
+      color: "#e8f0f8",
+      fontSize: 13,
+      fontFamily: "'DM Sans', sans-serif",
+      outline: "none",
+      boxSizing: "border-box"
+    }
+  })]), El("div", {
+    key: "target-field"
+  }, [El("div", {
+    key: "lbl",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 4
+    }
+  }, "Target ($)"), El("input", {
+    key: "inp",
+    type: "text",
+    inputMode: "decimal",
+    placeholder: "5,000",
+    value: fmtCurrencyInput(newPlanGoal.target),
+    onChange: function onChange(e) {
+      var v = stripCommas(e.target.value);
+      setNewPlanGoal(function (g) {
+        return Object.assign({}, g, {
+          target: v
+        });
+      });
+    },
+    style: {
+      width: "100%",
+      background: "#0f1923",
+      border: "1px solid #1e2d3d",
+      borderRadius: 6,
+      padding: "6px 8px",
+      color: "#e8f0f8",
+      fontSize: 13,
+      fontFamily: "'DM Mono', monospace",
+      outline: "none",
+      boxSizing: "border-box"
+    }
+  })]), El("div", {
+    key: "monthly-field"
+  }, [El("div", {
+    key: "lbl",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 4
+    }
+  }, "Monthly ($)"), El("input", {
+    key: "inp",
+    type: "text",
+    inputMode: "decimal",
+    placeholder: "200",
+    value: fmtCurrencyInput(newPlanGoal.monthly),
+    onChange: function onChange(e) {
+      var v = stripCommas(e.target.value);
+      setNewPlanGoal(function (g) {
+        return Object.assign({}, g, {
+          monthly: v
+        });
+      });
+    },
+    style: {
+      width: "100%",
+      background: "#0f1923",
+      border: "1px solid #1e2d3d",
+      borderRadius: 6,
+      padding: "6px 8px",
+      color: "#e8f0f8",
+      fontSize: 13,
+      fontFamily: "'DM Mono', monospace",
+      outline: "none",
+      boxSizing: "border-box"
+    }
+  })]), El("button", {
+    key: "add-btn",
+    onClick: function onClick() {
+      if (!newPlanGoal.name) return;
+      var goal = {
+        id: String(Date.now()),
+        name: newPlanGoal.name,
+        target: newPlanGoal.target,
+        monthly: newPlanGoal.monthly
+      };
+      setData(function (d) {
+        var goals = d.plan && d.plan.goals ? d.plan.goals : [];
+        return Object.assign({}, d, {
+          plan: Object.assign({}, d.plan, {
+            goals: goals.concat([goal])
+          })
+        });
+      });
+      setNewPlanGoal({
+        name: "",
+        target: "",
+        monthly: ""
+      });
+    },
+    style: {
+      padding: "8px 16px",
+      background: "#34d399",
+      border: "none",
+      borderRadius: 8,
+      color: "#000",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
+      alignSelf: "flex-end"
+    }
+  }, "Add")])])), El(Card, {
+    key: "payoff-whatif"
+  }, El("div", null, [El(SectionTitle, {
+    key: "st",
+    accent: "#f97316"
+  }, "Debt Payoff What-If"), data.debts.filter(function (d) {
+    return !d.isMortgage;
+  }).length === 0 ? El("p", {
+    key: "empty",
+    style: {
+      color: "#5a7a9a",
+      fontSize: 13
+    }
+  }, "No non-mortgage debts added yet.") : data.debts.filter(function (d) {
+    return !d.isMortgage;
+  }).map(function (debt) {
+    var balance = parseFloat(debt.balance) || 0;
+    var rate = parseFloat(debt.rate) || 0;
+    var planPay = parseFloat(data.plan && data.plan.debtPayments && data.plan.debtPayments[debt.id] || debt.minPayment || 0);
+    var minPay = parseFloat(debt.minPayment) || 0;
+    var minResult = calcPayoff(balance, rate, minPay);
+    var planResult = calcPayoff(balance, rate, planPay);
+    return El("div", {
+      key: debt.id,
+      style: {
+        padding: "14px",
+        background: "#0a1520",
+        borderRadius: 10,
+        marginBottom: 10,
+        borderLeft: "3px solid #f97316"
+      }
+    }, [El("div", {
+      key: "head",
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10
+      }
+    }, [El("div", {
+      key: "name",
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: "#e8f0f8"
+      }
+    }, debt.name), El("div", {
+      key: "bal",
+      style: {
+        fontSize: 12,
+        color: "#5a7a9a",
+        fontFamily: "'DM Mono', monospace"
+      }
+    }, fmt(balance) + " @ " + rate + "%")]), El("div", {
+      key: "cols",
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 10
+      }
+    }, [El("div", {
+      key: "min-col",
+      style: {
+        background: "#060e18",
+        borderRadius: 8,
+        padding: "10px 12px"
+      }
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 10,
+        color: "#5a7a9a",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        marginBottom: 6
+      }
+    }, "Min Payment \u2014 " + fmt(minPay) + "/mo"), minResult ? [El("div", {
+      key: "months",
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: "#e8f0f8",
+        fontFamily: "'DM Mono', monospace"
+      }
+    }, minResult.months + " months"), El("div", {
+      key: "date",
+      style: {
+        fontSize: 11,
+        color: "#5a7a9a"
+      }
+    }, payoffDate(minResult.months)), El("div", {
+      key: "interest",
+      style: {
+        fontSize: 11,
+        color: "#f97316",
+        marginTop: 2
+      }
+    }, fmt(minResult.totalInterest) + " in interest")] : El("div", {
+      key: "never",
+      style: {
+        fontSize: 12,
+        color: "#ef4444"
+      }
+    }, "Payment too low")]), El("div", {
+      key: "plan-col",
+      style: {
+        background: "#060e18",
+        borderRadius: 8,
+        padding: "10px 12px",
+        border: "1px solid #f9741633"
+      }
+    }, [El("div", {
+      key: "lbl",
+      style: {
+        fontSize: 10,
+        color: "#f97316",
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        marginBottom: 6
+      }
+    }, "Plan Payment \u2014 " + fmt(planPay) + "/mo"), planResult ? [El("div", {
+      key: "months",
+      style: {
+        fontSize: 13,
+        fontWeight: 600,
+        color: minResult && planResult.months < minResult.months ? "#10b981" : "#e8f0f8",
+        fontFamily: "'DM Mono', monospace"
+      }
+    }, planResult.months + " months"), El("div", {
+      key: "date",
+      style: {
+        fontSize: 11,
+        color: "#5a7a9a"
+      }
+    }, payoffDate(planResult.months)), El("div", {
+      key: "interest",
+      style: {
+        fontSize: 11,
+        color: "#10b981",
+        marginTop: 2
+      }
+    }, fmt(planResult.totalInterest) + " in interest")] : El("div", {
+      key: "never",
+      style: {
+        fontSize: 12,
+        color: "#ef4444"
+      }
+    }, "Payment too low")])])]);
+  })]))])
+  ]),
   // ===== WELCOME MODAL =====
   onboard.screen === "welcome" && El("div", {
     key: "welcome-overlay",

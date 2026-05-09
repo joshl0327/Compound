@@ -1048,17 +1048,15 @@ function App() {
     reader.readAsText(file);
     e.target.value = "";
   }
-  var tabs = ["overview", "income", "debts", "expenses", "savings", "retirement", "invest", "settings", "plan"];
+  var tabs = ["overview", "income", "expenses", "savings", "invest", "plan", "settings"];
   var tabLabels = {
     overview: "Overview",
     income: "Income",
-    debts: "Debts",
     expenses: "Expenses",
     savings: "Savings",
-    retirement: "Retirement",
     invest: "Invest",
-    settings: "Settings",
-    plan: "Plan"
+    plan: "Plan",
+    settings: "Settings"
   };
   function IncomeRow(label, value, color, indent) {
     return El("div", {

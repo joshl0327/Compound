@@ -1995,7 +1995,7 @@ function App() {
   }, fmt(totalRetirementMonthly) + "/mo")])]), El("button", {
     key: "btn",
     onClick: function onClick() {
-      setTab("retirement");
+      setTab("invest");
     },
     style: {
       width: "100%",
@@ -2427,25 +2427,6 @@ function App() {
       color: "#f97316"
     }
   }, fmt(realityTotal))]), El("div", {
-    key: "si"
-  }, [El("div", {
-    key: "l",
-    style: {
-      fontSize: 10,
-      color: "#5a7a9a",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      marginBottom: 2
-    }
-  }, [El("span", {key: "lbl"}, "Savings & Investing"), El("span", {key: "note", style: {fontSize: 9, color: "#3a5a7a", textTransform: "none", letterSpacing: 0, marginLeft: 5}}, isSimpleMode ? "(pre-tax, excluded from take-home calc)" : "(from Savings & Retirement tabs)")]), El("div", {
-    key: "v",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 18,
-      fontWeight: 700,
-      color: isSimpleMode ? "#5a7a9a" : "#10b981"
-    }
-  }, fmt(totalSavedMonthly))]), El("div", {
     key: "pt"
   }, [El("div", {
     key: "l",

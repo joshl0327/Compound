@@ -687,39 +687,41 @@ function App() {
   var setSetupDone = _setupDone[1];
   var ONBOARD_STEPS = [{
     tab: "income",
-    title: "Step 1 of 5 \u2014 Income",
+    title: "Step 1 of 6 \u2014 Income",
     headline: "Start with what you earn",
-    body: "Add your annual gross salary and what actually hits your bank account each paycheck. This is the foundation everything else builds on \u2014 your breathing room, your savings rate, your whole picture.",
-    action: "Go to Income",
+    body: "Enter your annual salary and what actually hits your bank each paycheck. Everything else \u2014 your breathing room, your debt payoff date, your savings rate \u2014 builds from this number.",
     color: "#60a5fa"
   }, {
-    tab: "debts",
-    title: "Step 2 of 5 \u2014 Debts",
-    headline: "Know what you owe",
-    body: "Add every debt you have \u2014 credit cards, student loans, car loan, everything. Don't panic at the total. Knowing the number is the first step to beating it. This is where your debt-free date gets calculated.",
-    action: "Go to Debts",
-    color: "#f97316"
-  }, {
     tab: "expenses",
-    title: "Step 3 of 5 \u2014 Expenses",
-    headline: "Are you sinking or swimming?",
-    body: "Fill in what you actually spend on essentials and discretionary items. This is your reality check \u2014 it shows how much breathing room you really have after your obligations. You can't make a plan without knowing this number.",
-    action: "Go to Expenses",
-    color: "#f59e0b"
+    title: "Step 2 of 6 \u2014 Expenses",
+    headline: "Document every outflow",
+    body: "Add your monthly essentials at the top, then scroll down to Debt Obligations to enter any loans or credit cards \u2014 balance, rate, and minimum payment. Discretionary spending (dining, entertainment) goes in the middle section.",
+    color: "#f97316",
+    scrollTop: true
   }, {
     tab: "savings",
-    title: "Step 4 of 5 \u2014 Savings",
-    headline: "Plan where your leftover money goes",
-    body: "After you set your income, debts, and budget, allocate what remains to emergency savings and general savings. This step helps you turn breathing room into real progress.",
-    action: "Go to Savings",
-    color: "#34d399"
+    title: "Step 3 of 6 \u2014 Savings",
+    headline: "Emergency fund before everything else",
+    body: "Before extra debt payments or investing, you need a cash cushion. Set your emergency fund goal and monthly contribution. One month of expenses is the minimum starting target.",
+    color: "#10b981"
+  }, {
+    tab: "invest",
+    title: "Step 4 of 6 \u2014 Invest & Retire",
+    headline: "Retirement accounts and investing",
+    body: "Enter your 401k, Roth IRA, HSA contributions and any brokerage investing. Pre-tax contributions are excluded from your take-home calculation automatically.",
+    color: "#a78bfa"
   }, {
     tab: "overview",
-    title: "Step 5 of 5 \u2014 Overview",
-    headline: "See your complete picture",
-    body: "Your Overview now shows your debt-free date, savings rate, housing percentage, and budget summary \u2014 all in one place. This is the dashboard you will come back to as things change.",
-    action: "Finish Setup",
-    color: "#10b981"
+    title: "Step 5 of 6 \u2014 Overview",
+    headline: "Your complete financial picture",
+    body: "Now you can see your DTI, savings rate, housing percentage, and personalized next steps \u2014 all in one place. Check Suggested Next Steps at the bottom to see what to tackle first.",
+    color: "#34d399"
+  }, {
+    tab: "plan",
+    title: "Step 6 of 6 \u2014 Plan",
+    headline: "Play with what-ifs",
+    body: "The Plan tab is your sandbox. Adjust spending targets, set savings goals with target dates, and model extra debt payments to see your payoff date change in real time. Nothing here affects your Expenses data.",
+    color: "#f59e0b"
   }];
   function completeOnboarding() {
     try {
@@ -741,6 +743,7 @@ function App() {
       completeOnboarding();
     } else {
       setTab(ONBOARD_STEPS[nextStep].tab);
+      if (ONBOARD_STEPS[nextStep].scrollTop) { window.scrollTo(0, 0); }
       setOnboard({
         screen: "steps",
         step: nextStep
@@ -1377,7 +1380,7 @@ function App() {
       textAlign: "center",
       padding: "20px 0"
     }
-  }, "No debts added yet. Add them in the Debts tab.") : El("div", {
+  }, "No debts added yet. Add them in the Expenses tab.") : El("div", {
     key: "list"
   }, [data.debts.map(function (debt, i) {
     var balance = parseFloat(debt.balance) || 0;

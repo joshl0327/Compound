@@ -707,6 +707,15 @@ function App() {
   var setQs = _qs[1];
   var setStableSortVersion = useState(0)[1];
   var stableSortRef = useRef(null);
+  var _pcd = useState(function() {
+    try { return !!localStorage.getItem("compound_profile_done"); } catch(e) { return false; }
+  });
+  var profileCardDismissed = _pcd[0];
+  var setProfileCardDismissed = _pcd[1];
+  function dismissProfileCard() {
+    try { localStorage.setItem("compound_profile_done", "1"); } catch(e) {}
+    setProfileCardDismissed(true);
+  }
   var ONBOARD_STEPS = [{
     tab: "income",
     title: "Step 1 of 6 \u2014 Income",
@@ -1141,6 +1150,50 @@ function App() {
   // Helpful label for per-paycheck
   var ppLabel = freqObj.label;
   var perPaycheckSuffix = "per " + freqObj.short.toLowerCase();
+  var profileItems = [
+    { id: "income",       label: "Enter your income",                 detail: "Annual salary and take-home pay",             done: grossMonthly > 0,                                                                                              tab: "income"   },
+    { id: "housing",      label: "Set your housing cost",             detail: "Rent or mortgage amount",                     done: housingAmt > 0,                                                                                                tab: "expenses" },
+    { id: "essentials",   label: "Fill in essential expenses",        detail: "Groceries, utilities, transportation, etc.",   done: data.budget.essentials.filter(function(e) { return e.id !== "housing" && parseFloat(e.baseline) > 0; }).length >= 2, tab: "expenses" },
+    { id: "discretionary",label: "Add discretionary spending",        detail: "Dining, entertainment, subscriptions, etc.",   done: data.budget.discretionary.length > 0,                                                                          tab: "expenses" },
+    { id: "debt",         label: "Log consumer debt (or confirm none)",detail: "Credit cards, student loans, car loans",      done: data.debts.filter(function(d) { return !d.isMortgage; }).length > 0,                                            tab: "expenses" },
+    { id: "emergency",    label: "Set an emergency fund goal",        detail: "Monthly contribution and target balance",      done: parseFloat(data.savings.emergencyFund.monthly) > 0 || parseFloat(data.savings.emergencyFund.goal) > 0,          tab: "savings"  },
+    { id: "retirement",   label: "Configure retirement contributions", detail: "401k, Roth IRA, or HSA",                      done: totalRetirementMonthly > 0,                                                                                    tab: "invest"   }
+  ];
+  var profileIncomplete = profileItems.filter(function(i) { return !i.done; });
+  var profileDoneCount = profileItems.length - profileIncomplete.length;
+  var profilePct = Math.round(profileDoneCount / profileItems.length * 100);
+  var profileCardEl = (!profileCardDismissed && profileIncomplete.length > 0) ? El("div", {
+    key: "profile-card",
+    style: { background: "linear-gradient(145deg, #111c28, #0d1620)", border: "1px solid #1a2840", borderRadius: 12, padding: "16px 20px", marginBottom: 14 }
+  }, [
+    El("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } }, [
+      El("div", { key: "left" }, [
+        El("div", { key: "title", style: { fontSize: 13, fontWeight: 700, color: "#e8f0f8", marginBottom: 2, fontFamily: "'Syne', sans-serif" } }, "Complete your profile"),
+        El("div", { key: "sub", style: { fontSize: 11, color: "#4a7fa5" } }, profileDoneCount + " of " + profileItems.length + " sections filled in")
+      ]),
+      El("div", { key: "pct", style: { fontFamily: "'DM Mono', monospace", fontSize: 22, fontWeight: 700, color: "#60a5fa" } }, profilePct + "%")
+    ]),
+    El("div", { key: "bar", style: { height: 4, background: "#0a1520", borderRadius: 2, marginBottom: 14, overflow: "hidden" } },
+      El("div", { style: { height: "100%", width: profilePct + "%", background: "linear-gradient(90deg, #1d4ed8, #60a5fa)", borderRadius: 2, transition: "width 0.4s ease" } })
+    ),
+    El("div", { key: "items" }, profileItems.map(function(item) {
+      return El("div", { key: item.id, style: { display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid #0d1620" } }, [
+        El("div", { key: "icon", style: { width: 16, height: 16, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: item.done ? "#10b98118" : "transparent", border: "1.5px solid " + (item.done ? "#10b98166" : "#1e3a5f") } },
+          item.done && El("div", { style: { width: 7, height: 7, borderRadius: "50%", background: "#10b981" } })
+        ),
+        El("div", { key: "text", style: { flex: 1, minWidth: 0 } }, [
+          El("div", { key: "lbl", style: { fontSize: 12, color: item.done ? "#4a7fa5" : "#e8f0f8", fontWeight: item.done ? 400 : 500, textDecoration: item.done ? "line-through" : "none" } }, item.label),
+          !item.done && El("div", { key: "det", style: { fontSize: 11, color: "#3a5a7a", marginTop: 1 } }, item.detail)
+        ]),
+        !item.done && El("button", { key: "go", onClick: function() { setTab(item.tab); },
+          style: { background: "none", border: "1px solid #1e3a5f", borderRadius: 6, color: "#60a5fa", fontSize: 11, cursor: "pointer", padding: "4px 10px", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }
+        }, "Go →")
+      ]);
+    })),
+    El("button", { key: "dismiss", onClick: dismissProfileCard,
+      style: { background: "none", border: "none", color: "#3a5a7a", fontSize: 11, cursor: "pointer", marginTop: 12, padding: 0, fontFamily: "'DM Sans', sans-serif" }
+    }, "Dismiss — I’ll explore on my own")
+  ]) : null;
   function commitDebtSort() {
     stableSortRef.current = data.debts.slice();
     setStableSortVersion(function(v) { return v + 1; });
@@ -1447,7 +1500,7 @@ function App() {
     color: parseFloat(savingsRate) > 0 ? "#60a5fa" : "#3a5a7a",
     sub: parseFloat(savingsRate) > 0 ? null : "Add income & savings",
     tooltip: "How much of your gross income you're setting aside across all accounts. 10% = getting started, 15% = on track, 20%+ = building wealth aggressively."
-  })]), El("div", {
+  })]), profileCardEl, El("div", {
     key: "grid",
     style: {
       display: "grid",
@@ -1914,7 +1967,7 @@ function App() {
   }, [El("span", null, "Monthly take-home"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#10b981",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(netMonthly))]), El("div", {
@@ -1929,7 +1982,7 @@ function App() {
   }, [El("span", null, "Inferred deductions"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#ef4444"
+      color: "#60a5fa"
     }
   }, fmt(inferredDeductions))])]), El("div", {
     key: "switch",
@@ -1976,7 +2029,7 @@ function App() {
   }, "Traditional 401k (" + (parseFloat(data.retirement.traditional401kPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#10b981",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(trad401kMonthly) + "/mo")]), El("div", {
@@ -1993,7 +2046,7 @@ function App() {
   }, "Roth 401k (" + (parseFloat(data.retirement.roth401kPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#a78bfa",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(roth401kMonthly) + "/mo")]), El("div", {
@@ -2010,7 +2063,7 @@ function App() {
   }, "Employer match (" + (parseFloat(data.retirement.employerMatchPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#10b981",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(employerMatch) + "/mo")]), El("div", {
@@ -2044,7 +2097,7 @@ function App() {
   }, "HSA"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
-      color: "#f59e0b",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(hsaMonthly) + "/mo")]), El("div", {
@@ -5369,44 +5422,23 @@ function App() {
       marginBottom: 12
     }
   }, "Quick Start \u2014 3 questions, then your overview"),
-  El("div", {
-    key: "btns",
+  El("label", {
+    key: "imp",
     style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 12,
-      marginBottom: 12
-    }
-  }, [El("button", {
-    key: "new",
-    onClick: startOnboarding,
-    style: {
-      padding: "14px 20px",
+      padding: "12px 20px",
       background: "#0f1923",
       border: "1px solid #1e3a5f",
       borderRadius: 10,
       color: "#60a5fa",
-      fontSize: 14,
-      fontWeight: 700,
-      cursor: "pointer",
-      fontFamily: "'DM Sans', sans-serif"
-    }
-  }, "Full Setup"), El("label", {
-    key: "imp",
-    style: {
-      padding: "14px 20px",
-      background: "#0f1923",
-      border: "1px solid #1e3a5f",
-      borderRadius: 10,
-      color: "#a78bfa",
-      fontSize: 14,
-      fontWeight: 700,
+      fontSize: 13,
+      fontWeight: 600,
       cursor: "pointer",
       fontFamily: "'DM Sans', sans-serif",
       textAlign: "center",
-      display: "block"
+      display: "block",
+      marginBottom: 12
     }
-  }, ["Import backup", El("input", {
+  }, ["Import a backup", El("input", {
     key: "fi",
     type: "file",
     accept: ".json",
@@ -5435,7 +5467,7 @@ function App() {
     style: {
       display: "none"
     }
-  })])]), El("button", {
+  })]), El("button", {
     key: "skip",
     onClick: completeOnboarding,
     style: {
@@ -5601,10 +5633,7 @@ function App() {
           ]);
         }),
         El("div", { key: "plan", style: { marginTop: 10, background: "#0d1a28", border: "1px solid #f59e0b44", borderRadius: 8, padding: "12px 14px" } }, [
-          El("div", { key: "hdr", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } }, [
-            El("div", { key: "n", style: { fontSize: 13, fontWeight: 700, color: "#f59e0b" } }, "Plan"),
-            El("div", { key: "badge", style: { fontSize: 10, color: "#f59e0b", background: "#f59e0b22", padding: "2px 7px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.06em" } }, "START HERE")
-          ]),
+          El("div", { key: "n", style: { fontSize: 13, fontWeight: 700, color: "#f59e0b", marginBottom: 4 } }, "Plan"),
           El("div", { key: "d", style: { fontSize: 12, color: "#8b9cb5", lineHeight: 1.6 } }, "The most powerful tab. Add extra debt payments or adjust spending and watch your debt-free date move in real time \u2014 without touching your real data.")
         ])
       ])

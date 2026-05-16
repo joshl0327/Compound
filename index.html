@@ -41,31 +41,31 @@ var STORAGE_KEY = "compound_v4";
 var ESSENTIAL_DEFAULTS = [{
   id: "housing",
   name: "Housing",
-  amount: 2200
+  amount: 0
 }, {
   id: "groceries",
   name: "Groceries",
-  amount: 600
+  amount: 0
 }, {
   id: "utilities",
   name: "Utilities",
-  amount: 180
+  amount: 0
 }, {
   id: "transportation",
   name: "Transportation",
-  amount: 350
+  amount: 0
 }, {
   id: "car_insurance",
   name: "Car Insurance",
-  amount: 280
+  amount: 0
 }, {
   id: "phone",
   name: "Phone",
-  amount: 90
+  amount: 0
 }, {
   id: "subscriptions",
   name: "Subscriptions",
-  amount: 60
+  amount: 0
 }];
 var DISC_SUGGESTIONS = [{
   group: "Dining and Social",
@@ -347,8 +347,12 @@ function SectionTitle(props) {
 }
 function Badge(props) {
   var color = props.color || "#3b82f6";
+  var _tip = useState(false);
+  var tipOpen = _tip[0];
+  var setTipOpen = _tip[1];
   return El("div", {
     style: {
+      position: "relative",
       background: "#0a1520",
       borderRadius: 10,
       padding: "12px 14px",
@@ -361,9 +365,32 @@ function Badge(props) {
       color: "#8b9cb5",
       letterSpacing: "0.08em",
       textTransform: "uppercase",
-      marginBottom: 4
+      marginBottom: 4,
+      display: "flex",
+      alignItems: "center",
+      gap: 5
     }
-  }, props.label), El("div", {
+  }, [props.label, props.tooltip && El("button", {
+    key: "tip-btn",
+    onMouseEnter: function() { setTipOpen(true); },
+    onMouseLeave: function() { setTipOpen(false); },
+    style: {
+      background: "none",
+      border: "1px solid #2a4060",
+      borderRadius: "50%",
+      width: 14,
+      height: 14,
+      fontSize: 9,
+      color: tipOpen ? "#60a5fa" : "#4a7fa5",
+      cursor: "default",
+      padding: 0,
+      flexShrink: 0,
+      fontFamily: "'DM Sans', sans-serif",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, "?")]), El("div", {
     key: "val",
     style: {
       fontSize: props.large ? 24 : 20,
@@ -378,7 +405,25 @@ function Badge(props) {
       color: "#4a7fa5",
       marginTop: 2
     }
-  }, props.sub)]);
+  }, props.sub), tipOpen && props.tooltip && El("div", {
+    key: "tip-pop",
+    style: {
+      position: "absolute",
+      top: "100%",
+      left: 0,
+      zIndex: 100,
+      background: "#0d1e30",
+      border: "1px solid #1e3a5f",
+      borderRadius: 8,
+      padding: "10px 12px",
+      marginTop: 4,
+      fontSize: 12,
+      color: "#8b9cb5",
+      lineHeight: 1.6,
+      width: 220,
+      pointerEvents: "none"
+    }
+  }, props.tooltip)]);
 }
 function RowHeader() {
   return El("div", {
@@ -539,7 +584,7 @@ function LineChart(props) {
     key: "line",
     points: points,
     fill: "none",
-    stroke: "#a855f7",
+    stroke: "#a78bfa",
     strokeWidth: 2.5,
     strokeLinejoin: "round"
   }), El("circle", {
@@ -547,13 +592,13 @@ function LineChart(props) {
     cx: pad.l,
     cy: pad.t + chartH,
     r: 3,
-    fill: "#a855f7"
+    fill: "#a78bfa"
   }), El("circle", {
     key: "e",
     cx: pad.l + chartW,
     cy: pad.t + chartH - data[data.length - 1].balance / maxVal * chartH,
     r: 4,
-    fill: "#a855f7"
+    fill: "#a78bfa"
   })]);
 }
 function App() {
@@ -657,6 +702,11 @@ function App() {
   var _setupDone = useState(false);
   var setupDone = _setupDone[0];
   var setSetupDone = _setupDone[1];
+  var _qs = useState({ step: 0, salary: "", takeHome: "", freq: "biweekly", housing: "", hasDebt: null, debts: [{ name: "", bal: "", rate: "", min: "" }], currentDebt: 0 });
+  var qs = _qs[0];
+  var setQs = _qs[1];
+  var setStableSortVersion = useState(0)[1];
+  var stableSortRef = useRef(null);
   var ONBOARD_STEPS = [{
     tab: "income",
     title: "Step 1 of 6 \u2014 Income",
@@ -687,7 +737,7 @@ function App() {
     title: "Step 5 of 6 \u2014 Overview",
     headline: "Your complete financial picture",
     body: "Now you can see your DTI, savings rate, housing percentage, and personalized next steps \u2014 all in one place. Check Suggested Next Steps at the bottom to see what to tackle first.",
-    color: "#34d399"
+    color: "#14b8a6"
   }, {
     tab: "plan",
     title: "Step 6 of 6 \u2014 Plan",
@@ -728,6 +778,27 @@ function App() {
       step: 0
     });
     setTab(ONBOARD_STEPS[0].tab);
+  }
+  function startQuickStart() {
+    setQs({ step: 0, salary: "", takeHome: "", freq: "biweekly", housing: "", hasDebt: null, debts: [{ name: "", bal: "", rate: "", min: "" }], currentDebt: 0 });
+    setOnboard({ screen: "quickstart", step: 0 });
+  }
+  function finishQuickStart() {
+    var d = makeDefault();
+    if (qs.salary) d.income.annualSalary = qs.salary;
+    if (qs.takeHome) { d.income.takeHomePerPaycheck = qs.takeHome; d.income.frequency = qs.freq; }
+    if (qs.housing) {
+      d.budget.essentials = d.budget.essentials.map(function(e) {
+        return e.id === "housing" ? Object.assign({}, e, { baseline: qs.housing }) : e;
+      });
+    }
+    if (qs.hasDebt && qs.debts.length > 0) {
+      d.debts = qs.debts.filter(function(dt) { return dt.name; }).map(function(dt, i) {
+        return { id: "qs" + i, name: dt.name, balance: dt.bal, rate: dt.rate, minPayment: dt.min, isMortgage: false };
+      });
+    }
+    setData(d);
+    completeOnboarding();
   }
   useEffect(function () {
     try {
@@ -879,7 +950,15 @@ function App() {
     return s + (!d.isMortgage ? parseFloat(d.minPayment) || 0 : 0);
   }, 0);
   var dti = grossMonthly > 0 ? (dtiTotal / grossMonthly * 100).toFixed(1) : "0";
-  var DEBT_COLORS = ["#f97316", "#ef4444", "#a855f7", "#3b82f6", "#14b8a6", "#eab308"];
+  function debtColor(index, total) {
+    // Orange (#f97316) at top (urgent) → soft amber (#fbbf24) at bottom (lower priority)
+    var t = total <= 1 ? 0 : index / (total - 1);
+    var r = Math.round(0xf9 + (0xfb - 0xf9) * t);
+    var g = Math.round(0x73 + (0xbf - 0x73) * t);
+    var b = Math.round(0x16 + (0x24 - 0x16) * t);
+    var hex = function(n) { return n.toString(16).padStart(2, "0"); };
+    return "#" + hex(r) + hex(g) + hex(b);
+  }
   function getEffectiveRate(debt) {
     if (!debt.isPromo || !debt.promoEndDate) return parseFloat(debt.rate) || 0;
     var promoEnd = new Date(debt.promoEndDate);
@@ -1062,6 +1141,37 @@ function App() {
   // Helpful label for per-paycheck
   var ppLabel = freqObj.label;
   var perPaycheckSuffix = "per " + freqObj.short.toLowerCase();
+  function commitDebtSort() {
+    stableSortRef.current = data.debts.slice();
+    setStableSortVersion(function(v) { return v + 1; });
+  }
+  var sortedDebts = (function() {
+    var consumer = data.debts.filter(function(d) { return !d.isMortgage; });
+    var mortgage = data.debts.filter(function(d) { return d.isMortgage; });
+    var strategy = data.settings.debtStrategy;
+    if (strategy === "avalanche") {
+      consumer = consumer.slice().sort(function(a, b) { return getEffectiveRate(b) - getEffectiveRate(a); });
+    } else if (strategy === "snowball") {
+      consumer = consumer.slice().sort(function(a, b) { return (parseFloat(a.balance) || 0) - (parseFloat(b.balance) || 0); });
+    }
+    return consumer.concat(mortgage);
+  })();
+  var consumerDebtCount = sortedDebts.filter(function(d) { return !d.isMortgage; }).length;
+  var stableDebts = (function() {
+    var consumer = data.debts.filter(function(d) { return !d.isMortgage; });
+    var mortgage = data.debts.filter(function(d) { return d.isMortgage; });
+    var strategy = data.settings.debtStrategy;
+    var snap = stableSortRef.current;
+    var snapMap = {};
+    if (snap) { snap.forEach(function(d) { snapMap[d.id] = d; }); }
+    function sortKey(d) { return snap ? (snapMap[d.id] || d) : d; }
+    if (strategy === "avalanche") {
+      consumer = consumer.slice().sort(function(a, b) { return getEffectiveRate(sortKey(b)) - getEffectiveRate(sortKey(a)); });
+    } else if (strategy === "snowball") {
+      consumer = consumer.slice().sort(function(a, b) { return (parseFloat(sortKey(a).balance) || 0) - (parseFloat(sortKey(b).balance) || 0); });
+    }
+    return consumer.concat(mortgage);
+  })();
   return El("div", {
     style: {
       minHeight: "100vh",
@@ -1209,7 +1319,7 @@ function App() {
     style: {
       fontFamily: "'DM Mono', monospace",
       fontSize: 13,
-      color: "#10b981",
+      color: "#60a5fa",
       fontWeight: 700
     }
   }, fmt(netMonthly))])])])),
@@ -1292,7 +1402,7 @@ function App() {
     key: "ni",
     label: "Take-Home",
     value: fmt(netMonthly),
-    color: "#10b981",
+    color: "#60a5fa",
     sub: "/month"
   }), El(Badge, {
     key: "td",
@@ -1302,16 +1412,18 @@ function App() {
     }).reduce(function (s, d) {
       return s + (parseFloat(d.balance) || 0);
     }, 0)) : "—",
-    color: data.debts.filter(function(d){return !d.isMortgage;}).length > 0 ? "#f97316" : "#3a5a7a",
+    color: data.debts.filter(function(d){return !d.isMortgage;}).length > 0 ? "#60a5fa" : "#3a5a7a",
     sub: data.debts.filter(function(d){return !d.isMortgage;}).length > 0 ? (data.debts.some(function (d) {
       return d.isMortgage;
-    }) ? "excl. mortgage" : null) : "Add debts in Expenses"
+    }) ? "excl. mortgage" : null) : "Add debts in Expenses",
+    tooltip: "Your non-mortgage debt total (credit cards, student loans, car loans). Paying this down frees up monthly cash flow and improves your DTI."
   }), El(Badge, {
     key: "hp",
     label: "Housing %",
     value: parseFloat(housingPct) > 0 ? housingPct + "%" : "—",
     color: parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? "#f97316" : "#10b981") : "#3a5a7a",
-    sub: parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? "above 28% rule" : "within 28% rule") : "Add housing in Expenses"
+    sub: parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? "above 28% rule" : "within 28% rule") : "Add housing in Expenses",
+    tooltip: "Your rent or mortgage as a share of gross monthly income. The 28% guideline: spending more than this on housing limits your ability to save and handle debt."
   }), El(Badge, {
     key: "dti",
     label: "Total DTI",
@@ -1319,19 +1431,22 @@ function App() {
     color: parseFloat(dti) > 0 ? (parseFloat(dti) > 36 ? "#ef4444" : parseFloat(dti) > 20 ? "#f97316" : "#10b981") : "#3a5a7a",
     sub: parseFloat(dti) > 0 ? (data.debts.some(function (d) {
       return d.isMortgage;
-    }) ? "Consumer DTI " + consumerDti + "%" : parseFloat(dti) > 36 ? "high" : parseFloat(dti) > 20 ? "moderate" : "healthy") : "Add income & debts"
+    }) ? "Consumer DTI " + consumerDti + "%" : parseFloat(dti) > 36 ? "high" : parseFloat(dti) > 20 ? "moderate" : "healthy") : "Add income & debts",
+    tooltip: "Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; lenders see above 36% as high-risk. Consumer DTI (non-housing debt) should stay under 20%."
   }), El(Badge, {
     key: "rr",
     label: "Retirement Rate",
     value: parseFloat(retireRate) > 0 ? retireRate + "%" : "—",
-    color: parseFloat(retireRate) > 0 ? "#34d399" : "#3a5a7a",
-    sub: parseFloat(retireRate) > 0 ? null : "Set contributions in Invest & Retire"
+    color: parseFloat(retireRate) > 0 ? "#60a5fa" : "#3a5a7a",
+    sub: parseFloat(retireRate) > 0 ? null : "Set contributions in Invest & Retire",
+    tooltip: "Percentage of gross income going to retirement accounts (401k, Roth IRA, HSA). 15% is a common target for retiring comfortably at 65. Capture any employer match first — it's free money."
   }), El(Badge, {
     key: "sr",
     label: "Total Savings Rate",
     value: parseFloat(savingsRate) > 0 ? savingsRate + "%" : "—",
-    color: parseFloat(savingsRate) > 0 ? "#a78bfa" : "#3a5a7a",
-    sub: parseFloat(savingsRate) > 0 ? null : "Add income & savings"
+    color: parseFloat(savingsRate) > 0 ? "#60a5fa" : "#3a5a7a",
+    sub: parseFloat(savingsRate) > 0 ? null : "Add income & savings",
+    tooltip: "How much of your gross income you're setting aside across all accounts. 10% = getting started, 15% = on track, 20%+ = building wealth aggressively."
   })]), El("div", {
     key: "grid",
     style: {
@@ -1354,14 +1469,14 @@ function App() {
     }
   }, "No debts added yet. Add them in the Expenses tab.") : El("div", {
     key: "list"
-  }, [data.debts.map(function (debt, i) {
+  }, [sortedDebts.map(function (debt, i) {
     var balance = parseFloat(debt.balance) || 0;
     var rate = parseFloat(debt.rate) || 0;
     var minPay = parseFloat(debt.minPayment) || 0;
     var planPay = parseFloat(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment) || minPay;
     var months = calcPayoffMonths(balance, rate, planPay);
     var extra = planPay - minPay;
-    var color = DEBT_COLORS[i % DEBT_COLORS.length];
+    var color = debt.isMortgage ? "#2a4060" : debtColor(i, consumerDebtCount);
     return El("div", {
       key: debt.id,
       style: {
@@ -1450,7 +1565,7 @@ function App() {
     }
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#34d399"
+    accent: "#14b8a6"
   }, "Monthly Savings"), El("div", {
     key: "grid",
     style: {
@@ -1468,26 +1583,26 @@ function App() {
     key: "ret",
     label: "Retirement",
     value: fmt(totalRetirementMonthly),
-    color: "#a78bfa",
+    color: "#60a5fa",
     sub: "/month"
   }), El(Badge, {
     key: "inv",
     label: "Brokerage",
     value: fmt(investMonthly),
-    color: "#34d399",
+    color: "#60a5fa",
     sub: "/month"
   }), El(Badge, {
     key: "gen",
     label: "General",
     value: fmt(genMonthly),
-    color: "#f59e0b",
+    color: "#60a5fa",
     sub: "/month"
   })])])), El(Card, {
     key: "bud"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#a78bfa"
-  }, "Budget Summary (Plan)"), [["Essentials", fmt(essTotalP), "#60a5fa"], ["Debt Payments", fmt(debtPlanTotal), "#f97316"], ["Discretionary", fmt(discPlanTotal), "#f59e0b"], ["All Savings", fmt(totalSavedMonthly), "#10b981"]].map(function (row) {
+  }, "Budget Summary (Plan)"), [["Essentials", fmt(essTotalP), "#60a5fa"], ["Debt Payments", fmt(debtPlanTotal), "#60a5fa"], ["Discretionary", fmt(discPlanTotal), "#60a5fa"], ["All Savings", fmt(totalSavedMonthly), "#60a5fa"]].map(function (row) {
     return El("div", {
       key: row[0],
       style: {
@@ -2761,31 +2876,54 @@ function App() {
     data.debts.length > 0 && El("div", {
       key: "list",
       style: {display: "flex", flexDirection: "column", gap: 10, marginBottom: 20}
-    }, data.debts.map(function(debt, i) {
-      var color = DEBT_COLORS[i % DEBT_COLORS.length];
+    }, stableDebts.map(function(debt, i) {
+      var color = debt.isMortgage ? "#2a4060" : debtColor(i, consumerDebtCount);
       var promoMonthsLeft = getMonthsUntilPromoEnd(debt);
       var displayRate = debt.isPromo && promoMonthsLeft > 0 ? "0% promo" : (parseFloat(debt.isPromo ? debt.postPromoRate : debt.rate) || 0) + "% APR";
       var minPay = parseFloat(debt.minPayment) || 0;
       var planPay = parseFloat(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment) || minPay;
       var extra = planPay - minPay;
       return El("div", {key: debt.id, style: {background: "#0a1520", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid " + color}}, [
-        El("div", {key: "top", style: {display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10}}, [
-          El("div", {key: "info"}, [
-            El("div", {key: "n", style: {display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 14, flexWrap: "wrap"}}, [
-              debt.name,
-              debt.isMortgage && El("span", {key: "m", style: {fontSize: 10, background: "#1d4ed833", color: "#60a5fa", border: "1px solid #1d4ed855", borderRadius: 4, padding: "1px 6px", fontWeight: 600}}, "MORTGAGE"),
-              debt.isPromo && El("span", {key: "p", style: {fontSize: 10, background: "#10b98122", color: "#10b981", border: "1px solid #10b98144", borderRadius: 4, padding: "1px 6px", fontWeight: 600}}, "PROMO")
-            ]),
-            El("div", {key: "d", style: {fontSize: 11, color: "#4a7fa5", marginTop: 3}}, fmt(parseFloat(debt.balance) || 0) + " at " + displayRate)
+        El("div", {key: "top", style: {display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10}}, [
+          El("div", {key: "name-row", style: {display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0}}, [
+            El("input", {key: "name-inp", type: "text", value: debt.name,
+              onChange: function(e) { var v = e.target.value; setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {name: v}) : x; })}); }); },
+              style: {background: "none", border: "none", outline: "none", fontWeight: 700, fontSize: 14, color: "#e8f0f8", fontFamily: "'DM Sans', sans-serif", padding: 0, flex: 1, minWidth: 0}
+            }),
+            debt.isMortgage && El("span", {key: "m", style: {fontSize: 10, background: "#1d4ed833", color: "#60a5fa", border: "1px solid #1d4ed855", borderRadius: 4, padding: "1px 6px", fontWeight: 600, flexShrink: 0}}, "MORTGAGE"),
+            debt.isPromo && El("span", {key: "p", style: {fontSize: 10, background: "#10b98122", color: "#10b981", border: "1px solid #10b98144", borderRadius: 4, padding: "1px 6px", fontWeight: 600, flexShrink: 0}}, "PROMO")
           ]),
           El("button", {key: "del", onClick: function() {
             setData(function(d) { return Object.assign({}, d, {debts: d.debts.filter(function(x) { return x.id !== debt.id; })}); });
-          }, style: {background: "none", border: "none", color: "#3a5a7a", fontSize: 16, padding: "2px 6px", cursor: "pointer"}}, "×")
+          }, style: {background: "none", border: "none", color: "#3a5a7a", fontSize: 16, padding: "2px 6px", cursor: "pointer", flexShrink: 0}}, "×")
+        ]),
+        El("div", {key: "fields", style: {display: "grid", gridTemplateColumns: debt.isMortgage ? "1fr" : "1fr 1fr", gap: 8, marginBottom: 8}}, [
+          El("div", {key: "bal-col"}, [
+            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Balance"),
+            El("input", {key: "inp", type: "text", inputMode: "numeric", value: fmtCurrencyInput(debt.balance),
+              onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {balance: v}) : x; })}); }); },
+              onBlur: commitDebtSort,
+              onKeyDown: function(e) { if (e.key === "Enter") commitDebtSort(); },
+              style: {width: "100%", background: "#060e18", border: "1px solid #1e2d3d", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
+            })
+          ]),
+          !debt.isMortgage && El("div", {key: "rate-col"}, [
+            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, debt.isPromo && promoMonthsLeft > 0 ? "Post-Promo APR %" : "APR %"),
+            El("input", {key: "inp", type: "text", inputMode: "decimal", value: debt.isPromo ? (debt.postPromoRate || "") : (debt.rate || ""),
+              onChange: function(e) { var v = e.target.value.replace(/[^0-9.]/g, ""); var field = debt.isPromo ? "postPromoRate" : "rate"; setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { if (x.id !== debt.id) return x; var u = {}; u[field] = v; return Object.assign({}, x, u); })}); }); },
+              onBlur: commitDebtSort,
+              onKeyDown: function(e) { if (e.key === "Enter") commitDebtSort(); },
+              style: {width: "100%", background: "#060e18", border: "1px solid #1e2d3d", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
+            })
+          ])
         ]),
         El("div", {key: "payments", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8}}, [
           El("div", {key: "min-col"}, [
             El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Minimum"),
-            El("div", {key: "val", style: {background: "#060e18", border: "1px solid #1e2d3d", borderRadius: 6, padding: "6px 8px", color: "#5a7a9a", fontSize: 13, fontFamily: "'DM Mono', monospace"}}, fmt(minPay))
+            El("input", {key: "inp", type: "text", inputMode: "numeric", value: fmtCurrencyInput(debt.minPayment),
+              onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {minPayment: v}) : x; })}); }); },
+              style: {width: "100%", background: "#060e18", border: "1px solid #1e2d3d", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
+            })
           ]),
           El("div", {key: "plan-col"}, [
             El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, display: "flex", alignItems: "center", gap: 6}}, [
@@ -3191,7 +3329,7 @@ function App() {
   }, {
     step: "6",
     label: "Taxable brokerage investing",
-    color: "#34d399"
+    color: "#a78bfa"
   }].map(function (item) {
     return El("div", {
       key: item.step,
@@ -3634,7 +3772,7 @@ function App() {
     key: "info"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#a855f7"
+    accent: "#a78bfa"
   }, "Projection Settings"), El(Input, {
     key: "age",
     label: "Current Age",
@@ -3761,7 +3899,7 @@ function App() {
     key: "pb",
     label: "Projected Balance",
     value: projBal > 0 ? fmtShort(projBal) : "—",
-    color: projBal > 0 ? "#a855f7" : "#3a5a7a",
+    color: projBal > 0 ? "#60a5fa" : "#3a5a7a",
     sub: projBal > 0 ? null : "Add contributions or a current balance"
   }), El(Badge, {
     key: "ytr",
@@ -3772,19 +3910,19 @@ function App() {
     key: "mi",
     label: "Monthly Income (4% rule)",
     value: projBal > 0 ? fmt(projBal * 0.04 / 12) : "—",
-    color: projBal > 0 ? "#10b981" : "#3a5a7a",
+    color: projBal > 0 ? "#60a5fa" : "#3a5a7a",
     sub: projBal > 0 ? "/month in retirement" : "Set retirement target first"
   }), El(Badge, {
     key: "ai",
     label: "Annual Income (4% rule)",
     value: projBal > 0 ? fmtShort(projBal * 0.04) : "—",
-    color: projBal > 0 ? "#f59e0b" : "#3a5a7a",
+    color: projBal > 0 ? "#60a5fa" : "#3a5a7a",
     sub: projBal > 0 ? "/year in retirement" : "Set retirement target first"
   })]), El(Card, {
     key: "chart"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#a855f7"
+    accent: "#a78bfa"
   }, "Projected Balance Growth"), El("div", {
     key: "note",
     style: {
@@ -3801,7 +3939,7 @@ function App() {
   // ===== INVEST & RETIRE (brokerage section) =====
   tab === "invest" && El("div", {
     key: "invest"
-  }, [El(SectionTitle, {key: "inv-hdr", accent: "#34d399", style: {marginTop: 8, marginBottom: 14}}, "Brokerage & Investing"), El("div", {
+  }, [El(SectionTitle, {key: "inv-hdr", accent: "#a78bfa", style: {marginTop: 8, marginBottom: 14}}, "Brokerage & Investing"), El("div", {
     key: "prereq",
     style: {
       background: "linear-gradient(135deg, #0d1a10, #0a1410)",
@@ -3874,7 +4012,7 @@ function App() {
     key: "inputs"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#34d399"
+    accent: "#a78bfa"
   }, "Brokerage Account"), El("div", {
     key: "note",
     style: {
@@ -3939,7 +4077,7 @@ function App() {
     key: "projection"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#34d399"
+    accent: "#a78bfa"
   }, "Simple Projection"), El("p", {
     key: "desc",
     style: {
@@ -3992,7 +4130,7 @@ function App() {
         style: {
           fontFamily: "'DM Mono', monospace",
           fontSize: 16,
-          color: "#34d399",
+          color: "#60a5fa",
           fontWeight: 700
         }
       }, fmtShort(p.value))]);
@@ -4710,7 +4848,7 @@ function App() {
     }
   }, El("div", null, [El(SectionTitle, {
     key: "st",
-    accent: "#34d399"
+    accent: "#14b8a6"
   }, "Savings Goal Planner"), data.plan && data.plan.goals && data.plan.goals.length > 0 && El("div", {
     key: "goals-list",
     style: {
@@ -4728,7 +4866,7 @@ function App() {
         background: "#0a1520",
         borderRadius: 10,
         marginBottom: 8,
-        borderLeft: "3px solid #34d399",
+        borderLeft: "3px solid #14b8a6",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
@@ -4755,7 +4893,7 @@ function App() {
       key: "proj",
       style: {
         fontSize: 11,
-        color: "#34d399",
+        color: "#14b8a6",
         marginTop: 2
       }
     }, months + " months \u2192 " + projDate)]), El("button", {
@@ -4925,7 +5063,7 @@ function App() {
     },
     style: {
       padding: "8px 16px",
-      background: "#34d399",
+      background: "#14b8a6",
       border: "none",
       borderRadius: 8,
       color: "#000",
@@ -5213,7 +5351,24 @@ function App() {
       lineHeight: 1.6
     }
   }, "Everything is stored locally in your browser. Nothing is sent to any server. Use the Export button to back up your data or move it to another device.")])]),
-  // Buttons \u2014 Skip is equally visible, not hidden
+  // Buttons
+  El("button", {
+    key: "qs",
+    onClick: startQuickStart,
+    style: {
+      width: "100%",
+      padding: "14px 20px",
+      background: "linear-gradient(135deg, #1d4ed8, #0ea5e9)",
+      border: "none",
+      borderRadius: 10,
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer",
+      fontFamily: "'DM Sans', sans-serif",
+      marginBottom: 12
+    }
+  }, "Quick Start \u2014 3 questions, then your overview"),
   El("div", {
     key: "btns",
     style: {
@@ -5227,16 +5382,16 @@ function App() {
     onClick: startOnboarding,
     style: {
       padding: "14px 20px",
-      background: "linear-gradient(135deg, #1d4ed8, #0ea5e9)",
-      border: "none",
+      background: "#0f1923",
+      border: "1px solid #1e3a5f",
       borderRadius: 10,
-      color: "#fff",
+      color: "#60a5fa",
       fontSize: 14,
       fontWeight: 700,
       cursor: "pointer",
       fontFamily: "'DM Sans', sans-serif"
     }
-  }, "First time"), El("label", {
+  }, "Full Setup"), El("label", {
     key: "imp",
     style: {
       padding: "14px 20px",
@@ -5296,6 +5451,184 @@ function App() {
       fontFamily: "'DM Sans', sans-serif"
     }
   }, "Skip \u2014 I'll explore on my own")])),
+  // ===== QUICK START WIZARD =====
+  onboard.screen === "quickstart" && El("div", {
+    key: "qs-overlay",
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(4,9,16,0.92)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: 20
+    }
+  }, El("div", {
+    style: {
+      background: "linear-gradient(145deg, #111c28, #0d1620)",
+      border: "1px solid #1a2840",
+      borderRadius: 20,
+      padding: 32,
+      maxWidth: 480,
+      width: "100%"
+    }
+  }, [
+    El("div", { key: "hdr", style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 } }, [
+      El("div", { key: "title", style: { fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16, color: "#e8f0f8" } }, "Quick Start"),
+      qs.step < 3 && El("div", { key: "ct", style: { fontSize: 12, color: "#4a7fa5" } }, (qs.step + 1) + " of 3")
+    ]),
+    El("div", { key: "prog", style: { height: 3, background: "#0a1520", borderRadius: 2, marginBottom: 28, overflow: "hidden" } },
+      El("div", { style: { height: "100%", width: (qs.step < 3 ? (qs.step + 1) / 3 * 100 : 100) + "%", background: "linear-gradient(90deg, #1d4ed8, #0ea5e9)", borderRadius: 2, transition: "width 0.3s ease" } })
+    ),
+    qs.step === 0 && El("div", { key: "s0" }, [
+      El("div", { key: "h", style: { fontSize: 18, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif", marginBottom: 6 } }, "What do you earn?"),
+      El("div", { key: "sub", style: { fontSize: 13, color: "#5a7a9a", marginBottom: 20, lineHeight: 1.6 } }, "We\u2019ll use this to calculate your savings rate, housing percentage, and financial benchmarks."),
+      El("div", { key: "f1", style: { marginBottom: 14 } }, [
+        El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Annual Salary"),
+        El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 65,000", value: qs.salary ? parseInt(qs.salary).toLocaleString("en-US") : "",
+          onChange: function(e) { setQs(Object.assign({}, qs, { salary: e.target.value.replace(/[^0-9]/g, "") })); },
+          style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } }),
+        qs.salary && El("div", { key: "mo", style: { fontSize: 12, color: "#10b981", marginTop: 6, fontFamily: "'DM Mono', monospace" } },
+          "= " + fmt(parseInt(qs.salary) / 12) + " / month")
+      ]),
+      El("div", { key: "f2", style: { marginBottom: 14 } }, [
+        El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Take-Home Per Paycheck"),
+        El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 2,100", value: qs.takeHome ? parseInt(qs.takeHome).toLocaleString("en-US") : "",
+          onChange: function(e) { setQs(Object.assign({}, qs, { takeHome: e.target.value.replace(/[^0-9]/g, "") })); },
+          style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
+      ]),
+      El("div", { key: "f3" }, [
+        El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Pay Frequency"),
+        El("div", { key: "opts", style: { display: "flex", gap: 8 } }, FREQ_OPTIONS.map(function(f) {
+          return El("button", {
+            key: f.id,
+            onClick: function() { setQs(Object.assign({}, qs, { freq: f.id })); },
+            style: { flex: 1, padding: "8px 4px", background: qs.freq === f.id ? "#1e3a5f" : "#0a1520", border: "1px solid " + (qs.freq === f.id ? "#3b82f6" : "#1e3a5f"), borderRadius: 6, color: qs.freq === f.id ? "#60a5fa" : "#4a7fa5", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+          }, f.label);
+        }))
+      ])
+    ]),
+    qs.step === 1 && El("div", { key: "s1" }, [
+      El("div", { key: "h", style: { fontSize: 18, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif", marginBottom: 6 } }, "What\u2019s your monthly housing cost?"),
+      El("div", { key: "sub", style: { fontSize: 13, color: "#5a7a9a", marginBottom: 20, lineHeight: 1.6 } }, "Rent, mortgage, or HOA dues. The 28% guideline is a common benchmark \u2014 though in high cost-of-living areas, it\u2019s often not realistic."),
+      El("input", { key: "inp", type: "number", placeholder: "e.g. 1800", value: qs.housing,
+        onChange: function(e) { setQs(Object.assign({}, qs, { housing: e.target.value })); },
+        style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } }),
+      qs.salary && qs.housing && El("div", { key: "hint", style: { fontSize: 12, color: "#4a7fa5", marginTop: 8, fontFamily: "'DM Mono', monospace" } },
+        (parseFloat(qs.housing) / (parseFloat(qs.salary) / 12) * 100).toFixed(1) + "% of gross income \u00b7 28% is the common guideline")
+    ]),
+    qs.step === 2 && El("div", { key: "s2" }, [
+      El("div", { key: "h", style: { fontSize: 18, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif", marginBottom: 6 } }, "Do you carry consumer debt?"),
+      El("div", { key: "sub", style: { fontSize: 13, color: "#5a7a9a", marginBottom: 20, lineHeight: 1.6 } }, "Credit cards, student loans, car loans \u2014 not your mortgage. You can add more later."),
+      qs.hasDebt === null && El("div", { key: "choice", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, [
+        El("button", { key: "yes", onClick: function() { setQs(Object.assign({}, qs, { hasDebt: true })); },
+          style: { padding: "14px", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 10, color: "#60a5fa", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" } }, "Yes"),
+        El("button", { key: "no", onClick: function() { setQs(Object.assign({}, qs, { hasDebt: false })); },
+          style: { padding: "14px", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 10, color: "#60a5fa", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" } }, "No debt")
+      ]),
+      qs.hasDebt === true && El("div", { key: "fields" }, [
+        El("div", { key: "car-hdr", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 } }, [
+          El("button", { key: "prev", disabled: qs.currentDebt === 0,
+            onClick: function() { setQs(Object.assign({}, qs, { currentDebt: qs.currentDebt - 1 })); },
+            style: { background: "none", border: "1px solid #1e3a5f", borderRadius: 6, color: qs.currentDebt === 0 ? "#2a4060" : "#60a5fa", width: 28, height: 28, cursor: qs.currentDebt === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" } }, "\u2190"),
+          El("div", { key: "ind", style: { flex: 1, textAlign: "center", fontSize: 12, color: "#4a7fa5" } }, "Debt " + (qs.currentDebt + 1) + " of " + qs.debts.length),
+          qs.debts.length > 1 && El("button", { key: "rm",
+            onClick: function() { var nd = qs.debts.filter(function(_, j) { return j !== qs.currentDebt; }); setQs(Object.assign({}, qs, { debts: nd, currentDebt: Math.min(qs.currentDebt, nd.length - 1) })); },
+            style: { background: "none", border: "1px solid #2a4060", borderRadius: 6, color: "#5a7a9a", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 14, fontFamily: "'DM Sans', sans-serif" } }, "\u00d7"),
+          El("button", { key: "next-car", disabled: qs.currentDebt === qs.debts.length - 1,
+            onClick: function() { setQs(Object.assign({}, qs, { currentDebt: qs.currentDebt + 1 })); },
+            style: { background: "none", border: "1px solid #1e3a5f", borderRadius: 6, color: qs.currentDebt === qs.debts.length - 1 ? "#2a4060" : "#60a5fa", width: 28, height: 28, cursor: qs.currentDebt === qs.debts.length - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'DM Sans', sans-serif" } }, "\u2192")
+        ]),
+        El("div", { key: "cur-debt" }, [
+          El("div", { key: "f1", style: { marginBottom: 10 } }, [
+            El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Debt Name"),
+            El("input", { key: "inp", type: "text", placeholder: "e.g. Visa, Student Loan", value: (qs.debts[qs.currentDebt] || {}).name || "",
+              onChange: function(e) { var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { name: e.target.value }); setQs(Object.assign({}, qs, { debts: d })); },
+              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: "none" } })
+          ]),
+          El("div", { key: "row1", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 } }, [
+            El("div", { key: "bal" }, [
+              El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Balance"),
+              El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 5,000", value: (qs.debts[qs.currentDebt] || {}).bal ? parseInt((qs.debts[qs.currentDebt] || {}).bal).toLocaleString("en-US") : "",
+                onChange: function(e) { var raw = e.target.value.replace(/[^0-9]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { bal: raw }); setQs(Object.assign({}, qs, { debts: d })); },
+                style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
+            ]),
+            El("div", { key: "rate" }, [
+              El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "APR %"),
+              El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 19.9", value: (qs.debts[qs.currentDebt] || {}).rate || "",
+                onChange: function(e) { var val = e.target.value.replace(/[^0-9.]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { rate: val }); setQs(Object.assign({}, qs, { debts: d })); },
+                style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
+            ])
+          ]),
+          El("div", { key: "f2" }, [
+            El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Monthly Minimum"),
+            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 150", value: (qs.debts[qs.currentDebt] || {}).min ? parseInt((qs.debts[qs.currentDebt] || {}).min).toLocaleString("en-US") : "",
+              onChange: function(e) { var raw = e.target.value.replace(/[^0-9]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { min: raw }); setQs(Object.assign({}, qs, { debts: d })); },
+              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
+          ])
+        ]),
+        El("div", { key: "actions", style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 } }, [
+          El("button", { key: "add",
+            onClick: function() { var nd = qs.debts.concat([{ name: "", bal: "", rate: "", min: "" }]); setQs(Object.assign({}, qs, { debts: nd, currentDebt: nd.length - 1 })); },
+            style: { background: "none", border: "1px solid #1e3a5f", borderRadius: 6, color: "#60a5fa", fontSize: 12, cursor: "pointer", padding: "8px 12px", fontFamily: "'DM Sans', sans-serif" } }, "+ Add another debt"),
+          El("button", { key: "chg",
+            onClick: function() { setQs(Object.assign({}, qs, { hasDebt: null, debts: [{ name: "", bal: "", rate: "", min: "" }], currentDebt: 0 })); },
+            style: { background: "none", border: "none", color: "#4a7fa5", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "'DM Sans', sans-serif" } }, "\u2190 Actually no debt")
+        ])
+      ]),
+      qs.hasDebt === false && El("div", { key: "nodbt", style: { background: "#0a1520", border: "1px solid #10b981", borderRadius: 10, padding: "14px", textAlign: "center" } }, [
+        El("div", { key: "msg", style: { color: "#10b981", fontSize: 14, fontWeight: 700, marginBottom: 6 } }, "\u2713 No consumer debt"),
+        El("button", { key: "chg", onClick: function() { setQs(Object.assign({}, qs, { hasDebt: null })); },
+          style: { background: "none", border: "none", color: "#4a7fa5", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "'DM Sans', sans-serif" } }, "Change answer")
+      ])
+    ]),
+    qs.step === 3 && El("div", { key: "s3" }, [
+      El("div", { key: "h", style: { fontSize: 18, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif", marginBottom: 6 } }, "Here's what's waiting for you"),
+      El("div", { key: "sub", style: { fontSize: 13, color: "#5a7a9a", marginBottom: 18, lineHeight: 1.6 } }, "You've entered the essentials. Here's how to get the most out of Compound:"),
+      El("div", { key: "tabs" }, [
+        [
+          { key: "exp", color: "#f97316", name: "Expenses", desc: "Fill in your full budget \u2014 all essentials, discretionary spending, and any additional debts." },
+          { key: "sav", color: "#10b981", name: "Savings", desc: "Set an emergency fund goal and track your progress with a target completion date." },
+          { key: "inv", color: "#a78bfa", name: "Invest & Retire", desc: "Model your 401k, Roth IRA, and HSA to see what your retirement actually looks like." }
+        ].map(function(tab) {
+          return El("div", { key: tab.key, style: { display: "flex", gap: 12, padding: "10px 0", borderBottom: "1px solid #1a2840" } }, [
+            El("div", { key: "a", style: { width: 3, borderRadius: 2, background: tab.color, flexShrink: 0, alignSelf: "stretch" } }),
+            El("div", { key: "t" }, [
+              El("div", { key: "n", style: { fontSize: 13, fontWeight: 600, color: "#e8f0f8", marginBottom: 2 } }, tab.name),
+              El("div", { key: "d", style: { fontSize: 12, color: "#5a7a9a", lineHeight: 1.5 } }, tab.desc)
+            ])
+          ]);
+        }),
+        El("div", { key: "plan", style: { marginTop: 10, background: "#0d1a28", border: "1px solid #f59e0b44", borderRadius: 8, padding: "12px 14px" } }, [
+          El("div", { key: "hdr", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } }, [
+            El("div", { key: "n", style: { fontSize: 13, fontWeight: 700, color: "#f59e0b" } }, "Plan"),
+            El("div", { key: "badge", style: { fontSize: 10, color: "#f59e0b", background: "#f59e0b22", padding: "2px 7px", borderRadius: 4, fontWeight: 700, letterSpacing: "0.06em" } }, "START HERE")
+          ]),
+          El("div", { key: "d", style: { fontSize: 12, color: "#8b9cb5", lineHeight: 1.6 } }, "The most powerful tab. Add extra debt payments or adjust spending and watch your debt-free date move in real time \u2014 without touching your real data.")
+        ])
+      ])
+    ]),
+    El("div", { key: "nav", style: { display: "flex", gap: 10, marginTop: 24 } }, [
+      El("button", {
+        key: "back",
+        onClick: function() {
+          if (qs.step === 0) { setOnboard({ screen: "welcome", step: 0 }); }
+          else { setQs(Object.assign({}, qs, { step: qs.step - 1 })); }
+        },
+        style: { flex: 1, padding: "12px", background: "none", border: "1px solid #1a2840", borderRadius: 10, color: "#5a7a9a", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+      }, "\u2190 Back"),
+      El("button", {
+        key: "next",
+        disabled: (qs.step === 0 && (!qs.salary || !qs.takeHome)) || (qs.step === 2 && qs.hasDebt === null),
+        onClick: function() {
+          if (qs.step < 3) { setQs(Object.assign({}, qs, { step: qs.step + 1 })); }
+          else { finishQuickStart(); }
+        },
+        style: { flex: 2, padding: "12px 20px", background: (qs.step === 0 && (!qs.salary || !qs.takeHome)) || (qs.step === 2 && qs.hasDebt === null) ? "#0a1520" : "linear-gradient(135deg, #1d4ed8, #0ea5e9)", border: "none", borderRadius: 10, color: (qs.step === 0 && (!qs.salary || !qs.takeHome)) || (qs.step === 2 && qs.hasDebt === null) ? "#2a4060" : "#fff", fontSize: 14, fontWeight: 700, cursor: (qs.step === 0 && (!qs.salary || !qs.takeHome)) || (qs.step === 2 && qs.hasDebt === null) ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif" }
+      }, qs.step === 3 ? "Explore my Overview \u2192" : "Next \u2192")
+    ])
+  ])),
   // ===== ONBOARDING STEP OVERLAY =====
   onboard.screen === "steps" && El("div", {
     key: "step-overlay",

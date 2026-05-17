@@ -13,7 +13,8 @@ The app runs entirely client-side as a **single `index.html` file** with localSt
 1. **Meet beginners where they are** — Avoid jargon. Every metric should have a plain-English label or tooltip (e.g., "DTI — how much of your paycheck goes to debt. Under 36% is healthy").
 2. **Show the user what to do next** — The app doesn't just display data; it guides action via a Suggested Next Steps section on the Overview tab.
 3. **Emotional motivation matters** — A debt-free date and savings milestone are more motivating than raw numbers. Surface these prominently.
-4. **Progressive complexity** — Beginners should reach a meaningful "aha moment" (their debt-free date, their savings rate) in under 5 minutes, without filling in every tab.
+4. **Progressive complexity** — Beginners should reach a meaningful "aha moment" in under 5 minutes via Quick Start, without filling in every tab.
+5. **Judgment-free** — Color coding and language should inform, not shame. Traffic light colors reserved only for Housing % and Total DTI where thresholds are universal. Having debt is not a moral failing.
 
 ---
 
@@ -21,10 +22,79 @@ The app runs entirely client-side as a **single `index.html` file** with localSt
 
 - **Single file**: All HTML, CSS, and JavaScript lives in `index.html` at the **repo root**
 - **Persistence**: `localStorage` for all user data — **localStorage key names must never be changed**
-- **No frameworks**: Vanilla JS (no React, no build step)
+  - Main data key: `compound_v4`
+  - Onboarding complete: `compound_onboarding_done`
+  - Profile card dismissed: `compound_profile_done`
+- **No frameworks**: Vanilla JS (no React, no build step) — React is loaded via CDN
 - **Dark theme**: Consistent dark card styling throughout
-- **Data model**: Settings, income, essentials, debts, discretionary, savings, investments stored as structured JSON in localStorage
 - **Default debt strategy**: Avalanche (highest interest rate first)
+- **Branches**:
+  - `main` — stable, deployed
+  - `multi-income` — in-progress multi-income source refactor (do not merge until tested)
+
+---
+
+## Data Model
+
+```js
+data = {
+  income: {
+    sources: [
+      {
+        id: "primary",           // "primary" for first source, "src-TIMESTAMP" for others
+        name: "Person 1",        // editable by user
+        type: "w2",              // "w2" | "other"
+        // W2 fields:
+        mode: "simple",          // "simple" | "detailed"
+        annualSalary: "",
+        takeHomePerPaycheck: "",
+        frequency: "biweekly",
+        grossPerPaycheck: "",    // detailed mode
+        healthInsurance: "",     // detailed mode, per paycheck
+        fsa: "",
+        otherPreTax: "",
+        federalTax: "",
+        stateTax: "",
+        otherPostTax: "",
+        retirement: {            // W2 sources only — per-person
+          use401kPercent: true,
+          traditional401kPct: "",
+          roth401kPct: "",
+          employerMatchPct: "",
+          traditional401kDollar: "",
+          roth401kDollar: "",
+          traditional401kBalance: "",
+          roth401kBalance: "",
+          rothIra: { monthly: "", currentBalance: "" },
+          currentAge: "",
+          targetAge: "65"
+        }
+      },
+      // "other" type sources:
+      { id: "src-...", name: "Side Hustle", type: "other", monthlyNet: "" }
+    ]
+  },
+  debts: [],                     // { id, name, balance, rate, minPayment, planPayment, isMortgage, isPromo, ... }
+  budget: {
+    essentials: [],              // { id, name, baseline, plan }
+    discretionary: []            // { id, name, baseline, plan }
+  },
+  retirement: {
+    hsa: { monthly: "", currentBalance: "", familyCoverage: false }  // household-level only
+  },
+  savings: {
+    emergencyFund: { current: "", goal: "", monthly: "" },
+    generalSavings: { monthly: "", goal: "" }
+  },
+  invest: { monthly: "", currentBalance: "", notes: "" },
+  settings: { incomeBasis: "gross", debtStrategy: "avalanche" },
+  plan: { essentials: {}, discretionary: {}, debtPayments: {}, goals: [] }
+}
+```
+
+**Migration**: `migrateData(parsed, def)` runs on load and transparently upgrades old flat `income`/`retirement` structure to the new `income.sources[]` format. Never remove this function.
+
+**localStorage key names must never be changed.**
 
 ---
 
@@ -32,11 +102,11 @@ The app runs entirely client-side as a **single `index.html` file** with localSt
 
 | Tab | Purpose |
 |-----|---------|
-| **Overview** | Dashboard: DTI badges, savings rate, housing %, Suggested Next Steps |
-| **Income** | Annual salary, take-home pay, income basis (gross/net), employer match |
+| **Overview** | Dashboard: DTI badges, savings rate, housing %, profile completeness card, Suggested Next Steps |
+| **Income** | Income sources list (W2 + Other), simple/detailed mode for primary W2 |
 | **Expenses** | Essentials + Debt Obligations + Discretionary. Baseline vs Plan columns |
 | **Savings** | Emergency fund goal, monthly contribution, general savings buckets |
-| **Invest & Retire** | 401k, Roth IRA, HSA (Retirement) + Brokerage/taxable (Invest) |
+| **Invest & Retire** | Per-W2-source 401k/Roth IRA + household HSA + brokerage/taxable |
 | **Plan** | What-if sandbox: adjust spending, set savings targets, model extra debt payments |
 | **Settings** | Debt strategy (Avalanche / Snowball / Custom), income basis, display prefs |
 
@@ -47,56 +117,86 @@ The app runs entirely client-side as a **single `index.html` file** with localSt
 - **Total DTI**: (all debt minimum payments + housing) ÷ gross monthly income
 - **Consumer DTI**: (non-housing debt minimum payments) ÷ gross monthly income
 - **Housing %**: Housing cost ÷ gross monthly income (target: ≤28%)
-- **Savings Rate**: Monthly savings + investments ÷ gross monthly income (targets: 10% floor, 15% comfortable, 20%+ early retirement)
+- **Savings Rate**: Monthly savings + investments ÷ gross monthly income
 - **Debt payoff date**: Calculated using avalanche or snowball strategy based on settings
-- **Emergency fund runway**: Months of expenses covered by current savings
+
+### Aggregation across income sources
+- `grossMonthly` = sum of all W2 source gross + all Other source monthlyNet
+- `netMonthly` = sum of all W2 source take-home + all Other source monthlyNet
+- `trad401kMonthly`, `roth401kMonthly`, `employerMatch`, `rothIraMonthly` = sums across all W2 sources
+- `hsaMonthly` = from household `data.retirement.hsa.monthly`
+- `primaryCalc` / `primaryRet` = shorthands for the first W2 source, used in legacy Income tab display
 
 ### DTI label convention
-- Label is **"Total DTI"** (never "Total DTI incl. mortgage") — housing is always included
-- **"Consumer DTI"** = debt excluding housing (this is the one that excludes mortgage)
+- Label is **"Total DTI"** — housing is always included
+- **"Consumer DTI"** = debt excluding housing
 
 ---
 
-## Onboarding Walkthrough
+## Color System
 
-A 6-step guided tour tied to tab navigation:
+One base color for all metric values. Traffic light only for ratios with universal thresholds.
 
-1. **Income** — "Start with what you earn"
-2. **Expenses** — "Document every outflow"
-3. **Savings** — "Emergency fund before everything else"
-4. **Invest & Retire** — "Retirement accounts and investing"
-5. **Overview** — "Your complete financial picture"
-6. **Plan** — "Play with what-ifs"
+| Color | Hex | Meaning |
+|---|---|---|
+| Blue | `#60a5fa` | All metric values (income, debt totals, savings rates, etc.) |
+| Green | `#10b981` | Healthy status **only** (DTI/Housing % within range, positive surplus) |
+| Orange | `#f97316` | Caution status (DTI/Housing % moderate) |
+| Red | `#ef4444` | Danger status (DTI/Housing % high, negative surplus) |
+| Amber gradient | `#f97316` → `#fbbf24` | Debt cards — priority order (highest priority = most orange) |
+| Neutral gray | `#3a5a7a` | Empty/unset values |
 
-Steps use colored headers and plain-English body text. Buttons: "Got it / Next", "Skip tour".
+Traffic light applies **only** to Housing % (28% threshold) and Total DTI (36%/20% thresholds). Retirement rate, savings rate, and consumer debt are always blue — shaming someone for 0% retirement when they can't afford to contribute more is counterproductive.
 
 ---
 
-## Suggested Next Steps (Overview tab)
+## Onboarding
 
-A dynamic section at the bottom of Overview that reads the user's actual data and surfaces 3–5 prioritized action items. Each item has:
-- An icon (⚠️ warning, 🎯 goal, ✅ on track)
-- A plain-English suggestion referencing the user's specific debt names / amounts
-- A "time saved" or "payoff by" impact statement where applicable
+### Quick Start (primary path)
+3-question wizard → Overview. Steps:
+1. **Income** — Annual salary, take-home, pay frequency
+2. **Housing** — Monthly rent/mortgage (neutral language, no 28% judgment)
+3. **Debt** — Carousel for multiple debts (Yes/No → name, balance, APR, minimum); deferred sort on blur/Enter
+4. **Orientation** — Tab overview with Plan highlighted; then lands on Overview
 
-**Priority logic** (roughly follows the financial order of operations):
-1. Flag housing cost > 28% gross
-2. Flag consumer DTI > 20%
-3. Direct extra cash toward highest-rate debt (name the specific debt)
-4. Emergency fund status and projected completion date
-5. Savings rate vs. benchmark (10% / 15% / 20%)
-6. Retirement contribution vs. employer match capture
+State: `qs` in `useState`, tracked in `onboard.screen === "quickstart"`.
+
+### Full Setup (6-step tab tour)
+Available via `startOnboarding()` but no longer surfaced in the welcome modal. Kept for potential future use.
+
+### Welcome Modal
+Options: **Quick Start** (primary) → **Import a backup** → **Skip**. Full Setup removed.
+
+### Profile Completeness Card
+Shown on Overview after onboarding, tracks 7 sections:
+1. Income entered
+2. Housing cost set
+3. Essential expenses filled (≥2 non-housing with values)
+4. Discretionary spending added
+5. Consumer debt logged (or confirmed none)
+6. Emergency fund goal set
+7. Retirement contributions configured
+
+Each incomplete item has a "Go →" tab link. Dismissed permanently via `localStorage.setItem("compound_profile_done", "1")`.
+
+---
+
+## Debt System
+
+- **Debt colors**: Warm amber gradient computed dynamically via `debtColor(index, total)`. Orange (`#f97316`) = highest priority, soft amber (`#fbbf24`) = lowest. Mortgage always gets neutral `#2a4060`.
+- **Sort order**: `sortedDebts` (for Overview) sorts live by strategy. `stableDebts` (for Expenses tab) sorts on blur/Enter only to avoid mid-type jumping — uses `stableSortRef` and `setStableSortVersion`.
+- **Editing**: All debt card fields are inline-editable (name, balance, APR, minimum, plan payment).
+- **Mortgage**: Always pinned to bottom of debt list regardless of strategy.
 
 ---
 
 ## Design Conventions
 
-- **Dark card styling**: `background: #1e293b` or similar dark slate
-- **Badge components**: Used for summary metrics at the top of tabs (e.g., Total Debt, Monthly Min Payments, DTI)
-- **Section titles**: Dividers within tabs to separate logical groups
+- **Dark card styling**: `background: linear-gradient(145deg, #111c28, #0d1620)`
+- **Badge components**: Used for summary metrics at the top of tabs
+- **Tooltips**: Badge component supports `tooltip` prop — hover `?` button to show plain-English explanation. Currently on 5 Overview badges (Consumer Debt, Housing %, Total DTI, Retirement Rate, Total Savings Rate).
 - **Empty states**: When a value is 0 or unset, show instructional placeholder text — never just "$0"
-- **Radio button groups**: Used for multi-option settings (income basis, debt strategy) — match existing `incomeBasis` styling
-- **Progress bar**: Shows onboarding completion across tabs (not a step indicator for the walkthrough tour itself)
+- **Progress bar**: Shows onboarding completion across tabs
 
 ---
 
@@ -111,44 +211,27 @@ The entire app is one file. Enforce these rules on every prompt:
 - **Preserve all existing data wiring** when moving UI between tabs — only change placement, not structure
 - **Don't add frameworks** (React, Vue, Alpine, etc.) — vanilla JS only
 - **Scope creep check**: if a prompt says "no other changes", do not refactor adjacent code even if it looks messy
-
----
-
-## Prompt Guidelines
-
-When working on this codebase:
-
-1. **One concern per prompt** — Don't bundle unrelated changes. Separate structural refactors from logic changes.
-2. **Reference exact variable/function names** when known (e.g., `updateSettings()`, `ONBOARD_STEPS`, `isMortgage`, `incomeBasis`)
-3. **Specify localStorage key preservation** explicitly whenever moving UI sections — data structure must not change, only UI placement
-4. **Order prompts to avoid conflicts** — structural changes (tab merges) before content changes (empty states, labels)
-5. **Flag the most complex prompts** — note which ones are risky and suggest splitting if needed
-
-### Prompt template
-```
-In index.html, [action].
-
-Specifics:
-- [detail 1]
-- [detail 2]
-
-No other changes.
-```
+- **Never merge `multi-income` to `main`** without explicit user approval and testing
 
 ---
 
 ## Known Issues / Decisions Log
 
-- Crypto/speculative assets belong under Invest (not Savings) — treated as speculative alongside taxable brokerage
-- localStorage is one browser-clear away from data loss — export/import is the current mitigation; account system is a future consideration
+- Crypto/speculative assets belong under Invest (not Savings)
+- localStorage is one browser-clear away from data loss — export/import is the current mitigation
+- Quick Start debt carousel: `currentDebt` index tracked in `qs` state
+- Profile completeness card: may not show if `compound_profile_done` key is set in localStorage from a previous dismiss. Clear via DevTools → Application → Local Storage.
+- Essentials default to $0 — previously defaulted to Miami averages, removed as confusing
 
 ---
 
 ## Future Roadmap
 
-- Mobile layout optimization (budget tab especially)
+- Mobile layout optimization (budget/expenses tab especially)
 - Age-based retirement benchmarks (1× salary by 30, 3× by 40, etc.)
-- "Quick Start" onboarding mode — 4–5 questions to populate Overview immediately
-- Cloud sync / account system
 - Inflation-adjusted retirement projections
-- Speculative vs. index fund split in Invest tab
+- Cloud sync / account system
+- Quick Start: ask if dual-income household upfront; aggregate projection across all W2 source balances
+- Per-W2-source retirement projection in Invest & Retire tab
+- Zip code-based essentials pre-population
+- Migration to Vite + React + JSX (recommended when feature set stabilizes — `El()` syntax is hard to maintain at scale)

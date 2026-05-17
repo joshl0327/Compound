@@ -112,87 +112,107 @@ function calcPayoff(balance, annualRate, monthlyPayment) {
   var months = Math.ceil(Math.log(p / (p - r * b)) / Math.log(1 + r));
   return { months: months, totalInterest: Math.max(0, p * months - b) };
 }
+function makeDefaultW2Source(id, name) {
+  return {
+    id: id,
+    name: name,
+    type: "w2",
+    mode: "simple",
+    annualSalary: "",
+    takeHomePerPaycheck: "",
+    frequency: "biweekly",
+    grossPerPaycheck: "",
+    healthInsurance: "",
+    fsa: "",
+    otherPreTax: "",
+    federalTax: "",
+    stateTax: "",
+    otherPostTax: "",
+    retirement: {
+      use401kPercent: true,
+      traditional401kPct: "",
+      roth401kPct: "",
+      employerMatchPct: "",
+      traditional401kDollar: "",
+      roth401kDollar: "",
+      traditional401kBalance: "",
+      roth401kBalance: "",
+      rothIra: { monthly: "", currentBalance: "" },
+      currentAge: "",
+      targetAge: "65"
+    }
+  };
+}
+function makeDefaultOtherSource(id, name) {
+  return { id: id, name: name, type: "other", monthlyNet: "" };
+}
 function makeDefault() {
   return {
     income: {
-      mode: "simple",
-      // Simple mode
-      annualSalary: "",
-      takeHomePerPaycheck: "",
-      // Detailed mode
-      frequency: "biweekly",
-      grossPerPaycheck: "",
-      healthInsurance: "",
-      fsa: "",
-      otherPreTax: "",
-      federalTax: "",
-      stateTax: "",
-      otherPostTax: ""
+      sources: [makeDefaultW2Source("primary", "Person 1")]
     },
     debts: [],
     budget: {
       essentials: ESSENTIAL_DEFAULTS.map(function (e) {
-        return {
-          id: e.id,
-          name: e.name,
-          baseline: String(e.amount),
-          plan: ""
-        };
+        return { id: e.id, name: e.name, baseline: String(e.amount), plan: "" };
       }),
       discretionary: []
     },
     retirement: {
-      // Simple mode for 401k - percentage
-      use401kPercent: true,
-      // true = percentage, false = dollar amount
-      traditional401kPct: "",
-      roth401kPct: "",
-      employerMatchPct: "",
-      // Dollar amount alternatives
-      traditional401kDollar: "",
-      roth401kDollar: "",
-      // Other retirement accounts
-      traditional401kBalance: "",
-      roth401kBalance: "",
-      rothIra: {
-        monthly: "",
-        currentBalance: ""
-      },
-      hsa: {
-        monthly: "",
-        currentBalance: "",
-        familyCoverage: false
-      },
-      targetAge: "65",
-      currentAge: ""
+      // Household-level only — HSA (one per household)
+      hsa: { monthly: "", currentBalance: "", familyCoverage: false }
     },
     savings: {
-      emergencyFund: {
-        current: "",
-        goal: "",
-        monthly: ""
-      },
-      generalSavings: {
-        monthly: "",
-        goal: ""
-      }
+      emergencyFund: { current: "", goal: "", monthly: "" },
+      generalSavings: { monthly: "", goal: "" }
     },
-    invest: {
-      monthly: "",
-      currentBalance: "",
-      notes: ""
-    },
-    settings: {
-      incomeBasis: "gross",
-      debtStrategy: "avalanche"
-    },
-    plan: {
-      essentials: {},
-      discretionary: {},
-      debtPayments: {},
-      goals: []
-    }
+    invest: { monthly: "", currentBalance: "", notes: "" },
+    settings: { incomeBasis: "gross", debtStrategy: "avalanche" },
+    plan: { essentials: {}, discretionary: {}, debtPayments: {}, goals: [] }
   };
+}
+function migrateData(parsed, def) {
+  // Old format: data.income is a flat object (no .sources array)
+  if (!parsed.income || !parsed.income.sources) {
+    var old = parsed.income || {};
+    var oldRet = parsed.retirement || {};
+    var primary = makeDefaultW2Source("primary", "Person 1");
+    primary.mode = old.mode || "simple";
+    primary.annualSalary = old.annualSalary || "";
+    primary.takeHomePerPaycheck = old.takeHomePerPaycheck || "";
+    primary.frequency = old.frequency || "biweekly";
+    primary.grossPerPaycheck = old.grossPerPaycheck || "";
+    primary.healthInsurance = old.healthInsurance || "";
+    primary.fsa = old.fsa || "";
+    primary.otherPreTax = old.otherPreTax || "";
+    primary.federalTax = old.federalTax || "";
+    primary.stateTax = old.stateTax || "";
+    primary.otherPostTax = old.otherPostTax || "";
+    primary.retirement = {
+      use401kPercent: oldRet.use401kPercent !== undefined ? oldRet.use401kPercent : true,
+      traditional401kPct: oldRet.traditional401kPct || "",
+      roth401kPct: oldRet.roth401kPct || "",
+      employerMatchPct: oldRet.employerMatchPct || "",
+      traditional401kDollar: oldRet.traditional401kDollar || "",
+      roth401kDollar: oldRet.roth401kDollar || "",
+      traditional401kBalance: oldRet.traditional401kBalance || "",
+      roth401kBalance: oldRet.roth401kBalance || "",
+      rothIra: oldRet.rothIra || { monthly: "", currentBalance: "" },
+      currentAge: oldRet.currentAge || "",
+      targetAge: oldRet.targetAge || "65"
+    };
+    return {
+      income: { sources: [primary] },
+      debts: parsed.debts || [],
+      budget: parsed.budget || def.budget,
+      retirement: { hsa: oldRet.hsa || def.retirement.hsa },
+      savings: Object.assign({}, def.savings, parsed.savings || {}),
+      invest: Object.assign({}, def.invest, parsed.invest || {}),
+      settings: Object.assign({}, def.settings, parsed.settings || {}),
+      plan: parsed.plan || def.plan
+    };
+  }
+  return parsed;
 }
 var defaultData = makeDefault();
 function fmt(v) {
@@ -608,8 +628,9 @@ function App() {
       if (s) {
         var parsed = JSON.parse(s);
         var def = makeDefault();
+        parsed = migrateData(parsed, def);
         return {
-          income: Object.assign({}, def.income, parsed.income || {}),
+          income: parsed.income,
           debts: parsed.debts || [],
           budget: {
             essentials: parsed.budget && parsed.budget.essentials ? parsed.budget.essentials : def.budget.essentials,
@@ -816,83 +837,81 @@ function App() {
   }, [data]);
 
   // ============ INCOME CALCULATIONS ============
-  var freqObj = FREQ_OPTIONS.find(function (f) {
-    return f.id === data.income.frequency;
-  }) || FREQ_OPTIONS[1];
-  var perYear = freqObj.perYear;
-  var isSimpleMode = data.income.mode === "simple";
+  var sources = (data.income && data.income.sources) || [];
+  var sourceCalcs = sources.map(function(src) {
+    if (src.type !== "w2") {
+      var n = parseFloat(src.monthlyNet) || 0;
+      return { src: src, gross: n, net: n, trad401k: 0, roth401k: 0, match: 0, rothIra: 0, perYear: 12, isSimple: true };
+    }
+    var fo = FREQ_OPTIONS.find(function(f) { return f.id === src.frequency; }) || FREQ_OPTIONS[1];
+    var py = fo.perYear;
+    var isSimple = src.mode === "simple";
+    var gross = isSimple
+      ? (parseFloat(src.annualSalary) || 0) / 12
+      : (parseFloat(src.grossPerPaycheck) || 0) * py / 12;
+    var ret = src.retirement || {};
+    var trad, roth, match;
+    if (ret.use401kPercent !== false) {
+      trad  = gross * (parseFloat(ret.traditional401kPct) || 0) / 100;
+      roth  = gross * (parseFloat(ret.roth401kPct) || 0) / 100;
+      match = gross * (parseFloat(ret.employerMatchPct) || 0) / 100;
+    } else {
+      trad  = parseFloat(ret.traditional401kDollar) || 0;
+      roth  = parseFloat(ret.roth401kDollar) || 0;
+      match = gross * (parseFloat(ret.employerMatchPct) || 0) / 100;
+    }
+    var rothIra = parseFloat((ret.rothIra || {}).monthly) || 0;
+    var net;
+    if (isSimple) {
+      net = (parseFloat(src.takeHomePerPaycheck) || 0) * py / 12;
+    } else {
+      var hmo = (parseFloat(src.healthInsurance) || 0) * py / 12;
+      var fmo = (parseFloat(src.fsa) || 0) * py / 12;
+      var opmo = (parseFloat(src.otherPreTax) || 0) * py / 12;
+      var fedmo = (parseFloat(src.federalTax) || 0) * py / 12;
+      var stmo = (parseFloat(src.stateTax) || 0) * py / 12;
+      var optmo = (parseFloat(src.otherPostTax) || 0) * py / 12;
+      net = gross - trad - hmo - fmo - opmo - fedmo - stmo - (gross * 0.0765) - roth - optmo;
+    }
+    return { src: src, gross: gross, net: net, trad401k: trad, roth401k: roth, match: match, rothIra: rothIra, perYear: py, isSimple: isSimple };
+  });
 
-  // Calculate gross monthly based on mode
-  var grossMonthly;
-  if (isSimpleMode) {
-    grossMonthly = (parseFloat(data.income.annualSalary) || 0) / 12;
-  } else {
-    grossMonthly = (parseFloat(data.income.grossPerPaycheck) || 0) * perYear / 12;
-  }
+  // Aggregate totals — downstream code uses these same variable names unchanged
+  var grossMonthly = sourceCalcs.reduce(function(s, c) { return s + c.gross; }, 0);
   var grossAnnual = grossMonthly * 12;
-
-  // 401k contributions - calculate monthly dollars from percentages or use direct dollar amount
-  var trad401kMonthly, roth401kMonthly, employerMatch;
-  if (data.retirement.use401kPercent) {
-    trad401kMonthly = grossMonthly * (parseFloat(data.retirement.traditional401kPct) || 0) / 100;
-    roth401kMonthly = grossMonthly * (parseFloat(data.retirement.roth401kPct) || 0) / 100;
-    employerMatch = grossMonthly * (parseFloat(data.retirement.employerMatchPct) || 0) / 100;
-  } else {
-    trad401kMonthly = parseFloat(data.retirement.traditional401kDollar) || 0;
-    roth401kMonthly = parseFloat(data.retirement.roth401kDollar) || 0;
-    var empMatchPct = parseFloat(data.retirement.employerMatchPct) || 0;
-    // Match is % of gross
-    employerMatch = grossMonthly * empMatchPct / 100;
-  }
-
-  // Other retirement
-  var rothIraMonthly = parseFloat(data.retirement.rothIra.monthly) || 0;
-  var hsaMonthly = parseFloat(data.retirement.hsa.monthly) || 0;
-
-  // Calculate net
-  var netMonthly;
-  if (isSimpleMode) {
-    var takeHomePer = parseFloat(data.income.takeHomePerPaycheck) || 0;
-    netMonthly = takeHomePer * perYear / 12;
-  } else {
-    // Detailed mode - compute from gross minus all deductions
-    var healthInsPP = parseFloat(data.income.healthInsurance) || 0;
-    var fsaPP = parseFloat(data.income.fsa) || 0;
-    var otherPreTaxPP = parseFloat(data.income.otherPreTax) || 0;
-    var federalPP = parseFloat(data.income.federalTax) || 0;
-    var statePP = parseFloat(data.income.stateTax) || 0;
-    var otherPostTaxPP = parseFloat(data.income.otherPostTax) || 0;
-    // Convert per-paycheck to monthly
-    var healthInsMo = healthInsPP * perYear / 12;
-    var fsaMo = fsaPP * perYear / 12;
-    var otherPreTaxMo = otherPreTaxPP * perYear / 12;
-    var federalMo = federalPP * perYear / 12;
-    var stateMo = statePP * perYear / 12;
-    var otherPostTaxMo = otherPostTaxPP * perYear / 12;
-    var ficaMo = grossMonthly * 0.0765;
-    netMonthly = grossMonthly - trad401kMonthly - hsaMonthly - healthInsMo - fsaMo - otherPreTaxMo - federalMo - stateMo - ficaMo - roth401kMonthly - otherPostTaxMo;
-  }
-  var netPerPaycheck = netMonthly * 12 / perYear;
+  var netMonthly = sourceCalcs.reduce(function(s, c) { return s + c.net; }, 0);
+  var trad401kMonthly = sourceCalcs.reduce(function(s, c) { return s + c.trad401k; }, 0);
+  var roth401kMonthly = sourceCalcs.reduce(function(s, c) { return s + c.roth401k; }, 0);
+  var employerMatch = sourceCalcs.reduce(function(s, c) { return s + c.match; }, 0);
+  var rothIraMonthly = sourceCalcs.reduce(function(s, c) { return s + c.rothIra; }, 0);
+  var hsaMonthly = parseFloat(((data.retirement || {}).hsa || {}).monthly) || 0;
   var inferredDeductions = grossMonthly - netMonthly;
 
-  // For detailed mode - per-paycheck values for display
-  var healthInsPP = parseFloat(data.income.healthInsurance) || 0;
-  var fsaPP = parseFloat(data.income.fsa) || 0;
-  var otherPreTaxPP = parseFloat(data.income.otherPreTax) || 0;
-  var federalPP = parseFloat(data.income.federalTax) || 0;
-  var statePP = parseFloat(data.income.stateTax) || 0;
-  var otherPostTaxPP = parseFloat(data.income.otherPostTax) || 0;
+  // Primary W2 source — drives Income tab single-source display and legacy vars
+  var primaryCalc = sourceCalcs.find(function(c) { return c.src.type === "w2"; })
+    || { src: makeDefaultW2Source("primary", "Person 1"), gross: 0, net: 0, trad401k: 0, roth401k: 0, match: 0, rothIra: 0, perYear: 24, isSimple: true };
+  var primaryRet = primaryCalc.src.retirement || {};
+  var freqObj = FREQ_OPTIONS.find(function(f) { return f.id === primaryCalc.src.frequency; }) || FREQ_OPTIONS[1];
+  var perYear = primaryCalc.perYear;
+  var isSimpleMode = primaryCalc.isSimple;
+  var netPerPaycheck = primaryCalc.net * 12 / primaryCalc.perYear;
+
+  // Per-paycheck display values for primary W2 source
+  var healthInsPP = parseFloat(primaryCalc.src.healthInsurance) || 0;
+  var fsaPP = parseFloat(primaryCalc.src.fsa) || 0;
+  var otherPreTaxPP = parseFloat(primaryCalc.src.otherPreTax) || 0;
+  var federalPP = parseFloat(primaryCalc.src.federalTax) || 0;
+  var statePP = parseFloat(primaryCalc.src.stateTax) || 0;
+  var otherPostTaxPP = parseFloat(primaryCalc.src.otherPostTax) || 0;
   var healthInsMonthly = healthInsPP * perYear / 12;
   var fsaMonthly = fsaPP * perYear / 12;
   var otherPreTaxMonthly = otherPreTaxPP * perYear / 12;
   var federalTaxMonthly = federalPP * perYear / 12;
   var stateTaxMonthly = statePP * perYear / 12;
   var otherPostTaxMonthly = otherPostTaxPP * perYear / 12;
-  var ficaMonthly = grossMonthly * 0.0765;
-
-  // Pre-paycheck values for 401k display
-  var trad401kPP = trad401kMonthly * 12 / perYear;
-  var roth401kPP = roth401kMonthly * 12 / perYear;
+  var ficaMonthly = primaryCalc.gross * 0.0765;
+  var trad401kPP = primaryCalc.trad401k * 12 / perYear;
+  var roth401kPP = primaryCalc.roth401k * 12 / perYear;
   var hsaPP = hsaMonthly * 12 / perYear;
 
   // Budget
@@ -1015,11 +1034,11 @@ function App() {
   }
 
   // Retirement projection
-  var retCurrentAge = parseInt(data.retirement.currentAge) || 30;
-  var retTargetAge = parseInt(data.retirement.targetAge) || 65;
+  var retCurrentAge = parseInt(primaryRet.currentAge) || 30;
+  var retTargetAge = parseInt(primaryRet.targetAge) || 65;
   var retYears = Math.max(0, retTargetAge - retCurrentAge);
   var mRate = 0.07 / 12;
-  var allRetBalances = (parseFloat(data.retirement.traditional401kBalance) || 0) + (parseFloat(data.retirement.roth401kBalance) || 0) + (parseFloat(data.retirement.rothIra.currentBalance) || 0);
+  var allRetBalances = (parseFloat(primaryRet.traditional401kBalance) || 0) + (parseFloat(primaryRet.roth401kBalance) || 0) + (parseFloat(primaryRet.rothIra.currentBalance) || 0);
   var contribMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + employerMatch;
   var projBal = allRetBalances * Math.pow(1 + mRate, retYears * 12) + contribMonthly * (Math.pow(1 + mRate, retYears * 12) - 1) / mRate;
   var retChartData = Array.from({
@@ -1030,32 +1049,59 @@ function App() {
       balance: Math.round(allRetBalances * Math.pow(1 + mRate, i * 12) + contribMonthly * (Math.pow(1 + mRate, i * 12) - 1) / mRate)
     };
   });
-  function updateIncome(key, val) {
-    setData(function (d) {
+  function updateSource(sourceId, key, val) {
+    setData(function(d) {
       return Object.assign({}, d, {
-        income: Object.assign({}, d.income, _defineProperty({}, key, val))
+        income: Object.assign({}, d.income, {
+          sources: d.income.sources.map(function(s) {
+            if (s.id !== sourceId) return s;
+            var upd = {}; upd[key] = val;
+            return Object.assign({}, s, upd);
+          })
+        })
       });
     });
   }
+  function updateSourceRetirement(sourceId, key, val) {
+    setData(function(d) {
+      return Object.assign({}, d, {
+        income: Object.assign({}, d.income, {
+          sources: d.income.sources.map(function(s) {
+            if (s.id !== sourceId) return s;
+            var upd = {}; upd[key] = val;
+            return Object.assign({}, s, { retirement: Object.assign({}, s.retirement, upd) });
+          })
+        })
+      });
+    });
+  }
+  function updateSourceRetirementNested(sourceId, section, key, val) {
+    setData(function(d) {
+      return Object.assign({}, d, {
+        income: Object.assign({}, d.income, {
+          sources: d.income.sources.map(function(s) {
+            if (s.id !== sourceId) return s;
+            var nested = {}; nested[key] = val;
+            var retUpd = {}; retUpd[section] = Object.assign({}, (s.retirement || {})[section], nested);
+            return Object.assign({}, s, { retirement: Object.assign({}, s.retirement, retUpd) });
+          })
+        })
+      });
+    });
+  }
+  // Shorthand targeting primary source — used by existing Income tab code
+  function updateIncome(key, val) { updateSource("primary", key, val); }
+  // Household-level retirement (HSA only)
   function updateRetirement(section, key, val) {
     setData(function (d) {
       var ret = Object.assign({}, d.retirement);
-      if (key === undefined) {
-        ret[section] = val;
-      } else {
-        ret[section] = Object.assign({}, ret[section], _defineProperty({}, key, val));
-      }
-      return Object.assign({}, d, {
-        retirement: ret
-      });
+      if (key === undefined) { ret[section] = val; }
+      else { ret[section] = Object.assign({}, ret[section], _defineProperty({}, key, val)); }
+      return Object.assign({}, d, { retirement: ret });
     });
   }
   function updateRetirementTop(key, val) {
-    setData(function (d) {
-      return Object.assign({}, d, {
-        retirement: Object.assign({}, d.retirement, _defineProperty({}, key, val))
-      });
-    });
+    updateSourceRetirement("primary", key, val);
   }
   function updateSavings(section, key, val) {
     setData(function (d) {
@@ -1757,7 +1803,7 @@ function App() {
         if (trad401kMonthly >= employerMatch) {
           suggestions.push({icon: "✅", text: "Capturing full employer match of " + fmt(employerMatch) + "/mo — free money secured.", sub: fmt(employerMatch * 12) + "/yr added to your 401k at no extra cost to you."});
         } else {
-          suggestions.push({icon: "⚠️", text: "Not capturing the full employer 401k match — leaving " + fmt(employerMatch - trad401kMonthly) + "/mo on the table.", sub: "Increase your 401k contribution to at least " + data.retirement.employerMatchPct + "% of gross to capture the full match."});
+          suggestions.push({icon: "⚠️", text: "Not capturing the full employer 401k match — leaving " + fmt(employerMatch - trad401kMonthly) + "/mo on the table.", sub: "Increase your 401k contribution to at least " + primaryRet.employerMatchPct + "% of gross to capture the full match."});
         }
       }
       suggestions = suggestions.slice(0, 5);
@@ -1877,7 +1923,7 @@ function App() {
   }, "Enter what you know - your salary and what hits your bank account. We will estimate the rest."), El(Input, {
     key: "salary",
     label: "Annual Gross Salary",
-    value: data.income.annualSalary,
+    value: primaryCalc.src.annualSalary,
     onChange: function onChange(v) {
       updateIncome("annualSalary", v);
     },
@@ -1909,7 +1955,7 @@ function App() {
       gap: 6
     }
   }, FREQ_OPTIONS.map(function (f) {
-    var sel = data.income.frequency === f.id;
+    var sel = primaryCalc.src.frequency === f.id;
     return El("button", {
       key: f.id,
       onClick: function onClick() {
@@ -1929,7 +1975,7 @@ function App() {
   }))]), El(Input, {
     key: "th",
     label: "Take-Home Per " + freqObj.label.replace("ly", "").replace("Semi-m", "Semi-m") + " Paycheck",
-    value: data.income.takeHomePerPaycheck,
+    value: primaryCalc.src.takeHomePerPaycheck,
     onChange: function onChange(v) {
       updateIncome("takeHomePerPaycheck", v);
     },
@@ -2026,7 +2072,7 @@ function App() {
     style: {
       color: "#5a7a9a"
     }
-  }, "Traditional 401k (" + (parseFloat(data.retirement.traditional401kPct) || 0) + "%)"), El("span", {
+  }, "Traditional 401k (" + (parseFloat(primaryRet.traditional401kPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
       color: "#60a5fa",
@@ -2043,7 +2089,7 @@ function App() {
     style: {
       color: "#5a7a9a"
     }
-  }, "Roth 401k (" + (parseFloat(data.retirement.roth401kPct) || 0) + "%)"), El("span", {
+  }, "Roth 401k (" + (parseFloat(primaryRet.roth401kPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
       color: "#60a5fa",
@@ -2060,7 +2106,7 @@ function App() {
     style: {
       color: "#5a7a9a"
     }
-  }, "Employer match (" + (parseFloat(data.retirement.employerMatchPct) || 0) + "%)"), El("span", {
+  }, "Employer match (" + (parseFloat(primaryRet.employerMatchPct) || 0) + "%)"), El("span", {
     style: {
       fontFamily: "'DM Mono', monospace",
       color: "#60a5fa",
@@ -2178,7 +2224,7 @@ function App() {
       gap: 6
     }
   }, FREQ_OPTIONS.map(function (f) {
-    var sel = data.income.frequency === f.id;
+    var sel = primaryCalc.src.frequency === f.id;
     return El("button", {
       key: f.id,
       onClick: function onClick() {
@@ -2198,7 +2244,7 @@ function App() {
   }))]), El(Input, {
     key: "gross",
     label: "Gross Pay " + perPaycheckSuffix,
-    value: data.income.grossPerPaycheck,
+    value: primaryCalc.src.grossPerPaycheck,
     onChange: function onChange(v) {
       updateIncome("grossPerPaycheck", v);
     },
@@ -2297,7 +2343,7 @@ function App() {
   }, fmt(hsaMonthly) + "/mo - set in Retirement tab")]), El(Input, {
     key: "health",
     label: "Health Insurance " + perPaycheckSuffix,
-    value: data.income.healthInsurance,
+    value: primaryCalc.src.healthInsurance,
     onChange: function onChange(v) {
       updateIncome("healthInsurance", v);
     },
@@ -2306,7 +2352,7 @@ function App() {
   }), El(Input, {
     key: "fsa",
     label: "FSA " + perPaycheckSuffix,
-    value: data.income.fsa,
+    value: primaryCalc.src.fsa,
     onChange: function onChange(v) {
       updateIncome("fsa", v);
     },
@@ -2315,7 +2361,7 @@ function App() {
   }), El(Input, {
     key: "other",
     label: "Other Pre-Tax " + perPaycheckSuffix,
-    value: data.income.otherPreTax,
+    value: primaryCalc.src.otherPreTax,
     onChange: function onChange(v) {
       updateIncome("otherPreTax", v);
     },
@@ -2334,7 +2380,7 @@ function App() {
   }, "Taxes"), El(Input, {
     key: "fed",
     label: "Federal Tax " + perPaycheckSuffix,
-    value: data.income.federalTax,
+    value: primaryCalc.src.federalTax,
     onChange: function onChange(v) {
       updateIncome("federalTax", v);
     },
@@ -2343,7 +2389,7 @@ function App() {
   }), El(Input, {
     key: "state",
     label: "State Tax " + perPaycheckSuffix,
-    value: data.income.stateTax,
+    value: primaryCalc.src.stateTax,
     onChange: function onChange(v) {
       updateIncome("stateTax", v);
     },
@@ -2436,7 +2482,7 @@ function App() {
   }, fmt(roth401kMonthly) + "/mo - set in Retirement tab")]), El(Input, {
     key: "other",
     label: "Other Post-Tax " + perPaycheckSuffix,
-    value: data.income.otherPostTax,
+    value: primaryCalc.src.otherPostTax,
     onChange: function onChange(v) {
       updateIncome("otherPostTax", v);
     },
@@ -3472,8 +3518,8 @@ function App() {
       padding: "6px 12px",
       borderRadius: 6,
       border: "none",
-      background: data.retirement.use401kPercent ? "#1d4ed8" : "transparent",
-      color: data.retirement.use401kPercent ? "#fff" : "#5a7a9a",
+      background: primaryRet.use401kPercent ? "#1d4ed8" : "transparent",
+      color: primaryRet.use401kPercent ? "#fff" : "#5a7a9a",
       fontSize: 11,
       fontWeight: 700,
       cursor: "pointer",
@@ -3489,8 +3535,8 @@ function App() {
       padding: "6px 12px",
       borderRadius: 6,
       border: "none",
-      background: !data.retirement.use401kPercent ? "#1d4ed8" : "transparent",
-      color: !data.retirement.use401kPercent ? "#fff" : "#5a7a9a",
+      background: !primaryRet.use401kPercent ? "#1d4ed8" : "transparent",
+      color: !primaryRet.use401kPercent ? "#fff" : "#5a7a9a",
       fontSize: 11,
       fontWeight: 700,
       cursor: "pointer",
@@ -3522,10 +3568,10 @@ function App() {
       color: "#10b981",
       marginBottom: 8
     }
-  }, "Traditional 401k (pre-tax)"), data.retirement.use401kPercent ? El(Input, {
+  }, "Traditional 401k (pre-tax)"), primaryRet.use401kPercent ? El(Input, {
     key: "p",
     label: "% of Gross Salary",
-    value: data.retirement.traditional401kPct,
+    value: primaryRet.traditional401kPct,
     onChange: function onChange(v) {
       updateRetirementTop("traditional401kPct", v);
     },
@@ -3534,7 +3580,7 @@ function App() {
   }) : El(Input, {
     key: "d",
     label: "Monthly Contribution",
-    value: data.retirement.traditional401kDollar,
+    value: primaryRet.traditional401kDollar,
     onChange: function onChange(v) {
       updateRetirementTop("traditional401kDollar", v);
     },
@@ -3549,7 +3595,7 @@ function App() {
   }, fmt(trad401kMonthly) + "/mo"), El(Input, {
     key: "bal",
     label: "Current Balance",
-    value: data.retirement.traditional401kBalance,
+    value: primaryRet.traditional401kBalance,
     onChange: function onChange(v) {
       updateRetirementTop("traditional401kBalance", v);
     },
@@ -3574,10 +3620,10 @@ function App() {
       color: "#a78bfa",
       marginBottom: 8
     }
-  }, "Roth 401k (post-tax)"), data.retirement.use401kPercent ? El(Input, {
+  }, "Roth 401k (post-tax)"), primaryRet.use401kPercent ? El(Input, {
     key: "p",
     label: "% of Gross Salary",
-    value: data.retirement.roth401kPct,
+    value: primaryRet.roth401kPct,
     onChange: function onChange(v) {
       updateRetirementTop("roth401kPct", v);
     },
@@ -3586,7 +3632,7 @@ function App() {
   }) : El(Input, {
     key: "d",
     label: "Monthly Contribution",
-    value: data.retirement.roth401kDollar,
+    value: primaryRet.roth401kDollar,
     onChange: function onChange(v) {
       updateRetirementTop("roth401kDollar", v);
     },
@@ -3601,7 +3647,7 @@ function App() {
   }, fmt(roth401kMonthly) + "/mo"), El(Input, {
     key: "bal",
     label: "Current Balance",
-    value: data.retirement.roth401kBalance,
+    value: primaryRet.roth401kBalance,
     onChange: function onChange(v) {
       updateRetirementTop("roth401kBalance", v);
     },
@@ -3630,7 +3676,7 @@ function App() {
   }, "Employer Match (% of gross salary)"), El(Input, {
     key: "p",
     label: "Match Percentage",
-    value: data.retirement.employerMatchPct,
+    value: primaryRet.employerMatchPct,
     onChange: function onChange(v) {
       updateRetirementTop("employerMatchPct", v);
     },
@@ -3686,18 +3732,18 @@ function App() {
   }, "Post-tax - comes from take-home pay"), El(Input, {
     key: "mo",
     label: "Monthly Contribution",
-    value: data.retirement.rothIra.monthly,
+    value: primaryRet.rothIra.monthly,
     onChange: function onChange(v) {
-      updateRetirement("rothIra", "monthly", v);
+      updateSourceRetirementNested("primary", "rothIra", "monthly", v);
     },
     prefix: "$",
     type: "number"
   }), El(Input, {
     key: "bal",
     label: "Current Balance",
-    value: data.retirement.rothIra.currentBalance,
+    value: primaryRet.rothIra.currentBalance,
     onChange: function onChange(v) {
-      updateRetirement("rothIra", "currentBalance", v);
+      updateSourceRetirementNested("primary", "rothIra", "currentBalance", v);
     },
     prefix: "$",
     type: "number"
@@ -3829,7 +3875,7 @@ function App() {
   }, "Projection Settings"), El(Input, {
     key: "age",
     label: "Current Age",
-    value: data.retirement.currentAge,
+    value: primaryRet.currentAge,
     onChange: function onChange(v) {
       updateRetirementTop("currentAge", v);
     },
@@ -3837,7 +3883,7 @@ function App() {
   }), El(Input, {
     key: "target",
     label: "Target Retirement Age",
-    value: data.retirement.targetAge,
+    value: primaryRet.targetAge,
     onChange: function onChange(v) {
       updateRetirementTop("targetAge", v);
     },
@@ -4014,7 +4060,7 @@ function App() {
     done: (parseFloat(data.savings.emergencyFund.current) || 0) >= (parseFloat(data.savings.emergencyFund.goal) || 1) && (parseFloat(data.savings.emergencyFund.goal) || 0) > 0
   }, {
     label: "401k funded to at least employer match",
-    done: trad401kMonthly > 0 && parseFloat(data.retirement.employerMatchPct) > 0
+    done: trad401kMonthly > 0 && parseFloat(primaryRet.employerMatchPct) > 0
   }, {
     label: "Roth IRA being contributed to",
     done: rothIraMonthly > 0

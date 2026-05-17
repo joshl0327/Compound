@@ -1854,6 +1854,14 @@ function App() {
       fontSize: 13
     }
   }, isSimpleMode ? "Quick estimate from salary and take-home." : "Full paycheck breakdown from gross to net.")]),
+  // Primary source label
+  El("div", { key: "src-label", style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 } }, [
+    El("input", { key: "name", type: "text", value: primaryCalc.src.name,
+      onChange: function(e) { updateSource("primary", "name", e.target.value); },
+      style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, flex: 1, minWidth: 0 }
+    }),
+    El("span", { key: "badge", style: { fontSize: 10, background: "#1d4ed833", color: "#60a5fa", border: "1px solid #1d4ed855", borderRadius: 4, padding: "2px 8px", fontWeight: 600, flexShrink: 0 } }, "W2")
+  ]),
   // Mode toggle
   El("div", {
     key: "mode",
@@ -2529,6 +2537,65 @@ function App() {
       marginTop: 4
     }
   }, fmtDec(netPerPaycheck) + " " + perPaycheckSuffix)])]))])])]),
+  // ===== ADDITIONAL INCOME SOURCES =====
+  tab === "income" && El("div", { key: "extra-sources" }, [
+    data.income.sources.filter(function(s) { return s.id !== "primary"; }).map(function(src) {
+      return El("div", { key: src.id, style: { background: "linear-gradient(145deg, #111c28, #0d1620)", border: "1px solid #1a2840", borderRadius: 12, padding: "16px 20px", marginBottom: 14 } }, [
+        El("div", { key: "hdr", style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 14 } }, [
+          El("input", { key: "name", type: "text", value: src.name,
+            onChange: function(e) { updateSource(src.id, "name", e.target.value); },
+            style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, flex: 1, minWidth: 0 }
+          }),
+          El("span", { key: "badge", style: { fontSize: 10, background: src.type === "w2" ? "#1d4ed833" : "#f59e0b22", color: src.type === "w2" ? "#60a5fa" : "#f59e0b", border: "1px solid " + (src.type === "w2" ? "#1d4ed855" : "#f59e0b44"), borderRadius: 4, padding: "2px 8px", fontWeight: 600, flexShrink: 0 } }, src.type === "w2" ? "W2" : "Additional"),
+          El("button", { key: "rm", onClick: function() { setData(function(d) { return Object.assign({}, d, { income: Object.assign({}, d.income, { sources: d.income.sources.filter(function(s) { return s.id !== src.id; }) }) }); }); },
+            style: { background: "none", border: "none", color: "#3a5a7a", fontSize: 18, cursor: "pointer", padding: "2px 6px", flexShrink: 0 }
+          }, "×")
+        ]),
+        src.type === "w2" ? El("div", { key: "w2-fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, [
+          El("div", { key: "sal" }, [
+            El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Annual Salary"),
+            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 65,000",
+              value: src.annualSalary ? parseInt(src.annualSalary).toLocaleString("en-US") : "",
+              onChange: function(e) { updateSource(src.id, "annualSalary", e.target.value.replace(/[^0-9]/g, "")); },
+              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
+            })
+          ]),
+          El("div", { key: "th" }, [
+            El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Take-Home / Paycheck"),
+            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 2,100",
+              value: src.takeHomePerPaycheck ? parseInt(src.takeHomePerPaycheck).toLocaleString("en-US") : "",
+              onChange: function(e) { updateSource(src.id, "takeHomePerPaycheck", e.target.value.replace(/[^0-9]/g, "")); },
+              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
+            })
+          ])
+        ]) : El("div", { key: "other-fields" }, [
+          El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Monthly Net Income"),
+          El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 1,200",
+            value: src.monthlyNet ? parseInt(src.monthlyNet).toLocaleString("en-US") : "",
+            onChange: function(e) { updateSource(src.id, "monthlyNet", e.target.value.replace(/[^0-9]/g, "")); },
+            style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
+          }),
+          El("div", { key: "hint", style: { fontSize: 11, color: "#3a5a7a", marginTop: 6 } }, "Enter the amount that hits your account after any taxes — side hustle, rental income, etc.")
+        ])
+      ]);
+    }),
+    El("div", { key: "add-row", style: { display: "flex", gap: 10 } }, [
+      El("button", { key: "add-w2",
+        onClick: function() {
+          var id = "src-" + Date.now();
+          setData(function(d) { return Object.assign({}, d, { income: Object.assign({}, d.income, { sources: d.income.sources.concat([makeDefaultW2Source(id, "Person " + (d.income.sources.length + 1))]) }) }); });
+        },
+        style: { flex: 1, padding: "12px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 10, color: "#60a5fa", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+      }, "+ Add W2 Income (Partner / Second Job)"),
+      El("button", { key: "add-other",
+        onClick: function() {
+          var id = "src-" + Date.now();
+          setData(function(d) { return Object.assign({}, d, { income: Object.assign({}, d.income, { sources: d.income.sources.concat([makeDefaultOtherSource(id, "Side Hustle")]) }) }); });
+        },
+        style: { flex: 1, padding: "12px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 10, color: "#f59e0b", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+      }, "+ Add Additional Income")
+    ])
+  ]),
   // ===== EXPENSES =====
   tab === "expenses" && El("div", {
     key: "expenses"
@@ -3499,8 +3566,8 @@ function App() {
     }
   }, [El(SectionTitle, {
     key: "st",
-    accent: "#10b981"
-  }, "401k Contributions"), El("div", {
+    accent: "#60a5fa"
+  }, primaryCalc.src.name + " — 401k"), El("div", {
     key: "toggle",
     style: {
       display: "flex",
@@ -3715,7 +3782,7 @@ function App() {
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#60a5fa"
-  }, "Roth IRA"), El("div", {
+  }, primaryCalc.src.name + " — Roth IRA"), El("div", {
     key: "pill",
     style: {
       display: "inline-flex",
@@ -3859,6 +3926,35 @@ function App() {
       color: "#4a7fa5"
     }
   }, "2025 limit: " + (data.retirement.hsa.familyCoverage ? "$8,550/yr ($713/mo)" : "$4,300/yr ($358/mo)"))]))]),
+  // Additional W2 source retirement sections
+  data.income.sources.filter(function(s) { return s.id !== "primary" && s.type === "w2"; }).map(function(src) {
+    var sRet = src.retirement || {};
+    return El(Card, { key: src.id + "-ret", style: { marginBottom: 14 } }, El("div", null, [
+      El("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } }, [
+        El(SectionTitle, { key: "st", accent: "#60a5fa" }, src.name + " — 401k"),
+        El("div", { key: "toggle", style: { display: "flex", background: "#0a1520", borderRadius: 8, padding: 3, border: "1px solid #1a2840" } }, [
+          El("button", { key: "p", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", true); },
+            style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent !== false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent !== false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "% of Salary"),
+          El("button", { key: "d", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", false); },
+            style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent === false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent === false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "$ Amount")
+        ])
+      ]),
+      El("div", { key: "fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, [
+        sRet.use401kPercent !== false ? El(Input, { key: "trad-p", label: "Traditional 401k %", value: sRet.traditional401kPct, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kPct", v); }, suffix: "%" })
+          : El(Input, { key: "trad-d", label: "Traditional 401k /mo", value: sRet.traditional401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kDollar", v); }, prefix: "$", type: "number" }),
+        sRet.use401kPercent !== false ? El(Input, { key: "roth-p", label: "Roth 401k %", value: sRet.roth401kPct, onChange: function(v) { updateSourceRetirement(src.id, "roth401kPct", v); }, suffix: "%" })
+          : El(Input, { key: "roth-d", label: "Roth 401k /mo", value: sRet.roth401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "roth401kDollar", v); }, prefix: "$", type: "number" }),
+        El(Input, { key: "match", label: "Employer Match %", value: sRet.employerMatchPct, onChange: function(v) { updateSourceRetirement(src.id, "employerMatchPct", v); }, suffix: "%" })
+      ]),
+      El("div", { key: "roth-ira", style: { marginTop: 14 } }, [
+        El(SectionTitle, { key: "st", accent: "#60a5fa" }, src.name + " — Roth IRA"),
+        El("div", { key: "fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 } }, [
+          El(Input, { key: "mo", label: "Monthly Contribution", value: (sRet.rothIra || {}).monthly, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "monthly", v); }, prefix: "$", type: "number" }),
+          El(Input, { key: "bal", label: "Current Balance", value: (sRet.rothIra || {}).currentBalance, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "currentBalance", v); }, prefix: "$", type: "number" })
+        ])
+      ])
+    ]));
+  }),
   // Projection
   El("div", {
     key: "proj",

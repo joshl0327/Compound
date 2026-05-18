@@ -173,7 +173,7 @@ function makeDefault() {
     },
     invest: { monthly: "", currentBalance: "", notes: "" },
     settings: { incomeBasis: "gross", debtStrategy: "avalanche" },
-    plan: { essentials: {}, discretionary: {}, debtPayments: {}, goals: [] }
+    plan: { essentials: {}, discretionary: {}, debtPayments: {}, savings: {}, goals: [] }
   };
 }
 function migrateData(parsed, def) {
@@ -970,6 +970,10 @@ function App() {
   var efMonthly = parseFloat(data.savings.emergencyFund.monthly) || 0;
   var genMonthly = parseFloat(data.savings.generalSavings.monthly) || 0;
   var liquidSavingsMonthly = efMonthly + genMonthly;
+  var planSav = (data.plan && data.plan.savings) || {};
+  var planEfMonthly = planSav.emergencyFund !== undefined ? parseFloat(planSav.emergencyFund) || 0 : efMonthly;
+  var planGenMonthly = planSav.generalSavings !== undefined ? parseFloat(planSav.generalSavings) || 0 : genMonthly;
+  var planLiquidSavingsMonthly = planEfMonthly + planGenMonthly;
 
   // Total retirement
   var totalRetirementMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + hsaMonthly + employerMatch;
@@ -993,7 +997,9 @@ function App() {
     return s + (parseFloat(v) || 0);
   }, 0);
   var planTabTotal = planTabEssTotal + planTabDebtTotal + planTabDiscTotal;
-  var planTabSurplus = netMonthly - planTabTotal;
+  var planTabBaselineTotal = realityTotal + postTaxSavingsMonthly;
+  var planTabTotalWithSavings = planTabTotal + postTaxSavingsMonthly;
+  var planTabSurplus = netMonthly - planTabTotalWithSavings;
   var savingsRate = (data.settings.incomeBasis === "net" ? netMonthly : grossMonthly) > 0 ? (totalSavedMonthly / (data.settings.incomeBasis === "net" ? netMonthly : grossMonthly) * 100).toFixed(1) : "0";
   var retireRate = grossMonthly > 0 ? (totalRetirementMonthly / grossMonthly * 100).toFixed(1) : "0";
   var housingItem = data.budget.essentials.find(function (e) {
@@ -1174,6 +1180,13 @@ function App() {
       return Object.assign({}, d, {
         savings: sav
       });
+    });
+  }
+  function updatePlanSavings(key, val) {
+    setData(function(d) {
+      var newSav = Object.assign({}, d.plan && d.plan.savings || {});
+      newSav[key] = val;
+      return Object.assign({}, d, { plan: Object.assign({}, d.plan, { savings: newSav }) });
     });
   }
   function updateInvest(key, val) {
@@ -3139,56 +3152,41 @@ function App() {
     key: "a"
   }, [El("div", {
     key: "l",
-    style: {
-      fontSize: 10,
-      color: "#5a7a9a",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em",
-      marginBottom: 4
-    }
-  }, "Budget plan surplus"), El("div", {
+    style: { fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }
+  }, "Available after expenses"), El("div", {
     key: "v",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 22,
-      fontWeight: 700,
-      color: realitySurplus >= 0 ? "#10b981" : "#ef4444"
-    }
-  }, fmt(realitySurplus))]), El("div", {
-    key: "b"
-  }, [El("div", {
-    key: "l",
-    style: {
-      fontSize: 10,
-      color: "#5a7a9a",
-      marginBottom: 4
-    }
-  }, "Liquid savings allocated"), El("div", {
-    key: "v",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 18,
-      fontWeight: 700,
-      color: "#60a5fa"
-    }
-  }, fmt(liquidSavingsMonthly))]), El("div", {
+    style: { fontFamily: "'DM Mono', monospace", fontSize: 22, fontWeight: 700, color: planSurplus >= 0 ? "#10b981" : "#ef4444" }
+  }, fmt(planSurplus))]),
+  El("div", { key: "breakdown", style: { display: "flex", gap: 20, flexWrap: "wrap" } }, [
+    El("div", { key: "ef" }, [
+      El("div", { key: "l", style: { fontSize: 10, color: "#5a7a9a", marginBottom: 4 } }, "Emergency Fund"),
+      El("div", { key: "v", style: { fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 700, color: "#60a5fa" } }, fmt(planEfMonthly))
+    ]),
+    El("div", { key: "gen" }, [
+      El("div", { key: "l", style: { fontSize: 10, color: "#5a7a9a", marginBottom: 4 } }, "General"),
+      El("div", { key: "v", style: { fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 700, color: "#60a5fa" } }, fmt(planGenMonthly))
+    ]),
+    El("div", { key: "rira" }, [
+      El("div", { key: "l", style: { fontSize: 10, color: "#5a7a9a", marginBottom: 4 } }, "Roth IRA"),
+      El("div", { key: "v", style: { fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 700, color: "#a78bfa" } }, fmt(rothIraMonthly))
+    ]),
+    El("div", { key: "inv" }, [
+      El("div", { key: "l", style: { fontSize: 10, color: "#5a7a9a", marginBottom: 4 } }, "Brokerage"),
+      El("div", { key: "v", style: { fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 700, color: "#a78bfa" } }, fmt(investMonthly))
+    ])
+  ]),
+  El("div", {
     key: "c"
   }, [El("div", {
     key: "l",
-    style: {
-      fontSize: 10,
-      color: "#5a7a9a",
-      marginBottom: 4
-    }
+    style: { fontSize: 10, color: "#5a7a9a", marginBottom: 4 }
   }, "Remaining"), El("div", {
     key: "v",
     style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 18,
-      fontWeight: 700,
-      color: planSurplus - liquidSavingsMonthly >= 0 ? "#10b981" : "#ef4444"
+      fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700,
+      color: planSurplus - planLiquidSavingsMonthly - rothIraMonthly - investMonthly >= 0 ? "#10b981" : "#ef4444"
     }
-  }, fmt(planSurplus - liquidSavingsMonthly))])]), El("div", {
+  }, fmt(planSurplus - planLiquidSavingsMonthly - rothIraMonthly - investMonthly))])]), El("div", {
     key: "grid",
     style: {
       display: "grid",
@@ -3237,19 +3235,27 @@ function App() {
     },
     prefix: "$",
     type: "number"
-  }), El(Input, {
-    key: "mo",
-    label: "Monthly Contribution",
-    value: data.savings.emergencyFund.monthly,
-    onChange: function onChange(v) {
-      updateSavings("emergencyFund", "monthly", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), function () {
+  }), El("div", { key: "mo-row", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, [
+    El(Input, {
+      key: "mo-act",
+      label: "Monthly (Actual)",
+      value: data.savings.emergencyFund.monthly,
+      onChange: function(v) { updateSavings("emergencyFund", "monthly", v); },
+      prefix: "$",
+      type: "number"
+    }),
+    El(Input, {
+      key: "mo-plan",
+      label: "Monthly (Plan)",
+      value: planSav.emergencyFund !== undefined ? planSav.emergencyFund : data.savings.emergencyFund.monthly,
+      onChange: function(v) { updatePlanSavings("emergencyFund", v); },
+      prefix: "$",
+      type: "number"
+    })
+  ]), function () {
     var current = parseFloat(data.savings.emergencyFund.current) || 0;
     var goal = parseFloat(data.savings.emergencyFund.goal) || 0;
-    var monthly = parseFloat(data.savings.emergencyFund.monthly) || 0;
+    var monthly = planEfMonthly;
     if (!goal) return null;
     var pct = Math.min(100, current / goal * 100);
     var remaining = Math.max(0, goal - current);
@@ -3310,16 +3316,24 @@ function App() {
     },
     prefix: "$",
     type: "number"
-  }), El(Input, {
-    key: "mo",
-    label: "Monthly Savings",
-    value: data.savings.generalSavings.monthly,
-    onChange: function onChange(v) {
-      updateSavings("generalSavings", "monthly", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), (parseFloat(data.savings.generalSavings.monthly) || 0) > 0 && El("div", {
+  }), El("div", { key: "mo-row", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, [
+    El(Input, {
+      key: "mo-act",
+      label: "Monthly (Actual)",
+      value: data.savings.generalSavings.monthly,
+      onChange: function(v) { updateSavings("generalSavings", "monthly", v); },
+      prefix: "$",
+      type: "number"
+    }),
+    El(Input, {
+      key: "mo-plan",
+      label: "Monthly (Plan)",
+      value: planSav.generalSavings !== undefined ? planSav.generalSavings : data.savings.generalSavings.monthly,
+      onChange: function(v) { updatePlanSavings("generalSavings", v); },
+      prefix: "$",
+      type: "number"
+    })
+  ]), (parseFloat(data.savings.generalSavings.monthly) || 0) > 0 && El("div", {
     key: "annual",
     style: {
       marginTop: 8,
@@ -4627,6 +4641,25 @@ function App() {
       color: "#10b981"
     }
   }, fmt(netMonthly))]), El("div", {
+    key: "bl"
+  }, [El("div", {
+    key: "l",
+    style: {
+      fontSize: 10,
+      color: "#5a7a9a",
+      textTransform: "uppercase",
+      letterSpacing: "0.06em",
+      marginBottom: 2
+    }
+  }, "Baseline"), El("div", {
+    key: "v",
+    style: {
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 18,
+      fontWeight: 700,
+      color: "#5a7a9a"
+    }
+  }, fmt(planTabBaselineTotal))]), El("div", {
     key: "pt"
   }, [El("div", {
     key: "l",
@@ -4643,9 +4676,9 @@ function App() {
       fontFamily: "'DM Mono', monospace",
       fontSize: 18,
       fontWeight: 700,
-      color: "#a78bfa"
+      color: planTabTotalWithSavings > planTabBaselineTotal ? "#f97316" : "#a78bfa"
     }
-  }, fmt(planTabTotal))]), El("div", {
+  }, fmt(planTabTotalWithSavings))]), El("div", {
     key: "ps"
   }, [El("div", {
     key: "l",
@@ -4656,7 +4689,7 @@ function App() {
       letterSpacing: "0.06em",
       marginBottom: 2
     }
-  }, "Plan Surplus"), El("div", {
+  }, "Remaining"), El("div", {
     key: "v",
     style: {
       fontFamily: "'DM Mono', monospace",
@@ -4738,111 +4771,6 @@ function App() {
         boxSizing: "border-box"
       }
     }), El("div", {key: "sp", style: {width: 24}})]);
-  })])), El(Card, {
-    key: "debt",
-    style: {
-      marginBottom: 14
-    }
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#f97316"
-  }, "Debt Obligations"), data.debts.filter(function (d) {
-    return !d.isMortgage;
-  }).length === 0 && El("p", {
-    key: "empty",
-    style: {
-      color: "#5a7a9a",
-      fontSize: 13
-    }
-  }, "No debts added yet."), data.debts.filter(function (d) {
-    return !d.isMortgage;
-  }).length > 0 && El("div", {
-    key: "rh",
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr auto",
-      gap: 8,
-      padding: "4px 12px",
-      marginBottom: 4
-    }
-  }, [El("div", {
-    key: "a",
-    style: {
-      fontSize: 10,
-      color: "#5a7a9a",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em"
-    }
-  }, "Debt"), El("div", {
-    key: "c",
-    style: {
-      fontSize: 10,
-      color: "#f97316",
-      textTransform: "uppercase",
-      letterSpacing: "0.06em"
-    }
-  }, "Plan Payment"), El("div", {
-    key: "d"
-  })]), data.debts.filter(function (d) {
-    return !d.isMortgage;
-  }).map(function (debt) {
-    var planPay = data.plan && data.plan.debtPayments && data.plan.debtPayments[debt.id] !== undefined ? data.plan.debtPayments[debt.id] : (debt.minPayment || "");
-    return El("div", {
-      key: debt.id,
-      style: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr auto",
-        gap: 8,
-        alignItems: "center",
-        padding: "8px 12px",
-        background: "#0a1520",
-        borderRadius: 10,
-        marginBottom: 6,
-        borderLeft: "3px solid #f97316"
-      }
-    }, [El("div", {
-      key: "lbl",
-      style: {
-        fontSize: 12,
-        fontWeight: 600,
-        color: "#e8f0f8"
-      }
-    }, debt.name), El("input", {
-      key: "v",
-      type: "text",
-      inputMode: "decimal",
-      value: fmtCurrencyInput(planPay),
-      onChange: function onChange(e) {
-        var v = stripCommas(e.target.value);
-        var debtId = debt.id;
-        setData(function (d) {
-          var newPay = Object.assign({}, d.plan && d.plan.debtPayments || {});
-          newPay[debtId] = v;
-          return Object.assign({}, d, {
-            plan: Object.assign({}, d.plan, {
-              debtPayments: newPay
-            })
-          });
-        });
-      },
-      style: {
-        width: "100%",
-        background: "#0f1923",
-        border: "1px solid #f9741644",
-        borderRadius: 6,
-        padding: "6px 8px",
-        color: "#e8f0f8",
-        fontSize: 13,
-        fontFamily: "'DM Mono', monospace",
-        outline: "none",
-        boxSizing: "border-box"
-      }
-    }), El("div", {
-      key: "sp",
-      style: {
-        width: 24
-      }
-    })]);
   })])), El(Card, {
     key: "disc",
     style: {
@@ -5197,7 +5125,7 @@ function App() {
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#f97316"
-  }, "Debt Payoff What-If"), data.debts.filter(function (d) {
+  }, "Debt Obligations"), data.debts.filter(function (d) {
     return !d.isMortgage;
   }).length === 0 ? El("p", {
     key: "empty",
@@ -5210,7 +5138,8 @@ function App() {
   }).map(function (debt) {
     var balance = parseFloat(debt.balance) || 0;
     var rate = parseFloat(debt.rate) || 0;
-    var planPay = parseFloat(data.plan && data.plan.debtPayments && data.plan.debtPayments[debt.id] || debt.minPayment || 0);
+    var planPayRaw = data.plan && data.plan.debtPayments && data.plan.debtPayments[debt.id] !== undefined ? data.plan.debtPayments[debt.id] : (debt.minPayment || "");
+    var planPay = parseFloat(planPayRaw) || 0;
     var minPay = parseFloat(debt.minPayment) || 0;
     var minResult = calcPayoff(balance, rate, minPay);
     var planResult = calcPayoff(balance, rate, planPay);
@@ -5304,15 +5233,34 @@ function App() {
         border: "1px solid #f9741633"
       }
     }, [El("div", {
+      key: "lbl-row",
+      style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }
+    }, [El("div", {
       key: "lbl",
+      style: { fontSize: 10, color: "#f97316", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }
+    }, "Plan \u2014"), El("input", {
+      key: "inp",
+      type: "text",
+      inputMode: "decimal",
+      value: fmtCurrencyInput(planPayRaw),
+      onChange: function(e) {
+        var v = stripCommas(e.target.value);
+        var debtId = debt.id;
+        setData(function(d) {
+          var newPay = Object.assign({}, d.plan && d.plan.debtPayments || {});
+          newPay[debtId] = v;
+          return Object.assign({}, d, { plan: Object.assign({}, d.plan, { debtPayments: newPay }) });
+        });
+      },
       style: {
-        fontSize: 10,
-        color: "#f97316",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        marginBottom: 6
+        width: "100%", background: "#0f1923", border: "1px solid #f9741644",
+        borderRadius: 4, padding: "2px 6px", color: "#f97316", fontSize: 11,
+        fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"
       }
-    }, "Plan Payment \u2014 " + fmt(planPay) + "/mo"), planResult ? [El("div", {
+    }), El("div", {
+      key: "unit",
+      style: { fontSize: 10, color: "#f97316", whiteSpace: "nowrap" }
+    }, "/mo")]), planResult ? [El("div", {
       key: "months",
       style: {
         fontSize: 13,

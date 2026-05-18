@@ -128,6 +128,11 @@ function makeDefaultW2Source(id, name) {
     federalTax: "",
     stateTax: "",
     otherPostTax: "",
+    taxesPerPaycheck: "",
+    hsaPerPaycheck: "",
+    trad401kPaycheck: "",
+    roth401kPaycheck: "",
+    customPreTax: [],
     retirement: {
       use401kPercent: true,
       traditional401kPct: "",
@@ -470,7 +475,7 @@ function RowHeader() {
       textTransform: "uppercase",
       letterSpacing: "0.06em"
     }
-  }, "Amount"), El("div", {
+  }, "Monthly Amount"), El("div", {
     key: "d"
   })]);
 }
@@ -670,10 +675,17 @@ function App() {
     isPromo: false,
     promoRate: "0",
     promoEndDate: "",
-    postPromoRate: ""
+    postPromoRate: "",
+    monthlyEscrow: "",
+    escrowBalance: "",
+    loanStartDate: "",
+    loanEndDate: ""
   });
   var newDebt = _newDebt[0];
   var setNewDebt = _newDebt[1];
+  var _newEss = useState({ name: "", baseline: "" });
+  var newEss = _newEss[0];
+  var setNewEss = _newEss[1];
   var _newDisc = useState({
     name: "",
     baseline: "",
@@ -815,8 +827,8 @@ function App() {
   }
   function finishQuickStart() {
     var d = makeDefault();
-    if (qs.salary) d.income.annualSalary = qs.salary;
-    if (qs.takeHome) { d.income.takeHomePerPaycheck = qs.takeHome; d.income.frequency = qs.freq; }
+    if (qs.salary) d.income.sources[0].annualSalary = qs.salary;
+    if (qs.takeHome) { d.income.sources[0].takeHomePerPaycheck = qs.takeHome; d.income.sources[0].frequency = qs.freq; }
     if (qs.housing) {
       d.budget.essentials = d.budget.essentials.map(function(e) {
         return e.id === "housing" ? Object.assign({}, e, { baseline: qs.housing }) : e;
@@ -865,13 +877,23 @@ function App() {
     if (isSimple) {
       net = (parseFloat(src.takeHomePerPaycheck) || 0) * py / 12;
     } else {
-      var hmo = (parseFloat(src.healthInsurance) || 0) * py / 12;
-      var fmo = (parseFloat(src.fsa) || 0) * py / 12;
-      var opmo = (parseFloat(src.otherPreTax) || 0) * py / 12;
-      var fedmo = (parseFloat(src.federalTax) || 0) * py / 12;
-      var stmo = (parseFloat(src.stateTax) || 0) * py / 12;
+      var useNewDetailedFields = src.taxesPerPaycheck !== undefined && src.taxesPerPaycheck !== "";
       var optmo = (parseFloat(src.otherPostTax) || 0) * py / 12;
-      net = gross - trad - hmo - fmo - opmo - fedmo - stmo - (gross * 0.0765) - roth - optmo;
+      if (useNewDetailedFields) {
+        var taxesMo = (parseFloat(src.taxesPerPaycheck) || 0) * py / 12;
+        var hsaDetMo = (parseFloat(src.hsaPerPaycheck) || 0) * py / 12;
+        var customPTmo = (src.customPreTax || []).reduce(function(s, d) {
+          return s + (parseFloat(d.amount) || 0) * py / 12;
+        }, 0);
+        net = gross - trad - roth - taxesMo - hsaDetMo - customPTmo - optmo;
+      } else {
+        var hmo = (parseFloat(src.healthInsurance) || 0) * py / 12;
+        var fmo = (parseFloat(src.fsa) || 0) * py / 12;
+        var opmo = (parseFloat(src.otherPreTax) || 0) * py / 12;
+        var fedmo = (parseFloat(src.federalTax) || 0) * py / 12;
+        var stmo = (parseFloat(src.stateTax) || 0) * py / 12;
+        net = gross - trad - hmo - fmo - opmo - fedmo - stmo - (gross * 0.0765) - roth - optmo;
+      }
     }
     return { src: src, gross: gross, net: net, trad401k: trad, roth401k: roth, match: match, rothIra: rothIra, perYear: py, isSimple: isSimple };
   });
@@ -885,6 +907,12 @@ function App() {
   var employerMatch = sourceCalcs.reduce(function(s, c) { return s + c.match; }, 0);
   var rothIraMonthly = sourceCalcs.reduce(function(s, c) { return s + c.rothIra; }, 0);
   var hsaMonthly = parseFloat(((data.retirement || {}).hsa || {}).monthly) || 0;
+  // If any W2 source is in detailed mode with hsaPerPaycheck entered, that drives hsaMonthly
+  var hsaFromDetailed = sourceCalcs.reduce(function(s, c) {
+    if (!c.isSimple && (parseFloat(c.src.hsaPerPaycheck) || 0) > 0) return s + (parseFloat(c.src.hsaPerPaycheck) || 0) * c.perYear / 12;
+    return s;
+  }, 0);
+  if (hsaFromDetailed > 0) hsaMonthly = hsaFromDetailed;
   var inferredDeductions = grossMonthly - netMonthly;
 
   // Primary W2 source — drives Income tab single-source display and legacy vars
@@ -947,6 +975,9 @@ function App() {
   var totalRetirementMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + hsaMonthly + employerMatch;
   var investMonthly = parseFloat(data.invest.monthly) || 0;
   var totalSavedMonthly = liquidSavingsMonthly + totalRetirementMonthly + investMonthly;
+  // Savings that actually come out of take-home pay (pre-tax items like trad401k, roth401k,
+  // HSA, and employer match are already excluded from netMonthly before it reaches us)
+  var postTaxSavingsMonthly = liquidSavingsMonthly + rothIraMonthly + investMonthly;
   // Plan tab sandbox calculations (independent of Expenses tab plan columns)
   var planTabEssTotal = data.budget.essentials.reduce(function (s, e) {
     var v = data.plan && data.plan.essentials && data.plan.essentials[e.id] !== undefined ? data.plan.essentials[e.id] : e.baseline;
@@ -1091,6 +1122,39 @@ function App() {
   }
   // Shorthand targeting primary source — used by existing Income tab code
   function updateIncome(key, val) { updateSource("primary", key, val); }
+  // Update HSA per paycheck and sync monthly to household retirement data
+  function updateHsaPerPaycheck(sourceId, perPaycheckVal, perYear) {
+    var monthly = (parseFloat(perPaycheckVal) || 0) * perYear / 12;
+    setData(function(d) {
+      return Object.assign({}, d, {
+        income: Object.assign({}, d.income, {
+          sources: d.income.sources.map(function(s) {
+            return s.id === sourceId ? Object.assign({}, s, { hsaPerPaycheck: perPaycheckVal }) : s;
+          })
+        }),
+        retirement: Object.assign({}, d.retirement, {
+          hsa: Object.assign({}, (d.retirement || {}).hsa, { monthly: String(Math.round(monthly * 100) / 100) })
+        })
+      });
+    });
+  }
+  // Update 401k per-paycheck (writes monthly to traditional401kDollar, forces dollar mode, preserves raw for display)
+  function update401kPerPaycheck(sourceId, perPaycheckVal, perYear, field) {
+    var monthly = (parseFloat(perPaycheckVal) || 0) * perYear / 12;
+    var rawField = field === "traditional401kDollar" ? "trad401kPaycheck" : "roth401kPaycheck";
+    setData(function(d) {
+      return Object.assign({}, d, {
+        income: Object.assign({}, d.income, {
+          sources: d.income.sources.map(function(s) {
+            if (s.id !== sourceId) return s;
+            var retUpd = {}; retUpd[field] = String(Math.round(monthly * 100) / 100); retUpd.use401kPercent = false;
+            var rawUpd = {}; rawUpd[rawField] = perPaycheckVal;
+            return Object.assign({}, s, rawUpd, { retirement: Object.assign({}, s.retirement, retUpd) });
+          })
+        })
+      });
+    });
+  }
   // Household-level retirement (HSA only)
   function updateRetirement(section, key, val) {
     setData(function (d) {
@@ -1528,9 +1592,7 @@ function App() {
     label: "Total DTI",
     value: parseFloat(dti) > 0 ? dti + "%" : "—",
     color: parseFloat(dti) > 0 ? (parseFloat(dti) > 36 ? "#ef4444" : parseFloat(dti) > 20 ? "#f97316" : "#10b981") : "#3a5a7a",
-    sub: parseFloat(dti) > 0 ? (data.debts.some(function (d) {
-      return d.isMortgage;
-    }) ? "Consumer DTI " + consumerDti + "%" : parseFloat(dti) > 36 ? "high" : parseFloat(dti) > 20 ? "moderate" : "healthy") : "Add income & debts",
+    sub: parseFloat(dti) > 0 ? "Consumer DTI " + consumerDti + "%" : "Add income & debts",
     tooltip: "Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; lenders see above 36% as high-risk. Consumer DTI (non-housing debt) should stay under 20%."
   }), El(Badge, {
     key: "rr",
@@ -1658,50 +1720,11 @@ function App() {
   }()])])), El("div", {
     key: "right"
   }, [El(Card, {
-    key: "sav",
-    style: {
-      marginBottom: 14
-    }
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#14b8a6"
-  }, "Monthly Savings"), El("div", {
-    key: "grid",
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 10
-    }
-  }, [El(Badge, {
-    key: "ef",
-    label: "Emergency Fund",
-    value: fmt(efMonthly),
-    color: "#60a5fa",
-    sub: "/month"
-  }), El(Badge, {
-    key: "ret",
-    label: "Retirement",
-    value: fmt(totalRetirementMonthly),
-    color: "#60a5fa",
-    sub: "/month"
-  }), El(Badge, {
-    key: "inv",
-    label: "Brokerage",
-    value: fmt(investMonthly),
-    color: "#60a5fa",
-    sub: "/month"
-  }), El(Badge, {
-    key: "gen",
-    label: "General",
-    value: fmt(genMonthly),
-    color: "#60a5fa",
-    sub: "/month"
-  })])])), El(Card, {
     key: "bud"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#a78bfa"
-  }, "Budget Summary (Plan)"), [["Essentials", fmt(essTotalP), "#60a5fa"], ["Debt Payments", fmt(debtPlanTotal), "#60a5fa"], ["Discretionary", fmt(discPlanTotal), "#60a5fa"], ["All Savings", fmt(totalSavedMonthly), "#60a5fa"]].map(function (row) {
+  }, "Take-Home Budget Summary (Plan)"), [["Essentials", fmt(essTotalP), "#60a5fa"], ["Debt Payments", fmt(debtPlanTotal), "#60a5fa"], ["Discretionary", fmt(discPlanTotal), "#60a5fa"], ["Savings", fmt(liquidSavingsMonthly + investMonthly), "#60a5fa"], ["Retirement (post-tax)", fmt(rothIraMonthly), "#60a5fa"]].map(function (row) {
     return El("div", {
       key: row[0],
       style: {
@@ -1746,83 +1769,9 @@ function App() {
       fontFamily: "'DM Mono', monospace",
       fontSize: 15,
       fontWeight: 700,
-      color: (isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly) >= 0 ? "#10b981" : "#ef4444"
+      color: (planSurplus - postTaxSavingsMonthly) >= 0 ? "#10b981" : "#ef4444"
     }
-  }, fmt(isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly))])]))])])]),
-  // ===== SUGGESTED NEXT STEPS (overview) =====
-  tab === "overview" && (function() {
-    var noData = grossMonthly === 0 && netMonthly === 0;
-    var suggestions = [];
-    if (noData) {
-      suggestions = [{icon: "🎯", text: "Fill in your Income and Expenses to see personalized next steps.", sub: null}];
-    } else {
-      // 1. Housing > 28%
-      if (parseFloat(housingPct) > 28) {
-        suggestions.push({icon: "⚠️", text: "Housing is " + housingPct + "% of gross income — above the 28% guideline.", sub: "Reduce by roughly " + fmt(Math.round((parseFloat(housingPct) - 28) / 100 * grossMonthly)) + "/mo to get within the recommended range."});
-      }
-      // 2. Consumer DTI > 20%
-      if (parseFloat(consumerDti) > 20) {
-        suggestions.push({icon: "⚠️", text: "Consumer DTI is " + consumerDti + "% — above the 20% caution zone.", sub: "Focus on paying down consumer debt before taking on new obligations."});
-      }
-      // 3. Surplus toward highest-rate debt
-      var consumerDebts = data.debts.filter(function(d) { return !d.isMortgage && (parseFloat(d.rate) || 0) > 0; });
-      var surplus = isSimpleMode ? planSurplus : planSurplus - totalSavedMonthly;
-      if (consumerDebts.length > 0 && surplus > 0) {
-        var topDebt = consumerDebts.reduce(function(best, d) { return (parseFloat(d.rate) || 0) > (parseFloat(best.rate) || 0) ? d : best; });
-        suggestions.push({icon: "🎯", text: "Direct your " + fmt(surplus) + "/mo surplus toward " + topDebt.name + " at " + (parseFloat(topDebt.rate) || 0) + "% APR.", sub: "Avalanche method: targeting the highest rate first minimizes total interest paid."});
-      }
-      // 4. Emergency fund
-      var efCurrent = parseFloat(data.savings.emergencyFund.current) || 0;
-      var efGoal = parseFloat(data.savings.emergencyFund.goal) || 0;
-      if (efGoal > 0 && efCurrent < efGoal) {
-        var efRemaining = efGoal - efCurrent;
-        var efPct = Math.round(efCurrent / efGoal * 100);
-        if (efMonthly > 0) {
-          var efMonthsLeft = Math.ceil(efRemaining / efMonthly);
-          suggestions.push({icon: "🎯", text: "Emergency fund is " + efPct + "% funded — " + fmt(efRemaining) + " to go.", sub: "At " + fmt(efMonthly) + "/mo, fully funded by " + payoffDate(efMonthsLeft) + "."});
-        } else {
-          suggestions.push({icon: "🎯", text: "Emergency fund is " + efPct + "% funded — " + fmt(efRemaining) + " remaining.", sub: "Set a monthly contribution in the Savings tab to see a completion date."});
-        }
-      } else if (efGoal > 0 && efCurrent >= efGoal) {
-        suggestions.push({icon: "✅", text: "Emergency fund is fully funded at " + fmt(efGoal) + ".", sub: (parseFloat(data.savings.emergencyFund.months) || 3) + " months of expenses covered — solid foundation."});
-      }
-      // 5. Savings rate
-      var sr = parseFloat(savingsRate);
-      if (sr >= 20) {
-        suggestions.push({icon: "✅", text: "Savings rate is " + savingsRate + "% — excellent.", sub: "Above the 20% benchmark. You're building wealth aggressively."});
-      } else if (sr >= 15) {
-        suggestions.push({icon: "✅", text: "Savings rate is " + savingsRate + "% — on track.", sub: "Above the 15% target. Consider pushing toward 20% for earlier financial independence."});
-      } else if (sr >= 10) {
-        var basisAmt = data.settings.incomeBasis === "net" ? netMonthly : grossMonthly;
-        suggestions.push({icon: "🎯", text: "Savings rate is " + savingsRate + "% — aim for 15–20%.", sub: "Add " + fmt(Math.round(0.15 * basisAmt - totalSavedMonthly)) + "/mo more to hit the 15% benchmark."});
-      } else if (sr > 0) {
-        suggestions.push({icon: "⚠️", text: "Savings rate is only " + savingsRate + "% — below the 10% minimum.", sub: "Aim for at least " + fmt(Math.round(0.10 * (data.settings.incomeBasis === "net" ? netMonthly : grossMonthly))) + "/mo to build financial security."});
-      }
-      // 6. Employer match
-      if (employerMatch > 0) {
-        if (trad401kMonthly >= employerMatch) {
-          suggestions.push({icon: "✅", text: "Capturing full employer match of " + fmt(employerMatch) + "/mo — free money secured.", sub: fmt(employerMatch * 12) + "/yr added to your 401k at no extra cost to you."});
-        } else {
-          suggestions.push({icon: "⚠️", text: "Not capturing the full employer 401k match — leaving " + fmt(employerMatch - trad401kMonthly) + "/mo on the table.", sub: "Increase your 401k contribution to at least " + primaryRet.employerMatchPct + "% of gross to capture the full match."});
-        }
-      }
-      suggestions = suggestions.slice(0, 5);
-    }
-    return El("div", {key: "next-steps", style: {marginTop: 14}}, [
-      El("div", {key: "hdr", style: {marginBottom: 12}}, El("h2", {style: {margin: 0, fontSize: 17, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: "#e8f0f8"}}, "Suggested Next Steps")),
-      El("div", {key: "list", style: {display: "flex", flexDirection: "column", gap: 8}},
-        suggestions.map(function(s) {
-          return El("div", {key: s.text, style: {background: "#0d1520", borderRadius: 12, padding: "14px 16px", border: "1px solid #1a2840", display: "flex", gap: 12, alignItems: "flex-start"}}, [
-            El("div", {key: "icon", style: {fontSize: 18, lineHeight: "1.4", flexShrink: 0, marginTop: 1}}, s.icon),
-            El("div", {key: "body"}, [
-              El("div", {key: "t", style: {fontSize: 13, fontWeight: 600, color: "#e8f0f8", marginBottom: s.sub ? 4 : 0}}, s.text),
-              s.sub && El("div", {key: "s", style: {fontSize: 12, color: "#5a7a9a", lineHeight: 1.5}}, s.sub)
-            ])
-          ]);
-        })
-      )
-    ]);
-  }()),
+  }, fmt(planSurplus - postTaxSavingsMonthly))])]))])])]),
   // ===== INCOME =====
   tab === "income" && El("div", {
     key: "income"
@@ -1855,11 +1804,17 @@ function App() {
     }
   }, isSimpleMode ? "Quick estimate from salary and take-home." : "Full paycheck breakdown from gross to net.")]),
   // Primary source label
-  El("div", { key: "src-label", style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 } }, [
-    El("input", { key: "name", type: "text", value: primaryCalc.src.name,
+  El("div", { key: "src-label", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 } }, [
+    El("input", { key: "name", id: "name-input-primary", type: "text", value: primaryCalc.src.name,
       onChange: function(e) { updateSource("primary", "name", e.target.value); },
-      style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, flex: 1, minWidth: 0 }
+      style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, minWidth: 0 }
     }),
+    El("button", { key: "pencil", onClick: function() { var el = document.getElementById("name-input-primary"); if (el) { el.select(); } },
+      title: "Edit name",
+      style: { background: "none", border: "none", color: "#3a5a7a", cursor: "pointer", padding: "2px 4px", display: "flex", alignItems: "center", flexShrink: 0 }
+    }, El("svg", { key: "s", width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+      El("path", { key: "p", d: "M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" })
+    )),
     El("span", { key: "badge", style: { fontSize: 10, background: "#1d4ed833", color: "#60a5fa", border: "1px solid #1d4ed855", borderRadius: 4, padding: "2px 8px", fontWeight: 600, flexShrink: 0 } }, "W2")
   ]),
   // Mode toggle
@@ -1908,15 +1863,8 @@ function App() {
     }
   }, "Detailed")])]),
   // ===== SIMPLE MODE =====
-  isSimpleMode && El("div", {
-    key: "simple",
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 14
-    }
-  }, [El(Card, {
-    key: "in"
+  isSimpleMode && El(Card, {
+    key: "simple"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#60a5fa"
@@ -2047,150 +1995,6 @@ function App() {
       lineHeight: 1.5
     }
   }, "Want a precise paycheck breakdown? Switch to Detailed mode.")])),
-  // Right: 401k summary
-  El(Card, {
-    key: "ret"
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#10b981"
-  }, "Retirement Contributions"), El("p", {
-    key: "desc",
-    style: {
-      fontSize: 12,
-      color: "#5a7a9a",
-      margin: "0 0 14px",
-      lineHeight: 1.6
-    }
-  }, "401k contributions are configured in the Retirement tab as a percentage of your salary."), El("div", {
-    key: "rows",
-    style: {
-      background: "#0a1520",
-      borderRadius: 8,
-      padding: "12px 14px",
-      fontSize: 12
-    }
-  }, [El("div", {
-    key: "trad",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#5a7a9a"
-    }
-  }, "Traditional 401k (" + (parseFloat(primaryRet.traditional401kPct) || 0) + "%)"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#60a5fa",
-      fontWeight: 700
-    }
-  }, fmt(trad401kMonthly) + "/mo")]), El("div", {
-    key: "roth401k",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#5a7a9a"
-    }
-  }, "Roth 401k (" + (parseFloat(primaryRet.roth401kPct) || 0) + "%)"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#60a5fa",
-      fontWeight: 700
-    }
-  }, fmt(roth401kMonthly) + "/mo")]), El("div", {
-    key: "match",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#5a7a9a"
-    }
-  }, "Employer match (" + (parseFloat(primaryRet.employerMatchPct) || 0) + "%)"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#60a5fa",
-      fontWeight: 700
-    }
-  }, fmt(employerMatch) + "/mo")]), El("div", {
-    key: "ira",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#5a7a9a"
-    }
-  }, "Roth IRA"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#60a5fa",
-      fontWeight: 700
-    }
-  }, fmt(rothIraMonthly) + "/mo")]), El("div", {
-    key: "hsa",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#5a7a9a"
-    }
-  }, "HSA"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#60a5fa",
-      fontWeight: 700
-    }
-  }, fmt(hsaMonthly) + "/mo")]), El("div", {
-    key: "tot",
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      borderTop: "1px solid #1e2d3d",
-      paddingTop: 8
-    }
-  }, [El("span", {
-    style: {
-      color: "#e8f0f8",
-      fontWeight: 700
-    }
-  }, "Total to retirement"), El("span", {
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      color: "#e8f0f8",
-      fontWeight: 700
-    }
-  }, fmt(totalRetirementMonthly) + "/mo")])]), El("button", {
-    key: "btn",
-    onClick: function onClick() {
-      setTab("invest");
-    },
-    style: {
-      width: "100%",
-      padding: "10px",
-      background: "#0f1923",
-      border: "1px solid #1e3a5f",
-      borderRadius: 8,
-      color: "#60a5fa",
-      fontSize: 12,
-      fontWeight: 600,
-      cursor: "pointer",
-      marginTop: 12
-    }
-  }, "Set retirement contributions")]))]),
   // ===== DETAILED MODE =====
   !isSimpleMode && El("div", {
     key: "detailed",
@@ -2276,234 +2080,100 @@ function App() {
       fontWeight: 700
     }
   }, fmt(grossMonthly))])])), El(Card, {
-    key: "pretax"
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#10b981"
-  }, "Pre-Tax Deductions"), El("div", {
-    key: "trad",
-    style: {
-      marginBottom: 12,
-      padding: "10px 12px",
-      background: "#0a1520",
-      borderRadius: 8,
-      border: "1px solid #1e3a5f"
-    }
-  }, [El("div", {
-    key: "lbl",
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: "0.08em",
-      color: "#8b9cb5",
-      marginBottom: 2,
-      textTransform: "uppercase"
-    }
-  }, "Traditional 401k"), El("div", {
-    key: "val",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 15,
-      color: "#10b981",
-      fontWeight: 700
-    }
-  }, fmt(trad401kPP) + " " + perPaycheckSuffix), El("div", {
-    key: "src",
-    style: {
-      fontSize: 11,
-      color: "#4a7fa5",
-      marginTop: 2
-    }
-  }, fmt(trad401kMonthly) + "/mo - set in Retirement tab")]), El("div", {
-    key: "hsa",
-    style: {
-      marginBottom: 12,
-      padding: "10px 12px",
-      background: "#0a1520",
-      borderRadius: 8,
-      border: "1px solid #1e3a5f"
-    }
-  }, [El("div", {
-    key: "lbl",
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: "0.08em",
-      color: "#8b9cb5",
-      marginBottom: 2,
-      textTransform: "uppercase"
-    }
-  }, "HSA"), El("div", {
-    key: "val",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 15,
-      color: "#10b981",
-      fontWeight: 700
-    }
-  }, fmt(hsaPP) + " " + perPaycheckSuffix), El("div", {
-    key: "src",
-    style: {
-      fontSize: 11,
-      color: "#4a7fa5",
-      marginTop: 2
-    }
-  }, fmt(hsaMonthly) + "/mo - set in Retirement tab")]), El(Input, {
-    key: "health",
-    label: "Health Insurance " + perPaycheckSuffix,
-    value: primaryCalc.src.healthInsurance,
-    onChange: function onChange(v) {
-      updateIncome("healthInsurance", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), El(Input, {
-    key: "fsa",
-    label: "FSA " + perPaycheckSuffix,
-    value: primaryCalc.src.fsa,
-    onChange: function onChange(v) {
-      updateIncome("fsa", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), El(Input, {
-    key: "other",
-    label: "Other Pre-Tax " + perPaycheckSuffix,
-    value: primaryCalc.src.otherPreTax,
-    onChange: function onChange(v) {
-      updateIncome("otherPreTax", v);
-    },
-    prefix: "$",
-    type: "number"
-  })]))]), El("div", {
+    key: "deductions"
+  }, El("div", null, [
+    El(SectionTitle, { key: "st", accent: "#10b981" }, "Deductions Per Paycheck"),
+    El("div", { key: "hint", style: { fontSize: 12, color: "#5a7a9a", marginBottom: 14, lineHeight: 1.5 } },
+      "Enter amounts from your paystub. 401k and HSA sync automatically to Invest & Retire."
+    ),
+    El(Input, { key: "taxes", label: "Total Taxes",
+      value: primaryCalc.src.taxesPerPaycheck,
+      onChange: function(v) { updateIncome("taxesPerPaycheck", v); },
+      prefix: "$", type: "number"
+    }),
+    El("div", { key: "tax-note", style: { fontSize: 11, color: "#4a7fa5", marginTop: -6, marginBottom: 12 } },
+      primaryCalc.src.taxesPerPaycheck ? fmt((parseFloat(primaryCalc.src.taxesPerPaycheck) || 0) * perYear / 12) + "/mo" : "Federal + state + FICA combined"
+    ),
+    El("div", { key: "sep", style: { borderTop: "1px solid #1a2840", margin: "8px 0 16px" } }),
+    El(Input, { key: "trad", label: "Traditional 401k",
+      value: primaryCalc.src.trad401kPaycheck !== undefined && primaryCalc.src.trad401kPaycheck !== "" ? primaryCalc.src.trad401kPaycheck : ((parseFloat(primaryRet.traditional401kDollar) || 0) > 0 ? String(Math.round((parseFloat(primaryRet.traditional401kDollar) || 0) * 12 / perYear * 100) / 100) : ""),
+      onChange: function(v) { update401kPerPaycheck("primary", v, perYear, "traditional401kDollar"); },
+      prefix: "$", type: "number"
+    }),
+    El("div", { key: "trad-note", style: { fontSize: 11, color: "#4a7fa5", marginTop: -6, marginBottom: 12 } },
+      trad401kMonthly > 0 ? fmt(trad401kMonthly) + "/mo — synced to Invest & Retire" : "From your paystub"
+    ),
+    El(Input, { key: "roth", label: "Roth 401k (post-tax)",
+      value: primaryCalc.src.roth401kPaycheck !== undefined && primaryCalc.src.roth401kPaycheck !== "" ? primaryCalc.src.roth401kPaycheck : ((parseFloat(primaryRet.roth401kDollar) || 0) > 0 ? String(Math.round((parseFloat(primaryRet.roth401kDollar) || 0) * 12 / perYear * 100) / 100) : ""),
+      onChange: function(v) { update401kPerPaycheck("primary", v, perYear, "roth401kDollar"); },
+      prefix: "$", type: "number"
+    }),
+    El("div", { key: "roth-note", style: { fontSize: 11, color: "#4a7fa5", marginTop: -6, marginBottom: 12 } },
+      roth401kMonthly > 0 ? fmt(roth401kMonthly) + "/mo — synced to Invest & Retire" : "From your paystub"
+    ),
+    El(Input, { key: "hsa", label: "HSA",
+      value: primaryCalc.src.hsaPerPaycheck,
+      onChange: function(v) { updateHsaPerPaycheck("primary", v, perYear); },
+      prefix: "$", type: "number"
+    }),
+    El("div", { key: "hsa-note", style: { fontSize: 11, color: "#4a7fa5", marginTop: -6, marginBottom: 12 } },
+      hsaMonthly > 0 ? fmt(hsaMonthly) + "/mo — synced to Invest & Retire" : "From your paystub"
+    ),
+    (primaryCalc.src.customPreTax || []).map(function(d) {
+      return El("div", { key: d.id, style: { display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-end" } }, [
+        El("div", { key: "lbl-wrap", style: { flex: 1 } }, [
+          El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Label"),
+          El("input", { key: "name", type: "text", value: d.label, placeholder: "e.g. Health Insurance",
+            onChange: function(e) {
+              updateIncome("customPreTax", (primaryCalc.src.customPreTax || []).map(function(x) { return x.id === d.id ? Object.assign({}, x, { label: e.target.value }) : x; }));
+            },
+            style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box" }
+          })
+        ]),
+        El("div", { key: "amt-wrap", style: { width: 130 } }, [
+          El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Per Paycheck"),
+          El("div", { key: "row", style: { display: "flex", alignItems: "center", background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 8, overflow: "hidden" } }, [
+            El("span", { key: "pre", style: { padding: "0 8px", color: "#4a7fa5", fontSize: 13 } }, "$"),
+            El("input", { key: "inp", type: "text", inputMode: "decimal", value: d.amount, placeholder: "0",
+              onChange: function(e) {
+                updateIncome("customPreTax", (primaryCalc.src.customPreTax || []).map(function(x) { return x.id === d.id ? Object.assign({}, x, { amount: e.target.value.replace(/[^0-9.]/g, "") }) : x; }));
+              },
+              style: { flex: 1, background: "transparent", border: "none", outline: "none", padding: "10px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace" }
+            })
+          ])
+        ]),
+        El("button", { key: "rm", onClick: function() { updateIncome("customPreTax", (primaryCalc.src.customPreTax || []).filter(function(x) { return x.id !== d.id; })); },
+          style: { background: "none", border: "none", color: "#3a5a7a", fontSize: 18, cursor: "pointer", padding: "0 4px", marginBottom: 2, flexShrink: 0 }
+        }, "×")
+      ]);
+    }),
+    El("button", { key: "add-ded",
+      onClick: function() { updateIncome("customPreTax", (primaryCalc.src.customPreTax || []).concat([{ id: "ded-" + Date.now(), label: "", amount: "" }])); },
+      style: { marginTop: 4, padding: "8px 14px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 8, color: "#60a5fa", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+    }, "+ Add Deduction")
+  ])),
+  ]), El("div", {
     key: "right"
-  }, [El(Card, {
-    key: "tax",
-    style: {
-      marginBottom: 14
-    }
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#ef4444"
-  }, "Taxes"), El(Input, {
-    key: "fed",
-    label: "Federal Tax " + perPaycheckSuffix,
-    value: primaryCalc.src.federalTax,
-    onChange: function onChange(v) {
-      updateIncome("federalTax", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), El(Input, {
-    key: "state",
-    label: "State Tax " + perPaycheckSuffix,
-    value: primaryCalc.src.stateTax,
-    onChange: function onChange(v) {
-      updateIncome("stateTax", v);
-    },
-    prefix: "$",
-    type: "number"
-  }), El("div", {
-    key: "fica",
-    style: {
-      background: "#0a1520",
-      borderRadius: 8,
-      padding: "10px 12px",
-      marginBottom: 12
-    }
-  }, [El("div", {
-    key: "lbl",
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: "0.08em",
-      color: "#8b9cb5",
-      marginBottom: 2,
-      textTransform: "uppercase"
-    }
-  }, "FICA (Auto-calculated)"), El("div", {
-    key: "val",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 15,
-      color: "#ef4444",
-      fontWeight: 700
-    }
-  }, fmt(ficaMonthly) + "/mo"), El("div", {
-    key: "note",
-    style: {
-      fontSize: 11,
-      color: "#4a7fa5",
-      marginTop: 2
-    }
-  }, "7.65% of gross (Social Security + Medicare)")]), El("div", {
-    key: "fl",
-    style: {
-      fontSize: 11,
-      color: "#4a7fa5",
-      background: "#0a1520",
-      borderRadius: 8,
-      padding: 10
-    }
-  }, "Florida has no state income tax. Set state tax to $0.")])), El(Card, {
-    key: "posttax",
-    style: {
-      marginBottom: 14
-    }
-  }, El("div", null, [El(SectionTitle, {
-    key: "st",
-    accent: "#a78bfa"
-  }, "Post-Tax Deductions"), El("div", {
-    key: "roth401k",
-    style: {
-      marginBottom: 12,
-      padding: "10px 12px",
-      background: "#0a1520",
-      borderRadius: 8,
-      border: "1px solid #1e3a5f"
-    }
-  }, [El("div", {
-    key: "lbl",
-    style: {
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: "0.08em",
-      color: "#8b9cb5",
-      marginBottom: 2,
-      textTransform: "uppercase"
-    }
-  }, "Roth 401k"), El("div", {
-    key: "val",
-    style: {
-      fontFamily: "'DM Mono', monospace",
-      fontSize: 15,
-      color: "#a78bfa",
-      fontWeight: 700
-    }
-  }, fmt(roth401kPP) + " " + perPaycheckSuffix), El("div", {
-    key: "src",
-    style: {
-      fontSize: 11,
-      color: "#4a7fa5",
-      marginTop: 2
-    }
-  }, fmt(roth401kMonthly) + "/mo - set in Retirement tab")]), El(Input, {
-    key: "other",
-    label: "Other Post-Tax " + perPaycheckSuffix,
-    value: primaryCalc.src.otherPostTax,
-    onChange: function onChange(v) {
-      updateIncome("otherPostTax", v);
-    },
-    prefix: "$",
-    type: "number"
-  })])), El(Card, {
+  }, [ El(Card, {
     key: "summary"
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#10b981"
   }, "Paycheck Summary"), El("div", {
     key: "rows"
-  }, [IncomeRow("Gross Pay", fmt(grossMonthly), "#60a5fa"), IncomeRow("Pre-Tax Deductions", "- " + fmt(trad401kMonthly + hsaMonthly + healthInsMonthly + fsaMonthly + otherPreTaxMonthly), "#ef4444"), IncomeRow("Traditional 401k", "- " + fmt(trad401kMonthly), "#5a7a9a", true), IncomeRow("HSA", "- " + fmt(hsaMonthly), "#5a7a9a", true), IncomeRow("Health + FSA + Other", "- " + fmt(healthInsMonthly + fsaMonthly + otherPreTaxMonthly), "#5a7a9a", true), IncomeRow("Taxes", "- " + fmt(federalTaxMonthly + stateTaxMonthly + ficaMonthly), "#ef4444"), IncomeRow("Federal", "- " + fmt(federalTaxMonthly), "#5a7a9a", true), IncomeRow("State", "- " + fmt(stateTaxMonthly), "#5a7a9a", true), IncomeRow("FICA", "- " + fmt(ficaMonthly), "#5a7a9a", true), IncomeRow("Post-Tax Deductions", "- " + fmt(roth401kMonthly + otherPostTaxMonthly), "#ef4444")]), El("div", {
+  }, (function() {
+    var taxesSumMo = primaryCalc.src.taxesPerPaycheck ? (parseFloat(primaryCalc.src.taxesPerPaycheck) || 0) * perYear / 12 : (federalTaxMonthly + stateTaxMonthly + ficaMonthly);
+    var rows = [IncomeRow("Gross Pay", fmtDec(grossMonthly), "#60a5fa")];
+    if (taxesSumMo > 0) rows.push(IncomeRow("Taxes", "- " + fmtDec(taxesSumMo), "#5a7a9a"));
+    if (trad401kMonthly > 0) rows.push(IncomeRow("Traditional 401k", "- " + fmtDec(trad401kMonthly), "#5a7a9a"));
+    if (roth401kMonthly > 0) rows.push(IncomeRow("Roth 401k (post-tax)", "- " + fmtDec(roth401kMonthly), "#5a7a9a"));
+    if (hsaMonthly > 0) rows.push(IncomeRow("HSA", "- " + fmtDec(hsaMonthly), "#5a7a9a"));
+    (primaryCalc.src.customPreTax || []).forEach(function(d) {
+      var mo = (parseFloat(d.amount) || 0) * perYear / 12;
+      if (mo > 0) rows.push(IncomeRow(d.label || "Other Deduction", "- " + fmtDec(mo), "#5a7a9a"));
+    });
+    return rows;
+  })()), El("div", {
     key: "net",
     style: {
       marginTop: 10,
@@ -2529,7 +2199,7 @@ function App() {
       fontWeight: 700,
       color: "#10b981"
     }
-  }, fmt(netMonthly)), El("div", {
+  }, fmtDec(netMonthly)), El("div", {
     key: "pp",
     style: {
       fontSize: 12,
@@ -2538,41 +2208,201 @@ function App() {
     }
   }, fmtDec(netPerPaycheck) + " " + perPaycheckSuffix)])]))])])]),
   // ===== ADDITIONAL INCOME SOURCES =====
-  tab === "income" && El("div", { key: "extra-sources" }, [
+  tab === "income" && El("div", { key: "extra-sources", style: { marginTop: 20 } }, [
     data.income.sources.filter(function(s) { return s.id !== "primary"; }).map(function(src) {
+      var sc = sourceCalcs.find(function(c) { return c.src.id === src.id; }) || { gross: 0, net: 0, trad401k: 0, roth401k: 0, perYear: 26 };
+      var srcFreq = FREQ_OPTIONS.find(function(f) { return f.id === src.frequency; }) || FREQ_OPTIONS[1];
+      var srcPY = srcFreq.perYear;
+      var srcIsSimple = src.mode !== "detailed";
+      var srcRet = src.retirement || {};
+      var srcTrad401kMo = sc.trad401k;
+      var srcRoth401kMo = sc.roth401k;
+      var srcHsaMo = (parseFloat(src.hsaPerPaycheck) || 0) * srcPY / 12;
+      var srcTaxesMo = (parseFloat(src.taxesPerPaycheck) || 0) * srcPY / 12;
+      var srcNetPP = sc.net * 12 / srcPY;
+      var INPUT_STYLE = { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" };
+      var NOTE_STYLE = { fontSize: 11, color: "#4a7fa5", marginTop: -6, marginBottom: 12 };
+
       return El("div", { key: src.id, style: { background: "linear-gradient(145deg, #111c28, #0d1620)", border: "1px solid #1a2840", borderRadius: 12, padding: "16px 20px", marginBottom: 14 } }, [
-        El("div", { key: "hdr", style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 14 } }, [
-          El("input", { key: "name", type: "text", value: src.name,
+        // Header: name + pencil + badge + mode toggle + remove
+        El("div", { key: "hdr", style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 } }, [
+          El("input", { key: "name", id: "name-input-" + src.id, type: "text", value: src.name,
             onChange: function(e) { updateSource(src.id, "name", e.target.value); },
-            style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, flex: 1, minWidth: 0 }
+            style: { background: "none", border: "none", outline: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: "#e8f0f8", padding: 0, minWidth: 0 }
           }),
+          El("button", { key: "pencil", onClick: function() { var el = document.getElementById("name-input-" + src.id); if (el) el.select(); },
+            title: "Edit name",
+            style: { background: "none", border: "none", color: "#3a5a7a", cursor: "pointer", padding: "2px 4px", display: "flex", alignItems: "center", flexShrink: 0 }
+          }, El("svg", { key: "s", width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+            El("path", { key: "p", d: "M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" })
+          )),
+          El("span", { key: "flex" }),
           El("span", { key: "badge", style: { fontSize: 10, background: src.type === "w2" ? "#1d4ed833" : "#f59e0b22", color: src.type === "w2" ? "#60a5fa" : "#f59e0b", border: "1px solid " + (src.type === "w2" ? "#1d4ed855" : "#f59e0b44"), borderRadius: 4, padding: "2px 8px", fontWeight: 600, flexShrink: 0 } }, src.type === "w2" ? "W2" : "Additional"),
+          src.type === "w2" && El("div", { key: "mode", style: { display: "flex", background: "#0a1520", borderRadius: 8, padding: 2, border: "1px solid #1a2840", flexShrink: 0 } }, [
+            El("button", { key: "s", onClick: function() { updateSource(src.id, "mode", "simple"); },
+              style: { padding: "5px 12px", borderRadius: 6, border: "none", background: srcIsSimple ? "#1d4ed8" : "transparent", color: srcIsSimple ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.04em" }
+            }, "Simple"),
+            El("button", { key: "d", onClick: function() { updateSource(src.id, "mode", "detailed"); },
+              style: { padding: "5px 12px", borderRadius: 6, border: "none", background: !srcIsSimple ? "#1d4ed8" : "transparent", color: !srcIsSimple ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.04em" }
+            }, "Detailed")
+          ]),
           El("button", { key: "rm", onClick: function() { setData(function(d) { return Object.assign({}, d, { income: Object.assign({}, d.income, { sources: d.income.sources.filter(function(s) { return s.id !== src.id; }) }) }); }); },
             style: { background: "none", border: "none", color: "#3a5a7a", fontSize: 18, cursor: "pointer", padding: "2px 6px", flexShrink: 0 }
           }, "×")
         ]),
-        src.type === "w2" ? El("div", { key: "w2-fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, [
-          El("div", { key: "sal" }, [
-            El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Annual Salary"),
-            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 65,000",
-              value: src.annualSalary ? parseInt(src.annualSalary).toLocaleString("en-US") : "",
-              onChange: function(e) { updateSource(src.id, "annualSalary", e.target.value.replace(/[^0-9]/g, "")); },
-              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
-            })
+
+        // SIMPLE MODE — frequency + salary/take-home + summary
+        src.type === "w2" && srcIsSimple && El("div", { key: "simple" }, [
+          El("div", { key: "freq", style: { marginBottom: 12 } }, [
+            El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 8, textTransform: "uppercase" } }, "Pay Frequency"),
+            El("div", { key: "opts", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 } },
+              FREQ_OPTIONS.map(function(f) {
+                var sel = src.frequency === f.id;
+                return El("button", { key: f.id, onClick: function() { updateSource(src.id, "frequency", f.id); },
+                  style: { padding: "8px 12px", background: sel ? "#1d4ed8" : "#0f1923", border: "1px solid " + (sel ? "#1d4ed8" : "#1e2d3d"), borderRadius: 8, color: sel ? "#fff" : "#5a7a9a", fontSize: 12, fontWeight: 600, cursor: "pointer" }
+                }, f.label);
+              })
+            )
           ]),
-          El("div", { key: "th" }, [
-            El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Take-Home / Paycheck"),
-            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 2,100",
-              value: src.takeHomePerPaycheck ? parseInt(src.takeHomePerPaycheck).toLocaleString("en-US") : "",
-              onChange: function(e) { updateSource(src.id, "takeHomePerPaycheck", e.target.value.replace(/[^0-9]/g, "")); },
-              style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
-            })
+          El("div", { key: "sal-th", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } }, [
+            El("div", { key: "sal" }, [
+              El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Annual Salary"),
+              El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 65,000",
+                value: fmtCurrencyInput(src.annualSalary),
+                onChange: function(e) { updateSource(src.id, "annualSalary", e.target.value.replace(/[^0-9.]/g, "")); },
+                style: INPUT_STYLE
+              })
+            ]),
+            El("div", { key: "th" }, [
+              El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Take-Home / " + srcFreq.label.replace("ly", "") + " Paycheck"),
+              El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 2,100",
+                value: fmtCurrencyInput(src.takeHomePerPaycheck),
+                onChange: function(e) { updateSource(src.id, "takeHomePerPaycheck", e.target.value.replace(/[^0-9.]/g, "")); },
+                style: INPUT_STYLE
+              })
+            ])
+          ]),
+          El("div", { key: "calc", style: { background: "#0a1520", borderRadius: 8, padding: "12px 14px", fontSize: 12, color: "#5a7a9a", lineHeight: 1.8 } }, [
+            El("div", { key: "g", style: { display: "flex", justifyContent: "space-between" } }, [El("span", null, "Monthly gross"), El("span", { style: { fontFamily: "'DM Mono', monospace", color: "#60a5fa", fontWeight: 700 } }, fmt(sc.gross))]),
+            El("div", { key: "n", style: { display: "flex", justifyContent: "space-between" } }, [El("span", null, "Monthly take-home"), El("span", { style: { fontFamily: "'DM Mono', monospace", color: "#60a5fa", fontWeight: 700 } }, fmt(sc.net))]),
+            El("div", { key: "diff", style: { display: "flex", justifyContent: "space-between", borderTop: "1px solid #1e2d3d", paddingTop: 6, marginTop: 4 } }, [El("span", null, "Inferred deductions"), El("span", { style: { fontFamily: "'DM Mono', monospace", color: "#60a5fa" } }, fmt(sc.gross - sc.net))])
           ])
-        ]) : El("div", { key: "other-fields" }, [
+        ]),
+
+        // DETAILED MODE — 2-col, frequency inside left column (matches Person 1)
+        src.type === "w2" && !srcIsSimple && El("div", { key: "detailed", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } }, [
+          // Left: Pay Details section + Deductions section
+          El("div", { key: "left" }, [
+            El("div", { key: "pay-section", style: { background: "#0a1520", borderRadius: 10, padding: "14px", marginBottom: 14 } }, [
+              El("div", { key: "st", style: { fontSize: 12, fontWeight: 700, color: "#60a5fa", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 } },
+                [El("span", { key: "bar", style: { display: "inline-block", width: 3, height: 14, background: "#60a5fa", borderRadius: 2 } }),  "Pay Details"]
+              ),
+              El("div", { key: "freq", style: { marginBottom: 12 } }, [
+                El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 8, textTransform: "uppercase" } }, "Pay Frequency"),
+                El("div", { key: "opts", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 } },
+                  FREQ_OPTIONS.map(function(f) {
+                    var sel = src.frequency === f.id;
+                    return El("button", { key: f.id, onClick: function() { updateSource(src.id, "frequency", f.id); },
+                      style: { padding: "8px 12px", background: sel ? "#1d4ed8" : "#0f1923", border: "1px solid " + (sel ? "#1d4ed8" : "#1e2d3d"), borderRadius: 8, color: sel ? "#fff" : "#5a7a9a", fontSize: 12, fontWeight: 600, cursor: "pointer" }
+                    }, f.label);
+                  })
+                )
+              ]),
+              El(Input, { key: "gross", label: "Gross Pay / " + srcFreq.label.replace("ly","") + " Paycheck",
+                value: src.grossPerPaycheck,
+                onChange: function(v) { updateSource(src.id, "grossPerPaycheck", v); },
+                prefix: "$", type: "number"
+              }),
+              El("div", { key: "gross-mo", style: { fontSize: 11, color: "#4a7fa5", marginTop: -6 } }, sc.gross > 0 ? fmt(sc.gross) + "/mo gross" : "From your paystub")
+            ]),
+            El("div", { key: "ded-section", style: { background: "#0a1520", borderRadius: 10, padding: "14px" } }, [
+              El("div", { key: "st", style: { fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 } },
+                [El("span", { key: "bar", style: { display: "inline-block", width: 3, height: 14, background: "#10b981", borderRadius: 2 } }), "Deductions Per Paycheck"]
+              ),
+              El("div", { key: "hint", style: { fontSize: 11, color: "#5a7a9a", marginBottom: 12, lineHeight: 1.5 } }, "401k and HSA sync to Invest & Retire."),
+            El(Input, { key: "taxes", label: "Total Taxes",
+              value: src.taxesPerPaycheck,
+              onChange: function(v) { updateSource(src.id, "taxesPerPaycheck", v); },
+              prefix: "$", type: "number"
+            }),
+            El("div", { key: "tax-note", style: NOTE_STYLE }, srcTaxesMo > 0 ? fmt(srcTaxesMo) + "/mo" : "Federal + state + FICA combined"),
+            El("div", { key: "sep", style: { borderTop: "1px solid #1a2840", margin: "8px 0 16px" } }),
+            El(Input, { key: "trad", label: "Traditional 401k",
+              value: src.trad401kPaycheck !== undefined && src.trad401kPaycheck !== "" ? src.trad401kPaycheck : ((parseFloat(srcRet.traditional401kDollar) || 0) > 0 ? String(Math.round((parseFloat(srcRet.traditional401kDollar) || 0) * 12 / srcPY * 100) / 100) : ""),
+              onChange: function(v) { update401kPerPaycheck(src.id, v, srcPY, "traditional401kDollar"); },
+              prefix: "$", type: "number"
+            }),
+            El("div", { key: "trad-note", style: NOTE_STYLE }, srcTrad401kMo > 0 ? fmt(srcTrad401kMo) + "/mo — synced to Invest & Retire" : "From your paystub"),
+            El(Input, { key: "roth", label: "Roth 401k (post-tax)",
+              value: src.roth401kPaycheck !== undefined && src.roth401kPaycheck !== "" ? src.roth401kPaycheck : ((parseFloat(srcRet.roth401kDollar) || 0) > 0 ? String(Math.round((parseFloat(srcRet.roth401kDollar) || 0) * 12 / srcPY * 100) / 100) : ""),
+              onChange: function(v) { update401kPerPaycheck(src.id, v, srcPY, "roth401kDollar"); },
+              prefix: "$", type: "number"
+            }),
+            El("div", { key: "roth-note", style: NOTE_STYLE }, srcRoth401kMo > 0 ? fmt(srcRoth401kMo) + "/mo — synced to Invest & Retire" : "From your paystub"),
+            El(Input, { key: "hsa", label: "HSA",
+              value: src.hsaPerPaycheck,
+              onChange: function(v) { updateHsaPerPaycheck(src.id, v, srcPY); },
+              prefix: "$", type: "number"
+            }),
+            El("div", { key: "hsa-note", style: NOTE_STYLE }, srcHsaMo > 0 ? fmt(srcHsaMo) + "/mo — synced to Invest & Retire" : "From your paystub"),
+            (src.customPreTax || []).map(function(d) {
+              return El("div", { key: d.id, style: { display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-end" } }, [
+                El("div", { key: "lw", style: { flex: 1 } }, [
+                  El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Label"),
+                  El("input", { key: "n", type: "text", value: d.label, placeholder: "e.g. Health Insurance",
+                    onChange: function(e) { updateSource(src.id, "customPreTax", (src.customPreTax || []).map(function(x) { return x.id === d.id ? Object.assign({}, x, { label: e.target.value }) : x; })); },
+                    style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box" }
+                  })
+                ]),
+                El("div", { key: "aw", style: { width: 130 } }, [
+                  El("div", { key: "lbl", style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", marginBottom: 4, textTransform: "uppercase" } }, "Per Paycheck"),
+                  El("div", { key: "row", style: { display: "flex", alignItems: "center", background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 8, overflow: "hidden" } }, [
+                    El("span", { key: "pre", style: { padding: "0 8px", color: "#4a7fa5", fontSize: 13 } }, "$"),
+                    El("input", { key: "inp", type: "text", inputMode: "decimal", value: d.amount, placeholder: "0",
+                      onChange: function(e) { updateSource(src.id, "customPreTax", (src.customPreTax || []).map(function(x) { return x.id === d.id ? Object.assign({}, x, { amount: e.target.value.replace(/[^0-9.]/g, "") }) : x; })); },
+                      style: { flex: 1, background: "transparent", border: "none", outline: "none", padding: "10px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace" }
+                    })
+                  ])
+                ]),
+                El("button", { key: "rm2", onClick: function() { updateSource(src.id, "customPreTax", (src.customPreTax || []).filter(function(x) { return x.id !== d.id; })); },
+                  style: { background: "none", border: "none", color: "#3a5a7a", fontSize: 18, cursor: "pointer", padding: "0 4px", marginBottom: 2, flexShrink: 0 }
+                }, "×")
+              ]);
+            }),
+            El("button", { key: "add-ded",
+              onClick: function() { updateSource(src.id, "customPreTax", (src.customPreTax || []).concat([{ id: "ded-" + Date.now(), label: "", amount: "" }])); },
+              style: { marginTop: 4, padding: "8px 14px", background: "#0f1923", border: "1px solid #1e3a5f", borderRadius: 8, color: "#60a5fa", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
+            }, "+ Add Deduction")
+          ])]),
+          // Right: Paycheck Summary
+          El("div", { key: "right" }, [
+            El("div", { key: "sum-lbl", style: { fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#8b9cb5", textTransform: "uppercase", marginBottom: 12 } }, "Paycheck Summary"),
+            El("div", { key: "rows" }, (function() {
+              var rows = [IncomeRow("Gross Pay", fmtDec(sc.gross), "#60a5fa")];
+              if (srcTaxesMo > 0) rows.push(IncomeRow("Taxes", "- " + fmtDec(srcTaxesMo), "#5a7a9a"));
+              if (srcTrad401kMo > 0) rows.push(IncomeRow("Traditional 401k", "- " + fmtDec(srcTrad401kMo), "#5a7a9a"));
+              if (srcRoth401kMo > 0) rows.push(IncomeRow("Roth 401k", "- " + fmtDec(srcRoth401kMo), "#5a7a9a"));
+              if (srcHsaMo > 0) rows.push(IncomeRow("HSA", "- " + fmtDec(srcHsaMo), "#5a7a9a"));
+              (src.customPreTax || []).forEach(function(d) {
+                var mo = (parseFloat(d.amount) || 0) * srcPY / 12;
+                if (mo > 0) rows.push(IncomeRow(d.label || "Other", "- " + fmtDec(mo), "#5a7a9a"));
+              });
+              return rows;
+            })()),
+            El("div", { key: "net", style: { marginTop: 10, padding: "12px 14px", background: "linear-gradient(135deg, #0d1f10, #0a1c14)", border: "1px solid #10b98133", borderRadius: 10 } }, [
+              El("div", { key: "lbl", style: { fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 } }, "Monthly Take-Home"),
+              El("div", { key: "val", style: { fontFamily: "'DM Mono', monospace", fontSize: 22, fontWeight: 700, color: "#10b981" } }, fmtDec(sc.net)),
+              El("div", { key: "pp", style: { fontSize: 12, color: "#4a7fa5", marginTop: 4 } }, fmtDec(srcNetPP) + " " + srcFreq.label.replace("ly","") + " paycheck")
+            ])
+          ])
+        ]),
+
+        // Other income (side hustle)
+        src.type !== "w2" && El("div", { key: "other-fields" }, [
           El("div", { key: "lbl", style: { fontSize: 11, color: "#4a7fa5", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 } }, "Monthly Net Income"),
-          El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 1,200",
-            value: src.monthlyNet ? parseInt(src.monthlyNet).toLocaleString("en-US") : "",
-            onChange: function(e) { updateSource(src.id, "monthlyNet", e.target.value.replace(/[^0-9]/g, "")); },
+          El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 1,200",
+            value: fmtCurrencyInput(src.monthlyNet),
+            onChange: function(e) { updateSource(src.id, "monthlyNet", e.target.value.replace(/[^0-9.]/g, "")); },
             style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
           }),
           El("div", { key: "hint", style: { fontSize: 11, color: "#3a5a7a", marginTop: 6 } }, "Enter the amount that hits your account after any taxes — side hustle, rental income, etc.")
@@ -2614,7 +2444,7 @@ function App() {
       color: "#5a7a9a",
       fontSize: 13
     }
-  }, "Track what you actually spend each month across essentials, debts, and discretionary."), El("div", {
+  }, "All amounts are monthly. Enter what you actually spend or owe each month."), El("div", {
     key: "bar",
     style: {
       background: "#0a1520",
@@ -2691,9 +2521,7 @@ function App() {
   , El("div", {key: "dtir"}, [El("div", {key: "l", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2}}, "Total DTI"), El("div", {key: "v", style: {fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 700, color: parseFloat(dti) > 0 ? (parseFloat(dti) > 36 ? "#ef4444" : "#10b981") : "#3a5a7a"}}, parseFloat(dti) > 0 ? dti + "%" : "Add income & debts")])
 ]), El(Card, {
     key: "ess",
-    style: {
-      marginBottom: 14
-    }
+    style: { marginBottom: 14 }
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#60a5fa"
@@ -2748,9 +2576,34 @@ function App() {
             })
           });
         });
+      },
+      onDelete: function() {
+        setData(function(d) {
+          return Object.assign({}, d, { budget: Object.assign({}, d.budget, {
+            essentials: d.budget.essentials.filter(function(e) { return e.id !== item.id; })
+          })});
+        });
       }
     });
-  }), El("div", {
+  }),
+  El("div", { key: "add-ess", style: { display: "grid", gridTemplateColumns: "1fr 110px auto", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid #1e2d3d" } }, [
+    El("input", { key: "name", type: "text", value: newEss.name, placeholder: "Add an essential (e.g. Groceries)",
+      onChange: function(e) { setNewEss(function(n) { return Object.assign({}, n, {name: e.target.value}); }); },
+      style: { background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 7, padding: "8px 10px", color: "#e8f0f8", fontSize: 13, outline: "none", boxSizing: "border-box" }
+    }),
+    El("input", { key: "amt", type: "text", inputMode: "decimal", value: fmtCurrencyInput(newEss.baseline), placeholder: "$/mo",
+      onChange: function(e) { setNewEss(function(n) { return Object.assign({}, n, {baseline: stripCommas(e.target.value)}); }); },
+      style: { background: "#0f1923", border: "1px solid #1e2d3d", borderRadius: 7, padding: "8px 10px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box" }
+    }),
+    El("button", { key: "btn", onClick: function() {
+      if (!newEss.name) return;
+      setData(function(d) { return Object.assign({}, d, { budget: Object.assign({}, d.budget, {
+        essentials: d.budget.essentials.concat([{ id: Date.now(), name: newEss.name, baseline: newEss.baseline || "0", plan: "" }])
+      })}); });
+      setNewEss({name: "", baseline: ""});
+    }, style: { background: "#60a5fa", border: "none", borderRadius: 7, padding: "8px 14px", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" } }, "+ Add")
+  ]),
+  El("div", {
     key: "tots",
     style: {
       display: "flex",
@@ -2774,13 +2627,11 @@ function App() {
     }
   }, fmt(essTotalR))])])])), El(Card, {
     key: "disc",
-    style: {
-      marginBottom: 14
-    }
+    style: { marginBottom: 14 }
   }, El("div", null, [El(SectionTitle, {
     key: "st",
     accent: "#f59e0b"
-  }, "Discretionary"), data.budget.discretionary.length > 0 && El(RowHeader, {
+  }, "Other Expenses"), data.budget.discretionary.length > 0 && El(RowHeader, {
     key: "rh"
   }), data.budget.discretionary.map(function (item) {
     return El(BudgetRow, {
@@ -2856,7 +2707,7 @@ function App() {
     key: "add",
     style: {
       display: "grid",
-      gridTemplateColumns: "1fr 90px 90px auto",
+      gridTemplateColumns: "1fr 100px auto",
       gap: 8,
       marginBottom: 12
     }
@@ -2893,34 +2744,10 @@ function App() {
         });
       });
     },
-    placeholder: "Baseline",
+    placeholder: "$/mo",
     style: {
       background: "#0f1923",
       border: "1px solid #1e2d3d",
-      borderRadius: 7,
-      padding: "8px 10px",
-      color: "#e8f0f8",
-      fontSize: 13,
-      fontFamily: "'DM Mono', monospace",
-      outline: "none",
-      boxSizing: "border-box"
-    }
-  }), El("input", {
-    key: "plan",
-    type: "text",
-    inputMode: "decimal",
-    value: fmtCurrencyInput(newDisc.plan),
-    onChange: function onChange(e) {
-      setNewDisc(function (n) {
-        return Object.assign({}, n, {
-          plan: stripCommas(e.target.value)
-        });
-      });
-    },
-    placeholder: "Plan",
-    style: {
-      background: "#0f1923",
-      border: "1px solid #f59e0b44",
       borderRadius: 7,
       padding: "8px 10px",
       color: "#e8f0f8",
@@ -3065,7 +2892,7 @@ function App() {
         ]),
         El("div", {key: "fields", style: {display: "grid", gridTemplateColumns: debt.isMortgage ? "1fr" : "1fr 1fr", gap: 8, marginBottom: 8}}, [
           El("div", {key: "bal-col"}, [
-            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Balance"),
+            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, debt.isMortgage ? "Loan Balance" : "Balance"),
             El("input", {key: "inp", type: "text", inputMode: "numeric", value: fmtCurrencyInput(debt.balance),
               onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {balance: v}) : x; })}); }); },
               onBlur: commitDebtSort,
@@ -3085,7 +2912,7 @@ function App() {
         ]),
         El("div", {key: "payments", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8}}, [
           El("div", {key: "min-col"}, [
-            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Minimum"),
+            El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, debt.isMortgage ? "P&I Payment" : "Minimum"),
             El("input", {key: "inp", type: "text", inputMode: "numeric", value: fmtCurrencyInput(debt.minPayment),
               onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {minPayment: v}) : x; })}); }); },
               style: {width: "100%", background: "#060e18", border: "1px solid #1e2d3d", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
@@ -3106,6 +2933,54 @@ function App() {
             })
           ])
         ]),
+        debt.isMortgage && El("div", {key: "mortgage-detail", style: {marginTop: 10, background: "#060e18", borderRadius: 8, padding: "12px 14px", border: "1px solid #1e3a5f"}}, [
+          El("div", {key: "lbl", style: {fontSize: 10, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10}}, "Mortgage Details"),
+          El("div", {key: "escrow-row", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8}}, [
+            El("div", {key: "escrow-mo"}, [
+              El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Monthly Escrow"),
+              El("input", {key: "inp", type: "text", inputMode: "decimal", value: fmtCurrencyInput(debt.monthlyEscrow || ""), placeholder: "0",
+                onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {monthlyEscrow: v}) : x; })}); }); },
+                style: {width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
+              }),
+              El("div", {key: "sub", style: {fontSize: 10, color: "#3a5a7a", marginTop: 3}}, "Taxes + Insurance")
+            ]),
+            El("div", {key: "escrow-bal"}, [
+              El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Escrow Balance"),
+              El("input", {key: "inp", type: "text", inputMode: "decimal", value: fmtCurrencyInput(debt.escrowBalance || ""), placeholder: "0",
+                onChange: function(e) { var v = stripCommas(e.target.value); setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {escrowBalance: v}) : x; })}); }); },
+                style: {width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none", boxSizing: "border-box"}
+              })
+            ])
+          ]),
+          El("div", {key: "dates-row", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8}}, [
+            El("div", {key: "start"}, [
+              El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Loan Start"),
+              El("input", {key: "inp", type: "date", value: debt.loanStartDate || "",
+                onChange: function(e) { var v = e.target.value; setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {loanStartDate: v}) : x; })}); }); },
+                style: {width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box"}
+              })
+            ]),
+            El("div", {key: "end"}, [
+              El("div", {key: "lbl", style: {fontSize: 10, color: "#5a7a9a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4}}, "Loan End (Payoff Date)"),
+              El("input", {key: "inp", type: "date", value: debt.loanEndDate || "",
+                onChange: function(e) { var v = e.target.value; setData(function(d) { return Object.assign({}, d, {debts: d.debts.map(function(x) { return x.id === debt.id ? Object.assign({}, x, {loanEndDate: v}) : x; })}); }); },
+                style: {width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 6, padding: "6px 8px", color: "#e8f0f8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box"}
+              })
+            ])
+          ]),
+          (function() {
+            var pi = parseFloat(debt.minPayment) || 0;
+            var esc = parseFloat(debt.monthlyEscrow) || 0;
+            var start = debt.loanStartDate ? new Date(debt.loanStartDate).toLocaleDateString("en-US", {month: "short", year: "numeric"}) : null;
+            var end = debt.loanEndDate ? new Date(debt.loanEndDate).toLocaleDateString("en-US", {month: "short", year: "numeric"}) : null;
+            return El("div", {key: "summary", style: {display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, paddingTop: 8, borderTop: "1px solid #1e3a5f"}}, [
+              pi + esc > 0 && El("div", {key: "piti", style: {fontSize: 12, color: "#e8f0f8"}},
+                [El("span", {key: "l", style: {color: "#5a7a9a"}}, "Total PITI: "), El("span", {key: "v", style: {fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#60a5fa"}}, fmt(pi + esc) + "/mo")]
+              ),
+              start && end && El("div", {key: "dur", style: {fontSize: 12, color: "#5a7a9a"}}, start + " — " + end)
+            ]);
+          })()
+        ]),
         debt.isPromo && promoMonthsLeft > 0 && El("div", {key: "promo-warn", style: {background: "linear-gradient(135deg, #1a1000, #120b00)", border: "1px solid #f97316aa", borderRadius: 8, padding: "8px 12px", marginTop: 8, fontSize: 12, color: "#f97316"}}, "Rate jumps to " + debt.postPromoRate + "% APR in " + promoMonthsLeft + " months. Pay off before then to avoid interest."),
         debt.isPromo && promoMonthsLeft === 0 && El("div", {key: "promo-expired", style: {background: "#1a0a0a", border: "1px solid #ef444444", borderRadius: 8, padding: "8px 12px", marginTop: 8, fontSize: 12, color: "#ef4444"}}, "Promo period has ended. Now accruing at " + debt.postPromoRate + "% APR.")
       ]);
@@ -3113,8 +2988,8 @@ function App() {
     data.debts.length === 0 && El("div", {key: "empty", style: {color: "#3a5a7a", fontSize: 13, textAlign: "center", padding: "16px 0", marginBottom: 20}}, "No debts added yet."),
     El(SectionTitle, {key: "st2", accent: "#f97316"}, "Add a Debt"),
     El(Input, {key: "name", label: "Name", value: newDebt.name, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {name: v}); }); }, placeholder: "e.g. Student Loan"}),
-    El(Input, {key: "bal", label: "Balance", value: newDebt.balance, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {balance: v}); }); }, prefix: "$", type: "number"}),
-    El(Input, {key: "min", label: "Minimum Payment", value: newDebt.minPayment, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {minPayment: v}); }); }, prefix: "$", type: "number"}),
+    El(Input, {key: "bal", label: newDebt.isMortgage ? "Loan Balance" : "Balance", value: newDebt.balance, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {balance: v}); }); }, prefix: "$", type: "number"}),
+    El(Input, {key: "min", label: newDebt.isMortgage ? "Monthly P&I (Principal + Interest)" : "Minimum Payment", value: newDebt.minPayment, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {minPayment: v}); }); }, prefix: "$", type: "number"}),
     El("div", {key: "promo-toggle", onClick: function() { setNewDebt(function(d) { return Object.assign({}, d, {isPromo: !d.isPromo}); }); }, style: {display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: newDebt.isPromo ? "linear-gradient(135deg, #0d1a10, #0a1508)" : "#0a1520", border: "1px solid " + (newDebt.isPromo ? "#10b98133" : "#1a2840"), borderRadius: 8, cursor: "pointer", marginBottom: 12}}, [
       El("div", {key: "check", style: {width: 18, height: 18, borderRadius: 4, background: newDebt.isPromo ? "#10b981" : "transparent", border: "2px solid " + (newDebt.isPromo ? "#10b981" : "#2a4060"), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0}}, newDebt.isPromo && El("div", {style: {width: 8, height: 8, background: "#fff", borderRadius: 2}})),
       El("div", {key: "text"}, [
@@ -3137,12 +3012,28 @@ function App() {
         El("div", {key: "d", style: {fontSize: 11, color: "#4a7fa5"}}, "Tracks payoff but excluded from consumer debt total and budget")
       ])
     ]),
+    newDebt.isMortgage && El("div", {key: "mortgage-fields", style: {background: "#0a1520", borderRadius: 10, padding: "14px", marginBottom: 12, border: "1px solid #1e3a5f"}}, [
+      El("div", {key: "lbl", style: {fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12}}, "Mortgage Details"),
+      El("div", {key: "escrow-row", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 0}}, [
+        El(Input, {key: "escrow-mo", label: "Monthly Escrow (Taxes + Insurance)", value: newDebt.monthlyEscrow, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {monthlyEscrow: v}); }); }, prefix: "$", type: "number"}),
+        El(Input, {key: "escrow-bal", label: "Escrow Balance", value: newDebt.escrowBalance, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {escrowBalance: v}); }); }, prefix: "$", type: "number"})
+      ]),
+      El("div", {key: "dates-row", style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10}}, [
+        El(Input, {key: "start", label: "Loan Start Date", value: newDebt.loanStartDate, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {loanStartDate: v}); }); }, type: "date"}),
+        El(Input, {key: "end", label: "Loan End Date", value: newDebt.loanEndDate, onChange: function(v) { setNewDebt(function(d) { return Object.assign({}, d, {loanEndDate: v}); }); }, type: "date"})
+      ]),
+      El("div", {key: "piti-note", style: {fontSize: 11, color: "#4a7fa5", marginTop: 10, lineHeight: 1.5}},
+        newDebt.minPayment && newDebt.monthlyEscrow
+          ? "Total monthly PITI: " + fmt((parseFloat(newDebt.minPayment)||0) + (parseFloat(newDebt.monthlyEscrow)||0)) + " (P&I " + fmt(parseFloat(newDebt.minPayment)||0) + " + Escrow " + fmt(parseFloat(newDebt.monthlyEscrow)||0) + ")"
+          : "Total PITI = P&I + Escrow. Enter both to see combined payment."
+      )
+    ]),
     El("button", {key: "btn", onClick: function() {
       if (!newDebt.name || !newDebt.balance) return;
       var debtToAdd = Object.assign({}, newDebt, {id: Date.now(), planPayment: newDebt.minPayment});
       if (newDebt.isPromo) { debtToAdd.rate = "0"; }
       setData(function(d) { return Object.assign({}, d, {debts: d.debts.concat([debtToAdd])}); });
-      setNewDebt({name: "", balance: "", rate: "", minPayment: "", isMortgage: false, isPromo: false, promoRate: "0", promoEndDate: "", postPromoRate: ""});
+      setNewDebt({name: "", balance: "", rate: "", minPayment: "", isMortgage: false, isPromo: false, promoRate: "0", promoEndDate: "", postPromoRate: "", monthlyEscrow: "", escrowBalance: "", loanStartDate: "", loanEndDate: ""});
     }, style: {width: "100%", padding: "11px", background: "linear-gradient(135deg,#1d4ed8,#1e40af)", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, fontFamily: "'DM Sans',sans-serif", marginTop: 4, cursor: "pointer"}}, "Add Debt")
   ])), El("div", {
     key: "surplus",
@@ -3635,7 +3526,9 @@ function App() {
       color: "#10b981",
       marginBottom: 8
     }
-  }, "Traditional 401k (pre-tax)"), primaryRet.use401kPercent ? El(Input, {
+  }, "Traditional 401k (pre-tax)"), !isSimpleMode ? El("div", { key: "synced", style: { fontSize: 11, color: "#4a7fa5", background: "#0a1520", borderRadius: 6, padding: "8px 10px", marginBottom: 8, lineHeight: 1.5 } },
+    [El("span", { key: "t", style: { color: "#10b981" } }, "Synced from Income tab. "), "Edit in the Income → Detailed view."]
+  ) : primaryRet.use401kPercent ? El(Input, {
     key: "p",
     label: "% of Gross Salary",
     value: primaryRet.traditional401kPct,
@@ -3862,7 +3755,9 @@ function App() {
       color: "#f59e0b",
       lineHeight: 1.6
     }
-  }, "Triple tax advantage: pre-tax contributions, tax-free growth, and tax-free withdrawals for medical expenses."), El(Input, {
+  }, "Triple tax advantage: pre-tax contributions, tax-free growth, and tax-free withdrawals for medical expenses."), !isSimpleMode && El("div", { key: "hsa-sync", style: { fontSize: 11, color: "#4a7fa5", background: "#0a1520", borderRadius: 6, padding: "8px 10px", marginBottom: 10, lineHeight: 1.5 } },
+    [El("span", { key: "t", style: { color: "#f59e0b" } }, "Synced from Income tab. "), "Edit in the Income → Detailed view."]
+  ), El(Input, {
     key: "mo",
     label: "Monthly Contribution",
     value: data.retirement.hsa.monthly,
@@ -3870,7 +3765,8 @@ function App() {
       updateRetirement("hsa", "monthly", v);
     },
     prefix: "$",
-    type: "number"
+    type: "number",
+    readOnly: !isSimpleMode
   }), El(Input, {
     key: "bal",
     label: "Current Balance",
@@ -3929,31 +3825,60 @@ function App() {
   // Additional W2 source retirement sections
   data.income.sources.filter(function(s) { return s.id !== "primary" && s.type === "w2"; }).map(function(src) {
     var sRet = src.retirement || {};
-    return El(Card, { key: src.id + "-ret", style: { marginBottom: 14 } }, El("div", null, [
-      El("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } }, [
-        El(SectionTitle, { key: "st", accent: "#60a5fa" }, src.name + " — 401k"),
-        El("div", { key: "toggle", style: { display: "flex", background: "#0a1520", borderRadius: 8, padding: 3, border: "1px solid #1a2840" } }, [
-          El("button", { key: "p", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", true); },
-            style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent !== false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent !== false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "% of Salary"),
-          El("button", { key: "d", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", false); },
-            style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent === false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent === false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "$ Amount")
-        ])
-      ]),
-      El("div", { key: "fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, [
-        sRet.use401kPercent !== false ? El(Input, { key: "trad-p", label: "Traditional 401k %", value: sRet.traditional401kPct, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kPct", v); }, suffix: "%" })
-          : El(Input, { key: "trad-d", label: "Traditional 401k /mo", value: sRet.traditional401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kDollar", v); }, prefix: "$", type: "number" }),
-        sRet.use401kPercent !== false ? El(Input, { key: "roth-p", label: "Roth 401k %", value: sRet.roth401kPct, onChange: function(v) { updateSourceRetirement(src.id, "roth401kPct", v); }, suffix: "%" })
-          : El(Input, { key: "roth-d", label: "Roth 401k /mo", value: sRet.roth401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "roth401kDollar", v); }, prefix: "$", type: "number" }),
-        El(Input, { key: "match", label: "Employer Match %", value: sRet.employerMatchPct, onChange: function(v) { updateSourceRetirement(src.id, "employerMatchPct", v); }, suffix: "%" })
-      ]),
-      El("div", { key: "roth-ira", style: { marginTop: 14 } }, [
+    var sc = sourceCalcs.find(function(c) { return c.src.id === src.id; }) || { trad401k: 0, roth401k: 0, match: 0, rothIra: 0 };
+    var sTrad = sc.trad401k;
+    var sRoth = sc.roth401k;
+    var sMatch = sc.match;
+    var sRothIra = sc.rothIra;
+    return El("div", { key: src.id + "-group" }, [
+      El(Card, { key: src.id + "-ret", style: { marginBottom: 14 } }, El("div", null, [
+        El("div", { key: "hdr", style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 } }, [
+          El(SectionTitle, { key: "st", accent: "#60a5fa" }, src.name + " — 401k"),
+          El("div", { key: "toggle", style: { display: "flex", background: "#0a1520", borderRadius: 8, padding: 3, border: "1px solid #1a2840" } }, [
+            El("button", { key: "p", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", true); },
+              style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent !== false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent !== false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em", textTransform: "uppercase" } }, "Percent"),
+            El("button", { key: "d", onClick: function() { updateSourceRetirement(src.id, "use401kPercent", false); },
+              style: { padding: "6px 12px", borderRadius: 6, border: "none", background: sRet.use401kPercent === false ? "#1d4ed8" : "transparent", color: sRet.use401kPercent === false ? "#fff" : "#5a7a9a", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em", textTransform: "uppercase" } }, "Dollars")
+          ])
+        ]),
+        El("div", { key: "grid", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } }, [
+          El("div", { key: "trad", style: { background: "#0a1520", borderRadius: 10, padding: 14, border: "1px solid #1a2840" } }, [
+            El("div", { key: "hdr", style: { fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 8 } }, "Traditional 401k (pre-tax)"),
+            sRet.use401kPercent !== false
+              ? El(Input, { key: "p", label: "% of Gross Salary", value: sRet.traditional401kPct, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kPct", v); }, suffix: "%", type: "number" })
+              : El(Input, { key: "d", label: "Monthly Contribution", value: sRet.traditional401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kDollar", v); }, prefix: "$", type: "number" }),
+            El("div", { key: "calc", style: { fontSize: 11, color: "#4a7fa5" } }, fmt(sTrad) + "/mo"),
+            El(Input, { key: "bal", label: "Current Balance", value: sRet.traditional401kBalance, onChange: function(v) { updateSourceRetirement(src.id, "traditional401kBalance", v); }, prefix: "$", type: "number", small: true })
+          ]),
+          El("div", { key: "roth", style: { background: "#0a1520", borderRadius: 10, padding: 14, border: "1px solid #1a2840" } }, [
+            El("div", { key: "hdr", style: { fontSize: 12, fontWeight: 700, color: "#a78bfa", marginBottom: 8 } }, "Roth 401k (post-tax)"),
+            sRet.use401kPercent !== false
+              ? El(Input, { key: "p", label: "% of Gross Salary", value: sRet.roth401kPct, onChange: function(v) { updateSourceRetirement(src.id, "roth401kPct", v); }, suffix: "%", type: "number" })
+              : El(Input, { key: "d", label: "Monthly Contribution", value: sRet.roth401kDollar, onChange: function(v) { updateSourceRetirement(src.id, "roth401kDollar", v); }, prefix: "$", type: "number" }),
+            El("div", { key: "calc", style: { fontSize: 11, color: "#4a7fa5" } }, fmt(sRoth) + "/mo"),
+            El(Input, { key: "bal", label: "Current Balance", value: sRet.roth401kBalance, onChange: function(v) { updateSourceRetirement(src.id, "roth401kBalance", v); }, prefix: "$", type: "number", small: true })
+          ]),
+          El("div", { key: "match", style: { gridColumn: "1 / -1", background: "#0a1520", borderRadius: 10, padding: 14, border: "1px solid #10b98133" } }, [
+            El("div", { key: "hdr", style: { fontSize: 12, fontWeight: 700, color: "#10b981", marginBottom: 8 } }, "Employer Match (% of gross salary)"),
+            El(Input, { key: "p", label: "Match Percentage", value: sRet.employerMatchPct, onChange: function(v) { updateSourceRetirement(src.id, "employerMatchPct", v); }, suffix: "%", type: "number" }),
+            El("div", { key: "calc", style: { fontSize: 12, color: "#10b981", fontWeight: 700, fontFamily: "'DM Mono', monospace" } }, fmt(sMatch) + "/mo - free money")
+          ])
+        ]),
+        El("div", { key: "limit", style: { marginTop: 12, fontSize: 11, color: (sTrad + sRoth) * 12 > 23500 ? "#f97316" : "#4a7fa5", background: "#0a1520", borderRadius: 8, padding: "8px 12px" } },
+          (sTrad + sRoth) * 12 > 23500 ? "Combined Traditional + Roth 401k exceeds 2025 limit of $23,500/yr" : "2025 combined limit: $23,500/yr ($1,958/mo)")
+      ])),
+      El(Card, { key: src.id + "-rira", style: { marginBottom: 14 } }, El("div", null, [
         El(SectionTitle, { key: "st", accent: "#60a5fa" }, src.name + " — Roth IRA"),
-        El("div", { key: "fields", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 } }, [
-          El(Input, { key: "mo", label: "Monthly Contribution", value: (sRet.rothIra || {}).monthly, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "monthly", v); }, prefix: "$", type: "number" }),
-          El(Input, { key: "bal", label: "Current Balance", value: (sRet.rothIra || {}).currentBalance, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "currentBalance", v); }, prefix: "$", type: "number" })
+        El("div", { key: "pill", style: { display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "#0a1520", border: "1px solid #60a5fa33", borderRadius: 20, fontSize: 11, color: "#60a5fa", marginBottom: 12 } }, "Post-tax - comes from take-home pay"),
+        El(Input, { key: "mo", label: "Monthly Contribution", value: (sRet.rothIra || {}).monthly, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "monthly", v); }, prefix: "$", type: "number" }),
+        El(Input, { key: "bal", label: "Current Balance", value: (sRet.rothIra || {}).currentBalance, onChange: function(v) { updateSourceRetirementNested(src.id, "rothIra", "currentBalance", v); }, prefix: "$", type: "number" }),
+        El("div", { key: "notes", style: { background: "#0a1520", borderRadius: 8, padding: 12, marginTop: 4, fontSize: 12, color: "#5a7a9a", lineHeight: 1.6 } }, [
+          El("div", { key: "limit", style: { marginBottom: 4, color: sRothIra * 12 > 7000 ? "#f97316" : "#5a7a9a" } },
+            sRothIra * 12 > 7000 ? "Exceeds 2025 limit of $7,000/yr" : "2025 limit: $7,000/yr ($583/mo)"),
+          "2025 phase-out: $150k-$165k single / $236k-$246k married."
         ])
-      ])
-    ]));
+      ]))
+    ]);
   }),
   // Projection
   El("div", {
@@ -5660,16 +5585,16 @@ function App() {
       El("div", { key: "sub", style: { fontSize: 13, color: "#5a7a9a", marginBottom: 20, lineHeight: 1.6 } }, "We\u2019ll use this to calculate your savings rate, housing percentage, and financial benchmarks."),
       El("div", { key: "f1", style: { marginBottom: 14 } }, [
         El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Annual Salary"),
-        El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 65,000", value: qs.salary ? parseInt(qs.salary).toLocaleString("en-US") : "",
-          onChange: function(e) { setQs(Object.assign({}, qs, { salary: e.target.value.replace(/[^0-9]/g, "") })); },
+        El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 65,000", value: fmtCurrencyInput(qs.salary),
+          onChange: function(e) { setQs(Object.assign({}, qs, { salary: e.target.value.replace(/[^0-9.]/g, "") })); },
           style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } }),
         qs.salary && El("div", { key: "mo", style: { fontSize: 12, color: "#10b981", marginTop: 6, fontFamily: "'DM Mono', monospace" } },
-          "= " + fmt(parseInt(qs.salary) / 12) + " / month")
+          "= " + fmt(parseFloat(qs.salary) / 12) + " / month")
       ]),
       El("div", { key: "f2", style: { marginBottom: 14 } }, [
         El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Take-Home Per Paycheck"),
-        El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 2,100", value: qs.takeHome ? parseInt(qs.takeHome).toLocaleString("en-US") : "",
-          onChange: function(e) { setQs(Object.assign({}, qs, { takeHome: e.target.value.replace(/[^0-9]/g, "") })); },
+        El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 2,100", value: fmtCurrencyInput(qs.takeHome),
+          onChange: function(e) { setQs(Object.assign({}, qs, { takeHome: e.target.value.replace(/[^0-9.]/g, "") })); },
           style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
       ]),
       El("div", { key: "f3" }, [
@@ -5681,7 +5606,9 @@ function App() {
             style: { flex: 1, padding: "8px 4px", background: qs.freq === f.id ? "#1e3a5f" : "#0a1520", border: "1px solid " + (qs.freq === f.id ? "#3b82f6" : "#1e3a5f"), borderRadius: 6, color: qs.freq === f.id ? "#60a5fa" : "#4a7fa5", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }
           }, f.label);
         }))
-      ])
+      ]),
+      El("div", { key: "multi-hint", style: { marginTop: 16, fontSize: 12, color: "#3a5a7a", lineHeight: 1.5 } },
+        "Enter your main income here. You can add a partner’s income or side hustle in the Income tab after setup.")
     ]),
     qs.step === 1 && El("div", { key: "s1" }, [
       El("div", { key: "h", style: { fontSize: 18, fontWeight: 700, color: "#e8f0f8", fontFamily: "'Syne', sans-serif", marginBottom: 6 } }, "What\u2019s your monthly housing cost?"),
@@ -5724,8 +5651,8 @@ function App() {
           El("div", { key: "row1", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 } }, [
             El("div", { key: "bal" }, [
               El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Balance"),
-              El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 5,000", value: (qs.debts[qs.currentDebt] || {}).bal ? parseInt((qs.debts[qs.currentDebt] || {}).bal).toLocaleString("en-US") : "",
-                onChange: function(e) { var raw = e.target.value.replace(/[^0-9]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { bal: raw }); setQs(Object.assign({}, qs, { debts: d })); },
+              El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 5,000", value: fmtCurrencyInput((qs.debts[qs.currentDebt] || {}).bal),
+                onChange: function(e) { var raw = e.target.value.replace(/[^0-9.]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { bal: raw }); setQs(Object.assign({}, qs, { debts: d })); },
                 style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
             ]),
             El("div", { key: "rate" }, [
@@ -5737,8 +5664,8 @@ function App() {
           ]),
           El("div", { key: "f2" }, [
             El("label", { key: "lbl", style: { display: "block", fontSize: 11, color: "#4a7fa5", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 } }, "Monthly Minimum"),
-            El("input", { key: "inp", type: "text", inputMode: "numeric", placeholder: "e.g. 150", value: (qs.debts[qs.currentDebt] || {}).min ? parseInt((qs.debts[qs.currentDebt] || {}).min).toLocaleString("en-US") : "",
-              onChange: function(e) { var raw = e.target.value.replace(/[^0-9]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { min: raw }); setQs(Object.assign({}, qs, { debts: d })); },
+            El("input", { key: "inp", type: "text", inputMode: "decimal", placeholder: "e.g. 150", value: fmtCurrencyInput((qs.debts[qs.currentDebt] || {}).min),
+              onChange: function(e) { var raw = e.target.value.replace(/[^0-9.]/g, ""); var d = qs.debts.slice(); d[qs.currentDebt] = Object.assign({}, d[qs.currentDebt], { min: raw }); setQs(Object.assign({}, qs, { debts: d })); },
               style: { width: "100%", background: "#0a1520", border: "1px solid #1e3a5f", borderRadius: 8, padding: "10px 12px", color: "#e8f0f8", fontSize: 14, fontFamily: "'DM Mono', monospace", outline: "none" } })
           ])
         ]),

@@ -25,12 +25,12 @@ The app runs entirely client-side as a **single `index.html` file** with localSt
   - Main data key: `compound_v4`
   - Onboarding complete: `compound_onboarding_done`
   - Profile card dismissed: `compound_profile_done`
-- **No frameworks**: Vanilla JS (no React, no build step) — React is loaded via CDN
+- **No frameworks**: Vanilla JS (no React, no build step) — React is loaded via CDN using `El()` factory function
 - **Dark theme**: Consistent dark card styling throughout
 - **Default debt strategy**: Avalanche (highest interest rate first)
 - **Branches**:
-  - `main` — stable, deployed
-  - `multi-income` — in-progress multi-income source refactor (do not merge until tested)
+  - `main` — stable baseline (pre multi-income)
+  - `multi-income` — active development branch with all recent features; this is the working branch
 
 ---
 
@@ -41,28 +41,31 @@ data = {
   income: {
     sources: [
       {
-        id: "primary",           // "primary" for first source, "src-TIMESTAMP" for others
-        name: "Person 1",        // editable by user
-        type: "w2",              // "w2" | "other"
+        id: "primary",              // "primary" for first source, "src-TIMESTAMP" for others
+        name: "Person 1",           // editable by user; pencil icon in UI
+        type: "w2",                 // "w2" | "other"
         // W2 fields:
-        mode: "simple",          // "simple" | "detailed"
-        annualSalary: "",
-        takeHomePerPaycheck: "",
+        mode: "simple",             // "simple" | "detailed"
+        annualSalary: "",           // simple mode
+        takeHomePerPaycheck: "",    // simple mode
         frequency: "biweekly",
-        grossPerPaycheck: "",    // detailed mode
-        healthInsurance: "",     // detailed mode, per paycheck
-        fsa: "",
-        otherPreTax: "",
-        federalTax: "",
-        stateTax: "",
-        otherPostTax: "",
-        retirement: {            // W2 sources only — per-person
-          use401kPercent: true,
-          traditional401kPct: "",
+        grossPerPaycheck: "",       // detailed mode
+        // Legacy detailed fields (old UI; still in data for backward compat):
+        healthInsurance: "", fsa: "", otherPreTax: "",
+        federalTax: "", stateTax: "", otherPostTax: "",
+        // New detailed paycheck fields (current UI):
+        taxesPerPaycheck: "",       // total taxes per paycheck (replaces federal/state/FICA UI)
+        hsaPerPaycheck: "",         // HSA per paycheck → syncs to data.retirement.hsa.monthly
+        trad401kPaycheck: "",       // raw per-paycheck display string for traditional 401k
+        roth401kPaycheck: "",       // raw per-paycheck display string for Roth 401k
+        customPreTax: [],           // [{ id, label, amount }] custom pre-tax deductions
+        retirement: {               // W2 sources only — per-person
+          use401kPercent: false,    // false = dollar mode (set by detailed Income tab)
+          traditional401kPct: "",   // used when use401kPercent = true (simple/Invest&Retire)
           roth401kPct: "",
           employerMatchPct: "",
-          traditional401kDollar: "",
-          roth401kDollar: "",
+          traditional401kDollar: "", // monthly $ — written by detailed Income tab
+          roth401kDollar: "",        // monthly $ — written by detailed Income tab
           traditional401kBalance: "",
           roth401kBalance: "",
           rothIra: { monthly: "", currentBalance: "" },
@@ -74,13 +77,14 @@ data = {
       { id: "src-...", name: "Side Hustle", type: "other", monthlyNet: "" }
     ]
   },
-  debts: [],                     // { id, name, balance, rate, minPayment, planPayment, isMortgage, isPromo, ... }
+  debts: [],  // { id, name, balance, rate, minPayment, planPayment, isMortgage, isPromo,
+              //   monthlyEscrow, escrowBalance, loanStartDate, loanEndDate, ... }
   budget: {
-    essentials: [],              // { id, name, baseline, plan }
-    discretionary: []            // { id, name, baseline, plan }
+    essentials: [],       // { id, name, baseline, plan } — user can add/remove items
+    discretionary: []     // { id, name, baseline, plan } — labeled "Other Expenses" in UI
   },
   retirement: {
-    hsa: { monthly: "", currentBalance: "", familyCoverage: false }  // household-level only
+    hsa: { monthly: "", currentBalance: "", familyCoverage: false }  // household-level
   },
   savings: {
     emergencyFund: { current: "", goal: "", monthly: "" },
@@ -103,12 +107,34 @@ data = {
 | Tab | Purpose |
 |-----|---------|
 | **Overview** | Dashboard: DTI badges, savings rate, housing %, profile completeness card, Suggested Next Steps |
-| **Income** | Income sources list (W2 + Other), simple/detailed mode for primary W2 |
-| **Expenses** | Essentials + Debt Obligations + Discretionary. Baseline vs Plan columns |
+| **Income** | Multi-source income (W2 + Other). Simple mode: salary + take-home. Detailed mode: full paycheck deductions per paystub. |
+| **Expenses** | Essentials (add/remove) + Debt Obligations + Other Expenses. All amounts are monthly. No plan columns. |
 | **Savings** | Emergency fund goal, monthly contribution, general savings buckets |
-| **Invest & Retire** | Per-W2-source 401k/Roth IRA + household HSA + brokerage/taxable |
+| **Invest & Retire** | Per-W2-source 401k/Roth IRA + household HSA + brokerage/taxable. When Income is in detailed mode, 401k and HSA show "Synced from Income tab." |
 | **Plan** | What-if sandbox: adjust spending, set savings targets, model extra debt payments |
 | **Settings** | Debt strategy (Avalanche / Snowball / Custom), income basis, display prefs |
+
+---
+
+## Income Tab — Detailed Mode
+
+When a W2 source switches to Detailed mode, the paycheck is entered as actual paystub line items:
+
+1. **Pay Details** (left): Pay frequency + Gross pay per paycheck → monthly gross
+2. **Deductions Per Paycheck** (left):
+   - Total Taxes (federal + state + FICA combined, one field)
+   - ─── separator ───
+   - Traditional 401k $ per paycheck → converts to monthly, writes to `retirement.traditional401kDollar`, sets `use401kPercent = false`
+   - Roth 401k $ per paycheck → writes to `retirement.roth401kDollar`
+   - HSA $ per paycheck → writes to `data.retirement.hsa.monthly`
+   - Custom deductions (label + $ per paycheck, "+ Add Deduction" button)
+3. **Paycheck Summary** (right): Shows cents for reconciliation against paystub
+
+**Sync behavior**: 401k and HSA entered in detailed Income flow to Invest & Retire automatically. Invest & Retire shows read-only "Synced from Income tab" when primary source is in detailed mode. Simple mode users configure 401k % directly in Invest & Retire.
+
+**All W2 sources** (primary and secondary) support the same Simple/Detailed toggle. Secondary source detailed mode includes the full deductions section with its own Paycheck Summary.
+
+**Pencil icon** next to all income source names — clicking focuses the editable name input.
 
 ---
 
@@ -124,8 +150,14 @@ data = {
 - `grossMonthly` = sum of all W2 source gross + all Other source monthlyNet
 - `netMonthly` = sum of all W2 source take-home + all Other source monthlyNet
 - `trad401kMonthly`, `roth401kMonthly`, `employerMatch`, `rothIraMonthly` = sums across all W2 sources
-- `hsaMonthly` = from household `data.retirement.hsa.monthly`
-- `primaryCalc` / `primaryRet` = shorthands for the first W2 source, used in legacy Income tab display
+- `hsaMonthly` = from `data.retirement.hsa.monthly`; overridden by sum of `src.hsaPerPaycheck * perYear/12` across detailed-mode sources
+- `primaryCalc` / `primaryRet` = shorthands for the first W2 source
+
+### Net calculation — detailed mode
+When `src.taxesPerPaycheck` is set (new UI), uses:
+`net = gross - trad401k - roth401k - taxesMo - hsaMo - customDeductionsMo - otherPostTax`
+
+Falls back to old separate federal/state/FICA fields for users with existing data.
 
 ### DTI label convention
 - Label is **"Total DTI"** — housing is always included
@@ -146,7 +178,7 @@ One base color for all metric values. Traffic light only for ratios with univers
 | Amber gradient | `#f97316` → `#fbbf24` | Debt cards — priority order (highest priority = most orange) |
 | Neutral gray | `#3a5a7a` | Empty/unset values |
 
-Traffic light applies **only** to Housing % (28% threshold) and Total DTI (36%/20% thresholds). Retirement rate, savings rate, and consumer debt are always blue — shaming someone for 0% retirement when they can't afford to contribute more is counterproductive.
+Traffic light applies **only** to Housing % (28% threshold) and Total DTI (36%/20% thresholds).
 
 ---
 
@@ -154,55 +186,67 @@ Traffic light applies **only** to Housing % (28% threshold) and Total DTI (36%/2
 
 ### Quick Start (primary path)
 3-question wizard → Overview. Steps:
-1. **Income** — Annual salary, take-home, pay frequency
-2. **Housing** — Monthly rent/mortgage (neutral language, no 28% judgment)
-3. **Debt** — Carousel for multiple debts (Yes/No → name, balance, APR, minimum); deferred sort on blur/Enter
-4. **Orientation** — Tab overview with Plan highlighted; then lands on Overview
+1. **Income** — Annual salary, take-home, pay frequency. Hint: "Enter your main income first — add a partner's income or side hustle in the Income tab after setup."
+2. **Housing** — Monthly rent/mortgage
+3. **Debt** — Carousel for multiple debts
+4. **Orientation** — Tab overview; lands on Overview
 
-State: `qs` in `useState`, tracked in `onboard.screen === "quickstart"`.
-
-### Full Setup (6-step tab tour)
-Available via `startOnboarding()` but no longer surfaced in the welcome modal. Kept for potential future use.
+Quick Start saves to `income.sources[0]` (not to old flat `income.*` fields). Bug was fixed in this refactor.
 
 ### Welcome Modal
-Options: **Quick Start** (primary) → **Import a backup** → **Skip**. Full Setup removed.
+Options: **Quick Start** (primary) → **Import a backup** → **Skip**.
 
 ### Profile Completeness Card
-Shown on Overview after onboarding, tracks 7 sections:
-1. Income entered
-2. Housing cost set
-3. Essential expenses filled (≥2 non-housing with values)
-4. Discretionary spending added
-5. Consumer debt logged (or confirmed none)
-6. Emergency fund goal set
-7. Retirement contributions configured
-
-Each incomplete item has a "Go →" tab link. Dismissed permanently via `localStorage.setItem("compound_profile_done", "1")`.
+Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profile_done` localStorage key.
 
 ---
 
 ## Debt System
 
-- **Debt colors**: Warm amber gradient computed dynamically via `debtColor(index, total)`. Orange (`#f97316`) = highest priority, soft amber (`#fbbf24`) = lowest. Mortgage always gets neutral `#2a4060`.
-- **Sort order**: `sortedDebts` (for Overview) sorts live by strategy. `stableDebts` (for Expenses tab) sorts on blur/Enter only to avoid mid-type jumping — uses `stableSortRef` and `setStableSortVersion`.
-- **Editing**: All debt card fields are inline-editable (name, balance, APR, minimum, plan payment).
-- **Mortgage**: Always pinned to bottom of debt list regardless of strategy.
+- **Debt colors**: `debtColor(index, total)`. Mortgage always gets neutral `#2a4060`.
+- **Sort order**: `sortedDebts` (Overview) sorts live. `stableDebts` (Expenses) sorts on blur/Enter only.
+- **Editing**: All debt card fields are inline-editable.
+- **Mortgage**: Always pinned to bottom. Has extended fields:
+  - `monthlyEscrow` — taxes + insurance per month
+  - `escrowBalance` — current escrow account balance
+  - `loanStartDate` / `loanEndDate` — for duration display and payoff planning
+  - Shows Total PITI = P&I + Escrow, and loan duration (e.g. "Mar 2025 — Apr 2055")
+
+---
+
+## Expenses Tab
+
+- **All amounts are monthly** — labeled in column headers and subtitle
+- **Essentials**: Fixed categories pre-populated; users can add custom essentials and remove any item (including defaults)
+- **Other Expenses** (formerly "Discretionary"): Custom categories with monthly amount only — no Plan column in UI
+- **Plan column**: Hidden from UI but preserved in data model — still used by the Plan tab sandbox
+- **Debt Obligations**: Mortgage cards show expanded detail section (escrow, dates, PITI total)
+
+---
+
+## Currency Input Conventions
+
+- **Input fields**: All currency inputs allow decimals. Display uses `fmtCurrencyInput()` which preserves trailing decimals while typing.
+- **Summaries and badges**: `fmt()` function — whole dollars only (`maximumFractionDigits: 0`)
+- **Paycheck Summary**: `fmtDec()` — shows cents for paystub reconciliation
+- **Per-paycheck ↔ monthly round-trip**: 401k fields store both the raw per-paycheck string (`trad401kPaycheck`) for display AND the computed monthly in `retirement.traditional401kDollar` for Invest & Retire
 
 ---
 
 ## Design Conventions
 
 - **Dark card styling**: `background: linear-gradient(145deg, #111c28, #0d1620)`
+- **Section titles**: `SectionTitle` component with colored accent bar
 - **Badge components**: Used for summary metrics at the top of tabs
-- **Tooltips**: Badge component supports `tooltip` prop — hover `?` button to show plain-English explanation. Currently on 5 Overview badges (Consumer Debt, Housing %, Total DTI, Retirement Rate, Total Savings Rate).
+- **Tooltips**: Badge component supports `tooltip` prop — 5 Overview badges have tooltips
 - **Empty states**: When a value is 0 or unset, show instructional placeholder text — never just "$0"
-- **Progress bar**: Shows onboarding completion across tabs
+- **Pencil icon SVG**: `<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />` used on all income source name fields
 
 ---
 
 ## Claude Code Guardrails
 
-The entire app is one file. Enforce these rules on every prompt:
+The entire app is one file (~6,200 lines). Enforce these rules on every prompt:
 
 - **Never rename localStorage keys** — changing a key name silently wipes user data on next load
 - **Never touch unrelated tabs** — if a prompt is about Expenses, don't modify Income or Overview
@@ -213,25 +257,40 @@ The entire app is one file. Enforce these rules on every prompt:
 - **Scope creep check**: if a prompt says "no other changes", do not refactor adjacent code even if it looks messy
 - **Never merge `multi-income` to `main`** without explicit user approval and testing
 
+### Single-file bracket complexity
+At ~6k lines, bracket/paren mismatches are the #1 source of bugs. Critical rules:
+- **Always verify with `node -e "new Function(code)"`** — the VS Code TypeScript language server gives false-positive errors on JavaScript inside HTML files. Node.js is the ground truth.
+- **Wrap-and-close in one edit** — never open a new `[` or `El(` wrapper without closing it in the same edit. Partial states cause cascading mismatches.
+- **DOM reordering requires a comprehensive replacement** — you cannot incrementally add wrapper divs to reorder elements. The entire affected block must be replaced at once.
+- **String content fools naive bracket counters** — `"linear-gradient(135deg,..."` contains `(` and `)` that will throw off simple depth scanners. Use `new Function(code)` for ground truth.
+- **Layout restructuring is high-risk** — changing the structural order of cards (e.g. side-by-side layout) should be deferred to the Vite + React + JSX migration, where JSX makes the tree structure visible and safe.
+
 ---
 
 ## Known Issues / Decisions Log
 
 - Crypto/speculative assets belong under Invest (not Savings)
 - localStorage is one browser-clear away from data loss — export/import is the current mitigation
-- Quick Start debt carousel: `currentDebt` index tracked in `qs` state
-- Profile completeness card: may not show if `compound_profile_done` key is set in localStorage from a previous dismiss. Clear via DevTools → Application → Local Storage.
+- Profile completeness card may not show if `compound_profile_done` is already set — clear via DevTools → Application → Local Storage
 - Essentials default to $0 — previously defaulted to Miami averages, removed as confusing
+- Legacy detailed-mode fields (`healthInsurance`, `fsa`, `otherPreTax`, `federalTax`, `stateTax`) still exist in data model and are used as fallback in net calculation when `taxesPerPaycheck` is not set
+- Expenses tab: Essentials and Debt Obligations are stacked vertically (not side-by-side as intended). Side-by-side layout requires a DOM reorder that is unsafe at this file size — deferred to JSX migration.
 
 ---
 
 ## Future Roadmap
 
-- Mobile layout optimization (budget/expenses tab especially)
-- Age-based retirement benchmarks (1× salary by 30, 3× by 40, etc.)
+### High priority
+- **Side-by-side Expenses layout** (Essentials left, Debt right) — safe to implement after JSX migration
+- **Per-W2-source retirement projection** in Invest & Retire tab
+- **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.)
+- **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
+
+### Medium priority
+- Mobile layout optimization (Expenses tab especially)
 - Inflation-adjusted retirement projections
-- Cloud sync / account system
-- Quick Start: ask if dual-income household upfront; aggregate projection across all W2 source balances
-- Per-W2-source retirement projection in Invest & Retire tab
 - Zip code-based essentials pre-population
-- Migration to Vite + React + JSX (recommended when feature set stabilizes — `El()` syntax is hard to maintain at scale)
+- Employer match capture check in Suggested Next Steps
+
+### Architecture
+- **Migration to Vite + React + JSX** — strongly recommended before adding major structural features. The `El()` vanilla syntax is now at the limit of safe maintainability at 6k+ lines. JSX would make the component tree visible, enable real component extraction, and make layout changes safe. This is the prerequisite for the side-by-side layout and other structural improvements.

@@ -649,6 +649,7 @@ function App() {
             essentials: parsed.plan && parsed.plan.essentials ? parsed.plan.essentials : {},
             discretionary: parsed.plan && parsed.plan.discretionary ? parsed.plan.discretionary : {},
             debtPayments: parsed.plan && parsed.plan.debtPayments ? parsed.plan.debtPayments : {},
+            savings: parsed.plan && parsed.plan.savings ? parsed.plan.savings : {},
             goals: parsed.plan && parsed.plan.goals ? parsed.plan.goals : []
           }
         };
@@ -1219,7 +1220,25 @@ function App() {
     var reader = new FileReader();
     reader.onload = function (ev) {
       try {
-        setData(Object.assign({}, makeDefault(), JSON.parse(ev.target.result)));
+        var imp = JSON.parse(ev.target.result);
+        var def = makeDefault();
+        imp = migrateData(imp, def);
+        var merged = Object.assign({}, def, imp);
+        merged.savings = {
+          emergencyFund: Object.assign({}, def.savings.emergencyFund, (imp.savings || {}).emergencyFund || {}),
+          generalSavings: Object.assign({}, def.savings.generalSavings, (imp.savings || {}).generalSavings || {})
+        };
+        merged.retirement = Object.assign({}, def.retirement, imp.retirement || {});
+        merged.invest = Object.assign({}, def.invest, imp.invest || {});
+        merged.settings = Object.assign({}, def.settings, imp.settings || {});
+        merged.plan = {
+          essentials: (imp.plan && imp.plan.essentials) || {},
+          discretionary: (imp.plan && imp.plan.discretionary) || {},
+          debtPayments: (imp.plan && imp.plan.debtPayments) || {},
+          savings: (imp.plan && imp.plan.savings) || {},
+          goals: (imp.plan && imp.plan.goals) || []
+        };
+        setData(merged);
         setImportMsg("Imported!");
         setTimeout(function () {
           setImportMsg("");

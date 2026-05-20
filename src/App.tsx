@@ -3,6 +3,7 @@ import type { TabId } from './types'
 import SettingsTab from './tabs/SettingsTab'
 import OverviewTab from './tabs/OverviewTab'
 import IncomeTab from './tabs/IncomeTab'
+import ExpensesTab from './tabs/ExpensesTab'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -43,7 +44,8 @@ export default function App() {
         {activeTab === 'settings' && <SettingsTab />}
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'income' && <IncomeTab />}
-        {activeTab !== 'settings' && activeTab !== 'overview' && activeTab !== 'income' && (
+        {activeTab === 'expenses' && <ExpensesTab />}
+        {activeTab !== 'settings' && activeTab !== 'overview' && activeTab !== 'income' && activeTab !== 'expenses' && (
           <div className="text-dim text-sm text-center py-8 font-mono">
             {activeTab} tab — migrating…
           </div>

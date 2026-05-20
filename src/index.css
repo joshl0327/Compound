@@ -18,3 +18,15 @@
     @apply bg-gradient-to-br from-surface to-surface2 border border-border rounded-2xl p-5;
   }
 }
+
+.expenses-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .expenses-grid {
+    grid-template-columns: 1fr;
+  }
+}

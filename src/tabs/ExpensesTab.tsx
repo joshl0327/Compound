@@ -163,410 +163,420 @@ export default function ExpensesTab() {
         All amounts are monthly. Enter what you actually spend or owe each month.
       </p>
 
-      {/* Essentials */}
-      <Card style={{ marginBottom: 14 }}>
-        <div>
-          <SectionTitle accent="#60a5fa">Essentials</SectionTitle>
-          {data.debts.some(d => d.isMortgage) && (
-            <div style={{ fontSize: 11, color: '#f59e0b', background: '#0a1520', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #f59e0b33' }}>
-              You have a mortgage flagged in Debts. Include your full PITI (principal, interest, taxes, insurance) in Housing below.
-            </div>
-          )}
-          <RowHeader />
-          {data.budget.essentials.map(item => (
-            <BudgetRow
-              key={item.id}
-              label={item.name}
-              baseline={item.baseline}
-              color="#60a5fa"
-              onBaselineChange={v => {
-                setData(d => ({
-                  ...d,
-                  budget: {
-                    ...d.budget,
-                    essentials: d.budget.essentials.map(e =>
-                      e.id === item.id
-                        ? { ...e, baseline: v, plan: e.plan === '' || e.plan === undefined ? '' : e.plan }
-                        : e
-                    ),
-                  },
-                }))
-              }}
-              onDelete={() => {
-                setData(d => ({
-                  ...d,
-                  budget: { ...d.budget, essentials: d.budget.essentials.filter(e => e.id !== item.id) },
-                }))
-              }}
-            />
-          ))}
+      <div className="expenses-grid">
+        {/* Left column: spending */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-          {/* Add Essential form */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px auto', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e2d3d' }}>
-            <input
-              type="text"
-              value={newEss.name}
-              placeholder="Add an essential (e.g. Groceries)"
-              onChange={e => setNewEss(n => ({ ...n, name: e.target.value }))}
-              onKeyDown={e => { if (e.key === 'Enter') addEssential() }}
-              style={inputStyle}
-            />
-            <input
-              type="text"
-              inputMode="decimal"
-              value={fmtCurrencyInput(newEss.baseline)}
-              placeholder="$/mo"
-              onChange={e => setNewEss(n => ({ ...n, baseline: stripCommas(e.target.value) }))}
-              onKeyDown={e => { if (e.key === 'Enter') addEssential() }}
-              style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
-            />
-            <button
-              onClick={addEssential}
-              style={{ background: '#60a5fa', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              + Add
-            </button>
-          </div>
+          {/* Essentials */}
+          <Card>
+            <div>
+              <SectionTitle accent="#60a5fa">Essentials</SectionTitle>
+              {data.debts.some(d => d.isMortgage) && (
+                <div style={{ fontSize: 11, color: '#f59e0b', background: '#0a1520', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #f59e0b33' }}>
+                  You have a mortgage flagged in Debts. Include your full PITI (principal, interest, taxes, insurance) in Housing below.
+                </div>
+              )}
+              <RowHeader />
+              {data.budget.essentials.map(item => (
+                <BudgetRow
+                  key={item.id}
+                  label={item.name}
+                  baseline={item.baseline}
+                  color="#60a5fa"
+                  onBaselineChange={v => {
+                    setData(d => ({
+                      ...d,
+                      budget: {
+                        ...d.budget,
+                        essentials: d.budget.essentials.map(e =>
+                          e.id === item.id
+                            ? { ...e, baseline: v, plan: e.plan === '' || e.plan === undefined ? '' : e.plan }
+                            : e
+                        ),
+                      },
+                    }))
+                  }}
+                  onDelete={() => {
+                    setData(d => ({
+                      ...d,
+                      budget: { ...d.budget, essentials: d.budget.essentials.filter(e => e.id !== item.id) },
+                    }))
+                  }}
+                />
+              ))}
 
-          {/* Essentials total */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4 }}>
-            <div style={{ fontSize: 12, color: '#5a7a9a' }}>
-              Total:{' '}
-              <span style={{ fontFamily: "'DM Mono', monospace", color: '#60a5fa' }}>{fmt(essTotal)}</span>
-            </div>
-          </div>
-        </div>
-      </Card>
+              {/* Add Essential form */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px auto', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e2d3d' }}>
+                <input
+                  type="text"
+                  value={newEss.name}
+                  placeholder="Add an essential (e.g. Groceries)"
+                  onChange={e => setNewEss(n => ({ ...n, name: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') addEssential() }}
+                  style={inputStyle}
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={fmtCurrencyInput(newEss.baseline)}
+                  placeholder="$/mo"
+                  onChange={e => setNewEss(n => ({ ...n, baseline: stripCommas(e.target.value) }))}
+                  onKeyDown={e => { if (e.key === 'Enter') addEssential() }}
+                  style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
+                />
+                <button
+                  onClick={addEssential}
+                  style={{ background: '#60a5fa', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  + Add
+                </button>
+              </div>
 
-      {/* Other Expenses (Discretionary) */}
-      <Card style={{ marginBottom: 14 }}>
-        <div>
-          <SectionTitle accent="#f59e0b">Other Expenses</SectionTitle>
-          {data.budget.discretionary.length > 0 && <RowHeader />}
-          {data.budget.discretionary.map(item => (
-            <BudgetRow
-              key={item.id}
-              label={item.name}
-              baseline={item.baseline}
-              color="#f59e0b"
-              onBaselineChange={v => {
-                setData(d => ({
-                  ...d,
-                  budget: {
-                    ...d.budget,
-                    discretionary: d.budget.discretionary.map(di =>
-                      di.id === item.id
-                        ? { ...di, baseline: v, plan: di.plan === '' || di.plan === undefined ? '' : di.plan }
-                        : di
-                    ),
-                  },
-                }))
-              }}
-              onDelete={() => {
-                setData(d => ({
-                  ...d,
-                  budget: { ...d.budget, discretionary: d.budget.discretionary.filter(di => di.id !== item.id) },
-                }))
-              }}
-            />
-          ))}
-
-          {/* Discretionary total */}
-          {data.budget.discretionary.length > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4, marginBottom: 12 }}>
-              <div style={{ fontSize: 12, color: '#5a7a9a' }}>
-                Total:{' '}
-                <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>{fmt(discTotal)}</span>
+              {/* Essentials total */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: '#5a7a9a' }}>
+                  Total:{' '}
+                  <span style={{ fontFamily: "'DM Mono', monospace", color: '#60a5fa' }}>{fmt(essTotal)}</span>
+                </div>
               </div>
             </div>
-          )}
+          </Card>
 
-          {/* Add Discretionary form */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px auto', gap: 8, marginBottom: 12 }}>
-            <input
-              type="text"
-              value={newDisc.name}
-              placeholder="Category name"
-              onChange={e => setNewDisc(n => ({ ...n, name: e.target.value }))}
-              onKeyDown={e => { if (e.key === 'Enter') addDiscretionary() }}
-              style={inputStyle}
-            />
-            <input
-              type="text"
-              inputMode="decimal"
-              value={fmtCurrencyInput(newDisc.baseline)}
-              placeholder="$/mo"
-              onChange={e => setNewDisc(n => ({ ...n, baseline: stripCommas(e.target.value) }))}
-              onKeyDown={e => { if (e.key === 'Enter') addDiscretionary() }}
-              style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
-            />
-            <button
-              onClick={addDiscretionary}
-              style={{ background: '#f59e0b', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Add
-            </button>
-          </div>
-
-          {/* Suggestions */}
-          <button
-            onClick={() => setShowSugg(s => !s)}
-            style={{ background: 'none', border: '1px solid #1e2d3d', borderRadius: 7, padding: '6px 12px', color: '#5a7a9a', fontSize: 12, cursor: 'pointer', marginBottom: showSugg ? 12 : 0 }}
-          >
-            {showSugg ? 'Hide suggestions' : 'Quick-add suggestions'}
-          </button>
-          {showSugg && (
+          {/* Other Expenses (Discretionary) */}
+          <Card>
             <div>
-              {DISC_SUGGESTIONS.map(group => (
-                <div key={group.group} style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: '#5a7a9a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                    {group.group}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {group.items.map(item => {
-                      const exists = data.budget.discretionary.some(d => d.name === item)
-                      return (
-                        <button
-                          key={item}
-                          onClick={() => {
-                            if (exists) return
-                            setData(d => ({
-                              ...d,
-                              budget: {
-                                ...d.budget,
-                                discretionary: [
-                                  ...d.budget.discretionary,
-                                  { id: String(Date.now() + Math.random()), name: item, baseline: '0', plan: '' },
-                                ],
-                              },
-                            }))
-                          }}
-                          style={{
-                            padding: '5px 12px',
-                            background: exists ? '#0a1520' : '#0f1923',
-                            border: '1px solid ' + (exists ? '#1a2840' : '#1e3a5f'),
-                            borderRadius: 20,
-                            color: exists ? '#2a4060' : '#8b9cb5',
-                            fontSize: 12,
-                            cursor: exists ? 'default' : 'pointer',
-                          }}
-                        >
-                          {exists ? 'Added' : item}
-                        </button>
-                      )
-                    })}
+              <SectionTitle accent="#f59e0b">Other Expenses</SectionTitle>
+              {data.budget.discretionary.length > 0 && <RowHeader />}
+              {data.budget.discretionary.map(item => (
+                <BudgetRow
+                  key={item.id}
+                  label={item.name}
+                  baseline={item.baseline}
+                  color="#f59e0b"
+                  onBaselineChange={v => {
+                    setData(d => ({
+                      ...d,
+                      budget: {
+                        ...d.budget,
+                        discretionary: d.budget.discretionary.map(di =>
+                          di.id === item.id
+                            ? { ...di, baseline: v, plan: di.plan === '' || di.plan === undefined ? '' : di.plan }
+                            : di
+                        ),
+                      },
+                    }))
+                  }}
+                  onDelete={() => {
+                    setData(d => ({
+                      ...d,
+                      budget: { ...d.budget, discretionary: d.budget.discretionary.filter(di => di.id !== item.id) },
+                    }))
+                  }}
+                />
+              ))}
+
+              {/* Discretionary total */}
+              {data.budget.discretionary.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4, marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: '#5a7a9a' }}>
+                    Total:{' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>{fmt(discTotal)}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Card>
+              )}
 
-      {/* Debt Obligations */}
-      <Card style={{ marginBottom: 14 }}>
-        <div>
-          <SectionTitle accent="#f97316">Debt Obligations</SectionTitle>
-
-          {/* Debt list */}
-          {data.debts.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-              {stableDebts.map((debt, i) => {
-                if (debt.isMortgage) {
-                  return (
-                    <MortgageCard
-                      key={debt.id}
-                      debt={debt}
-                      onChange={updateDebt}
-                      onDelete={() => deleteDebt(debt.id)}
-                    />
-                  )
-                }
-                const color = debtColor(i, consumerDebtCount)
-                return (
-                  <DebtCard
-                    key={debt.id}
-                    debt={debt}
-                    color={color}
-                    onChange={updateDebt}
-                    onDelete={() => deleteDebt(debt.id)}
-                    onCommitSort={commitDebtSort}
-                  />
-                )
-              })}
-            </div>
-          )}
-
-          {data.debts.length === 0 && (
-            <div style={{ color: '#3a5a7a', fontSize: 13, textAlign: 'center', padding: '16px 0', marginBottom: 20 }}>
-              No debts added yet.
-            </div>
-          )}
-
-          {/* Add a Debt */}
-          <SectionTitle accent="#f97316">Add a Debt</SectionTitle>
-
-          <Input
-            label="Name"
-            value={newDebt.name}
-            onChange={v => setNewDebt(d => ({ ...d, name: v }))}
-            placeholder="e.g. Student Loan"
-          />
-          <Input
-            label={newDebt.isMortgage ? 'Loan Balance' : 'Balance'}
-            value={newDebt.balance || ''}
-            onChange={v => setNewDebt(d => ({ ...d, balance: v }))}
-            prefix="$"
-            type="number"
-          />
-          <Input
-            label={newDebt.isMortgage ? 'Monthly P&I (Principal + Interest)' : 'Minimum Payment'}
-            value={newDebt.minPayment || ''}
-            onChange={v => setNewDebt(d => ({ ...d, minPayment: v }))}
-            prefix="$"
-            type="number"
-          />
-
-          {/* Promo toggle */}
-          <div
-            onClick={() => setNewDebt(d => ({ ...d, isPromo: !d.isPromo }))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-              background: newDebt.isPromo ? 'linear-gradient(135deg, #0d1a10, #0a1508)' : '#0a1520',
-              border: '1px solid ' + (newDebt.isPromo ? '#10b98133' : '#1a2840'),
-              borderRadius: 8, cursor: 'pointer', marginBottom: 12,
-            }}
-          >
-            <div style={{
-              width: 18, height: 18, borderRadius: 4,
-              background: newDebt.isPromo ? '#10b981' : 'transparent',
-              border: '2px solid ' + (newDebt.isPromo ? '#10b981' : '#2a4060'),
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {newDebt.isPromo && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>Intro / 0% APR promo offer</div>
-              <div style={{ fontSize: 11, color: '#4a7fa5' }}>Rate is 0% until a specific date, then jumps</div>
-            </div>
-          </div>
-
-          {!newDebt.isPromo && (
-            <Input
-              label="Interest Rate (APR)"
-              value={newDebt.rate || ''}
-              onChange={v => setNewDebt(d => ({ ...d, rate: v }))}
-              suffix="%"
-              type="number"
-            />
-          )}
-
-          {newDebt.isPromo && (
-            <div style={{ background: '#0a1520', borderRadius: 8, padding: '12px', marginBottom: 12, border: '1px solid #10b98133' }}>
-              <div style={{ fontSize: 11, color: '#10b981', fontWeight: 700, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Promo Details
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <Input
-                  label="Promo End Date"
-                  value={newDebt.promoEndDate || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, promoEndDate: v }))}
-                  type="date"
-                  placeholder=""
+              {/* Add Discretionary form */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px auto', gap: 8, marginBottom: 12 }}>
+                <input
+                  type="text"
+                  value={newDisc.name}
+                  placeholder="Category name"
+                  onChange={e => setNewDisc(n => ({ ...n, name: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') addDiscretionary() }}
+                  style={inputStyle}
                 />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={fmtCurrencyInput(newDisc.baseline)}
+                  placeholder="$/mo"
+                  onChange={e => setNewDisc(n => ({ ...n, baseline: stripCommas(e.target.value) }))}
+                  onKeyDown={e => { if (e.key === 'Enter') addDiscretionary() }}
+                  style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }}
+                />
+                <button
+                  onClick={addDiscretionary}
+                  style={{ background: '#f59e0b', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Suggestions */}
+              <button
+                onClick={() => setShowSugg(s => !s)}
+                style={{ background: 'none', border: '1px solid #1e2d3d', borderRadius: 7, padding: '6px 12px', color: '#5a7a9a', fontSize: 12, cursor: 'pointer', marginBottom: showSugg ? 12 : 0 }}
+              >
+                {showSugg ? 'Hide suggestions' : 'Quick-add suggestions'}
+              </button>
+              {showSugg && (
+                <div>
+                  {DISC_SUGGESTIONS.map(group => (
+                    <div key={group.group} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 10, color: '#5a7a9a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                        {group.group}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {group.items.map(item => {
+                          const exists = data.budget.discretionary.some(d => d.name === item)
+                          return (
+                            <button
+                              key={item}
+                              onClick={() => {
+                                if (exists) return
+                                setData(d => ({
+                                  ...d,
+                                  budget: {
+                                    ...d.budget,
+                                    discretionary: [
+                                      ...d.budget.discretionary,
+                                      { id: String(Date.now() + Math.random()), name: item, baseline: '0', plan: '' },
+                                    ],
+                                  },
+                                }))
+                              }}
+                              style={{
+                                padding: '5px 12px',
+                                background: exists ? '#0a1520' : '#0f1923',
+                                border: '1px solid ' + (exists ? '#1a2840' : '#1e3a5f'),
+                                borderRadius: 20,
+                                color: exists ? '#2a4060' : '#8b9cb5',
+                                fontSize: 12,
+                                cursor: exists ? 'default' : 'pointer',
+                              }}
+                            >
+                              {exists ? 'Added' : item}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+
+        </div>{/* end left column */}
+
+        {/* Right column: debt */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Debt Obligations */}
+          <Card>
+            <div>
+              <SectionTitle accent="#f97316">Debt Obligations</SectionTitle>
+
+              {/* Debt list */}
+              {data.debts.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                  {stableDebts.map((debt, i) => {
+                    if (debt.isMortgage) {
+                      return (
+                        <MortgageCard
+                          key={debt.id}
+                          debt={debt}
+                          onChange={updateDebt}
+                          onDelete={() => deleteDebt(debt.id)}
+                        />
+                      )
+                    }
+                    const color = debtColor(i, consumerDebtCount)
+                    return (
+                      <DebtCard
+                        key={debt.id}
+                        debt={debt}
+                        color={color}
+                        onChange={updateDebt}
+                        onDelete={() => deleteDebt(debt.id)}
+                        onCommitSort={commitDebtSort}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+
+              {data.debts.length === 0 && (
+                <div style={{ color: '#3a5a7a', fontSize: 13, textAlign: 'center', padding: '16px 0', marginBottom: 20 }}>
+                  No debts added yet.
+                </div>
+              )}
+
+              {/* Add a Debt */}
+              <SectionTitle accent="#f97316">Add a Debt</SectionTitle>
+
+              <Input
+                label="Name"
+                value={newDebt.name}
+                onChange={v => setNewDebt(d => ({ ...d, name: v }))}
+                placeholder="e.g. Student Loan"
+              />
+              <Input
+                label={newDebt.isMortgage ? 'Loan Balance' : 'Balance'}
+                value={newDebt.balance || ''}
+                onChange={v => setNewDebt(d => ({ ...d, balance: v }))}
+                prefix="$"
+                type="number"
+              />
+              <Input
+                label={newDebt.isMortgage ? 'Monthly P&I (Principal + Interest)' : 'Minimum Payment'}
+                value={newDebt.minPayment || ''}
+                onChange={v => setNewDebt(d => ({ ...d, minPayment: v }))}
+                prefix="$"
+                type="number"
+              />
+
+              {/* Promo toggle */}
+              <div
+                onClick={() => setNewDebt(d => ({ ...d, isPromo: !d.isPromo }))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                  background: newDebt.isPromo ? 'linear-gradient(135deg, #0d1a10, #0a1508)' : '#0a1520',
+                  border: '1px solid ' + (newDebt.isPromo ? '#10b98133' : '#1a2840'),
+                  borderRadius: 8, cursor: 'pointer', marginBottom: 12,
+                }}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: 4,
+                  background: newDebt.isPromo ? '#10b981' : 'transparent',
+                  border: '2px solid ' + (newDebt.isPromo ? '#10b981' : '#2a4060'),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {newDebt.isPromo && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>Intro / 0% APR promo offer</div>
+                  <div style={{ fontSize: 11, color: '#4a7fa5' }}>Rate is 0% until a specific date, then jumps</div>
+                </div>
+              </div>
+
+              {!newDebt.isPromo && (
                 <Input
-                  label="Rate After Promo"
-                  value={newDebt.postPromoRate || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, postPromoRate: v }))}
+                  label="Interest Rate (APR)"
+                  value={newDebt.rate || ''}
+                  onChange={v => setNewDebt(d => ({ ...d, rate: v }))}
                   suffix="%"
                   type="number"
                 />
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Mortgage toggle */}
-          <div
-            onClick={() => setNewDebt(d => ({ ...d, isMortgage: !d.isMortgage }))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-              background: newDebt.isMortgage ? '#0d1a2e' : '#0a1520',
-              border: '1px solid ' + (newDebt.isMortgage ? '#1e3a5f' : '#1a2840'),
-              borderRadius: 8, cursor: 'pointer', marginBottom: 12,
-            }}
-          >
-            <div style={{
-              width: 18, height: 18, borderRadius: 4,
-              background: newDebt.isMortgage ? '#1d4ed8' : 'transparent',
-              border: '2px solid ' + (newDebt.isMortgage ? '#1d4ed8' : '#2a4060'),
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {newDebt.isMortgage && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>This is a mortgage</div>
-              <div style={{ fontSize: 11, color: '#4a7fa5' }}>Tracks payoff but excluded from consumer debt total and budget</div>
-            </div>
-          </div>
+              {newDebt.isPromo && (
+                <div style={{ background: '#0a1520', borderRadius: 8, padding: '12px', marginBottom: 12, border: '1px solid #10b98133' }}>
+                  <div style={{ fontSize: 11, color: '#10b981', fontWeight: 700, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Promo Details
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <Input
+                      label="Promo End Date"
+                      value={newDebt.promoEndDate || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, promoEndDate: v }))}
+                      type="date"
+                      placeholder=""
+                    />
+                    <Input
+                      label="Rate After Promo"
+                      value={newDebt.postPromoRate || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, postPromoRate: v }))}
+                      suffix="%"
+                      type="number"
+                    />
+                  </div>
+                </div>
+              )}
 
-          {newDebt.isMortgage && (
-            <div style={{ background: '#0a1520', borderRadius: 10, padding: '14px', marginBottom: 12, border: '1px solid #1e3a5f' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
-                Mortgage Details
+              {/* Mortgage toggle */}
+              <div
+                onClick={() => setNewDebt(d => ({ ...d, isMortgage: !d.isMortgage }))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                  background: newDebt.isMortgage ? '#0d1a2e' : '#0a1520',
+                  border: '1px solid ' + (newDebt.isMortgage ? '#1e3a5f' : '#1a2840'),
+                  borderRadius: 8, cursor: 'pointer', marginBottom: 12,
+                }}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: 4,
+                  background: newDebt.isMortgage ? '#1d4ed8' : 'transparent',
+                  border: '2px solid ' + (newDebt.isMortgage ? '#1d4ed8' : '#2a4060'),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {newDebt.isMortgage && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>This is a mortgage</div>
+                  <div style={{ fontSize: 11, color: '#4a7fa5' }}>Tracks payoff but excluded from consumer debt total and budget</div>
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 0 }}>
-                <Input
-                  label="Monthly Escrow (Taxes + Insurance)"
-                  value={newDebt.monthlyEscrow || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, monthlyEscrow: v }))}
-                  prefix="$"
-                  type="number"
-                />
-                <Input
-                  label="Escrow Balance"
-                  value={newDebt.escrowBalance || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, escrowBalance: v }))}
-                  prefix="$"
-                  type="number"
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <Input
-                  label="Loan Start Date"
-                  value={newDebt.loanStartDate || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, loanStartDate: v }))}
-                  type="date"
-                />
-                <Input
-                  label="Loan End Date"
-                  value={newDebt.loanEndDate || ''}
-                  onChange={v => setNewDebt(d => ({ ...d, loanEndDate: v }))}
-                  type="date"
-                />
-              </div>
-              <div style={{ fontSize: 11, color: '#4a7fa5', marginTop: 10, lineHeight: 1.5 }}>
-                {newDebt.minPayment && newDebt.monthlyEscrow
-                  ? `Total monthly PITI: ${fmt((parseFloat(newDebt.minPayment) || 0) + (parseFloat(newDebt.monthlyEscrow) || 0))} (P&I ${fmt(parseFloat(newDebt.minPayment) || 0)} + Escrow ${fmt(parseFloat(newDebt.monthlyEscrow) || 0)})`
-                  : 'Total PITI = P&I + Escrow. Enter both to see combined payment.'}
-              </div>
-            </div>
-          )}
 
-          <button
-            onClick={addDebt}
-            style={{
-              width: '100%', padding: '11px',
-              background: 'linear-gradient(135deg,#1d4ed8,#1e40af)',
-              color: '#fff', border: 'none', borderRadius: 8,
-              fontWeight: 600, fontSize: 14,
-              fontFamily: "'DM Sans',sans-serif",
-              marginTop: 4, cursor: 'pointer',
-            }}
-          >
-            Add Debt
-          </button>
-        </div>
-      </Card>
+              {newDebt.isMortgage && (
+                <div style={{ background: '#0a1520', borderRadius: 10, padding: '14px', marginBottom: 12, border: '1px solid #1e3a5f' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                    Mortgage Details
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 0 }}>
+                    <Input
+                      label="Monthly Escrow (Taxes + Insurance)"
+                      value={newDebt.monthlyEscrow || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, monthlyEscrow: v }))}
+                      prefix="$"
+                      type="number"
+                    />
+                    <Input
+                      label="Escrow Balance"
+                      value={newDebt.escrowBalance || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, escrowBalance: v }))}
+                      prefix="$"
+                      type="number"
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <Input
+                      label="Loan Start Date"
+                      value={newDebt.loanStartDate || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, loanStartDate: v }))}
+                      type="date"
+                    />
+                    <Input
+                      label="Loan End Date"
+                      value={newDebt.loanEndDate || ''}
+                      onChange={v => setNewDebt(d => ({ ...d, loanEndDate: v }))}
+                      type="date"
+                    />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#4a7fa5', marginTop: 10, lineHeight: 1.5 }}>
+                    {newDebt.minPayment && newDebt.monthlyEscrow
+                      ? `Total monthly PITI: ${fmt((parseFloat(newDebt.minPayment) || 0) + (parseFloat(newDebt.monthlyEscrow) || 0))} (P&I ${fmt(parseFloat(newDebt.minPayment) || 0)} + Escrow ${fmt(parseFloat(newDebt.monthlyEscrow) || 0)})`
+                      : 'Total PITI = P&I + Escrow. Enter both to see combined payment.'}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={addDebt}
+                style={{
+                  width: '100%', padding: '11px',
+                  background: 'linear-gradient(135deg,#1d4ed8,#1e40af)',
+                  color: '#fff', border: 'none', borderRadius: 8,
+                  fontWeight: 600, fontSize: 14,
+                  fontFamily: "'DM Sans',sans-serif",
+                  marginTop: 4, cursor: 'pointer',
+                }}
+              >
+                Add Debt
+              </button>
+            </div>
+          </Card>
+        </div>{/* end right column */}
+      </div>{/* end expenses-grid */}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useUI } from './context/UIContext'
 import type { TabId } from './types'
 import SettingsTab from './tabs/SettingsTab'
@@ -7,6 +8,9 @@ import ExpensesTab from './tabs/ExpensesTab'
 import SavingsTab from './tabs/SavingsTab'
 import InvestRetireTab from './tabs/InvestRetireTab'
 import PlanTab from './tabs/PlanTab'
+import WelcomeModal from './onboarding/WelcomeModal'
+import QuickStart from './onboarding/QuickStart'
+import { ONBOARDING_KEY } from './lib/storage'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -21,8 +25,31 @@ const TABS: { id: TabId; label: string }[] = [
 export default function App() {
   const { activeTab, setActiveTab } = useUI()
 
+  const [onboardScreen, setOnboardScreen] = useState<'welcome' | 'quickstart' | 'done'>(() => {
+    try {
+      return localStorage.getItem(ONBOARDING_KEY) ? 'done' : 'welcome'
+    } catch {
+      return 'done'
+    }
+  })
+
   return (
     <div className="min-h-screen bg-bg font-body">
+      {onboardScreen === 'welcome' && (
+        <WelcomeModal
+          onQuickStart={() => setOnboardScreen('quickstart')}
+          onSkip={() => {
+            try { localStorage.setItem(ONBOARDING_KEY, '1') } catch {}
+            setOnboardScreen('done')
+          }}
+        />
+      )}
+      {onboardScreen === 'quickstart' && (
+        <QuickStart
+          onComplete={() => setOnboardScreen('done')}
+          onBack={() => setOnboardScreen('welcome')}
+        />
+      )}
       {/* Tab nav */}
       <div className="sticky top-0 z-50 bg-[#050b12] border-b border-border">
         <div className="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto">

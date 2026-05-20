@@ -2,7 +2,6 @@ import Input from '../components/Input'
 import SectionTitle from '../components/SectionTitle'
 import Card from '../components/Card'
 import { payoffDate } from '../lib/calculations'
-import { fmt } from '../lib/format'
 
 export interface SavingsCardProps {
   title: string

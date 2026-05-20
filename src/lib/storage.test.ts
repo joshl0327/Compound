@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { makeDefault, migrateData, STORAGE_KEY, FREQ_OPTIONS, ESSENTIAL_DEFAULTS } from './storage'
+import { describe, it, expect } from 'vitest'
+import { makeDefault, migrateData, STORAGE_KEY, ESSENTIAL_DEFAULTS } from './storage'
 
 describe('STORAGE_KEY', () => {
   it('is compound_v4', () => {
@@ -31,7 +31,7 @@ describe('makeDefault', () => {
 describe('migrateData', () => {
   it('passes through data that already has income.sources', () => {
     const d = makeDefault()
-    const result = migrateData(d, makeDefault())
+    const result = migrateData(d as any, makeDefault())
     expect(result.income.sources[0].id).toBe('primary')
   })
 

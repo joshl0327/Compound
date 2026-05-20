@@ -2,7 +2,7 @@ import Badge from '../components/Badge'
 import IncomeSourceCard from '../features/IncomeSourceCard'
 import { useData } from '../context/DataContext'
 import { useMetrics } from '../hooks/useMetrics'
-import { FREQ_OPTIONS, makeDefaultW2Source, makeDefaultOtherSource, STORAGE_KEY } from '../lib/storage'
+import { FREQ_OPTIONS, makeDefaultW2Source, makeDefaultOtherSource } from '../lib/storage'
 import type { IncomeSource } from '../types'
 
 export default function IncomeTab() {

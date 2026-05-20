@@ -10,7 +10,7 @@ export default function OverviewTab() {
   const { data, setData } = useData()
   const {
     grossMonthly, netMonthly,
-    housingPct, consumerDti, dti, consumerDtiTotal,
+    housingPct, consumerDti, dti,
     retireRate, savingsRate,
     planSurplus, essTotalP, debtPlanTotal, discPlanTotal,
     liquidSavingsMonthly, investMonthly, rothIraMonthly,

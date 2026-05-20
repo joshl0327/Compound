@@ -28,7 +28,7 @@ function SummaryRow({ label, value, color }: { label: string; value: string; col
   )
 }
 
-export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary }: IncomeSourceCardProps) {
+export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary: _isPrimary }: IncomeSourceCardProps) {
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const freqObj = FREQ_OPTIONS.find(f => f.id === source.frequency) || FREQ_OPTIONS[1]

@@ -4,23 +4,7 @@
 
 Compound is a personal finance web app designed to help people — especially beginners — understand their financial health and take action toward debt payoff, savings goals, and retirement. The primary audience is someone early in their financial journey: they may carry significant consumer debt, have limited savings, and lack financial literacy vocabulary.
 
-The app runs entirely client-side as a **single `index.html` file** with localStorage persistence. There is no backend, no login, no cloud sync.
-
----
-
-## ⚠️ Next Major Change: Migrate to React + Vite + JSX
-
-**This should be the next significant piece of work before adding any more structural features.**
-
-The single-file `El()` vanilla approach has reached its maintainability ceiling at ~6,300 lines. Every structural change (layout reorders, new component patterns, tab reorganizations) risks cascading bracket mismatches. The React migration would:
-
-- Make the component tree visible and safe via JSX
-- Enable real component extraction (currently everything is inlined)
-- Allow layout changes that are unsafe at this file size (e.g. side-by-side Expenses layout)
-- Unlock proper state management patterns
-- Make future features (charts, projections, multi-account) tractable
-
-**Preserve localStorage key names exactly** — migration must be data-compatible with existing users.
+The app runs entirely client-side with localStorage persistence. There is no backend, no login, no cloud sync.
 
 ---
 
@@ -36,17 +20,22 @@ The single-file `El()` vanilla approach has reached its maintainability ceiling 
 
 ## Architecture
 
-- **Single file**: All HTML, CSS, and JavaScript lives in `index.html` at the **repo root**
+| Layer | Tech |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS |
+| State | React Context (DataContext + UIContext) |
+| Build | Vite (port 5173), `npm run dev` / `npm run build` |
+| Testing | Vitest + @testing-library/react, `npx vitest run` |
+| Persistence | localStorage (`compound_v4`, `compound_onboarding_done`, `compound_profile_done`) |
+
+- **Component-based**: `src/` directory with `tabs/`, `features/`, `components/`, `hooks/`, `context/`, `lib/`, `types/`
+- **React 18 with JSX**, bundled by Vite
 - **Persistence**: `localStorage` for all user data — **localStorage key names must never be changed**
   - Main data key: `compound_v4`
   - Onboarding complete: `compound_onboarding_done`
   - Profile card dismissed: `compound_profile_done`
-- **No frameworks**: Vanilla JS (no React, no build step) — React is loaded via CDN using `El()` factory function
 - **Dark theme**: Consistent dark card styling throughout
 - **Default debt strategy**: Avalanche (highest interest rate first)
-- **Branches**:
-  - `main` — stable baseline
-  - `multi-income` — active development branch with all recent features; this is the working branch
 
 ---
 
@@ -346,24 +335,10 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ## Claude Code Guardrails
 
-The entire app is one file (~6,300 lines). Enforce these rules on every prompt:
-
 - **Never rename localStorage keys** — changing a key name silently wipes user data on next load
 - **Never touch unrelated tabs** — if a prompt is about Expenses, don't modify Income or Overview
-- **Never add a build step or external dependencies** — the app is intentionally zero-dependency
-- **Never split index.html into multiple files** — single-file is an explicit constraint
 - **Preserve all existing data wiring** when moving UI between tabs — only change placement, not structure
-- **Don't add frameworks** (React, Vue, Alpine, etc.) — vanilla JS only **until the planned React migration**
 - **Scope creep check**: if a prompt says "no other changes", do not refactor adjacent code even if it looks messy
-- **Never merge `multi-income` to `main`** without explicit user approval and testing
-
-### Single-file bracket complexity
-At ~6,300 lines, bracket/paren mismatches are the #1 source of bugs. Critical rules:
-- **Always verify with `node -e "new Function(code)"`** — the VS Code TypeScript language server gives false-positive errors on JavaScript inside HTML files. Node.js is the ground truth.
-- **Wrap-and-close in one edit** — never open a new `[` or `El(` wrapper without closing it in the same edit. Partial states cause cascading mismatches.
-- **DOM reordering requires a comprehensive replacement** — you cannot incrementally add wrapper divs to reorder elements. The entire affected block must be replaced at once.
-- **String content fools naive bracket counters** — `"linear-gradient(135deg,..."` contains `(` and `)` that will throw off simple depth scanners. Use `new Function(code)` for ground truth.
-- **Layout restructuring is high-risk** — changing the structural order of cards should be deferred to the React + JSX migration, where the tree structure is visible and safe.
 
 ---
 
@@ -381,11 +356,7 @@ At ~6,300 lines, bracket/paren mismatches are the #1 source of bugs. Critical ru
 
 ## Future Roadmap
 
-### Top priority — React migration
-**Migrate to Vite + React + JSX.** This is the prerequisite for everything below it. The single-file El() approach is at its limit. See the warning at the top of this file.
-
-### After migration
-- **Side-by-side Expenses layout** (Essentials left, Debt right) — currently unsafe to implement
+- **Side-by-side Expenses layout** (Essentials left, Debt right)
 - **Suggested Next Steps redesign** — removed from Overview; needs rethinking with better contextual logic
 - **Per-W2-source retirement projection** in Invest & Retire tab
 - **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.)

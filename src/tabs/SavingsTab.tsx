@@ -20,8 +20,7 @@ export default function SavingsTab() {
   const planLiquidSavingsMonthly = planEfMonthly + planGenMonthly
   const remaining = planSurplus - planLiquidSavingsMonthly - rothIraMonthly - investMonthly
 
-  // Emergency fund actual monthly
-  const efMonthlyActual = parseFloat(data.savings.emergencyFund.monthly) || 0
+  // Actual monthly savings
   const genMonthlyActual = parseFloat(data.savings.generalSavings.monthly) || 0
 
   return (

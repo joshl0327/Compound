@@ -56,7 +56,7 @@ export default function OverviewTab() {
       <p className="m-0 mb-5 text-[#5a7a9a] text-[13px]">Your complete picture at a glance.</p>
 
       {/* Badge row */}
-      <div className="grid gap-2.5 mb-[18px]" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+      <div className="grid gap-2.5 mb-[18px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
         <Badge
           label="Gross Income"
           value={fmt(grossMonthly)}
@@ -66,7 +66,7 @@ export default function OverviewTab() {
         <Badge
           label="Take-Home"
           value={fmt(netMonthly)}
-          color="#10b981"
+          color="#60a5fa"
           sub="/month"
         />
         <Badge
@@ -101,14 +101,14 @@ export default function OverviewTab() {
         <Badge
           label="Retirement Rate"
           value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
-          color={parseFloat(retireRate) > 0 ? '#a78bfa' : '#3a5a7a'}
+          color={parseFloat(retireRate) > 0 ? '#60a5fa' : '#3a5a7a'}
           sub={parseFloat(retireRate) > 0 ? undefined : 'Set contributions in Invest & Retire'}
           tooltip="Percentage of gross income going to retirement accounts (401k, Roth IRA, HSA). 15% is a common target for retiring comfortably at 65. Capture any employer match first — it's free money."
         />
         <Badge
           label="Total Savings Rate"
           value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
-          color={parseFloat(savingsRate) > 0 ? '#10b981' : '#3a5a7a'}
+          color={parseFloat(savingsRate) > 0 ? '#60a5fa' : '#3a5a7a'}
           sub={parseFloat(savingsRate) > 0 ? undefined : 'Add income & savings'}
           tooltip="How much of your gross income you're setting aside across all accounts. 10% = getting started, 15% = on track, 20%+ = building wealth aggressively."
         />

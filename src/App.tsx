@@ -91,7 +91,7 @@ export default function App() {
 
       {/* Top header bar */}
       <div className="bg-[#050b12] border-b border-border px-4 py-2.5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-blue flex items-center justify-center text-bg font-display font-extrabold text-sm">C</div>
@@ -123,7 +123,7 @@ export default function App() {
 
       {/* Tab nav */}
       <div className="sticky top-0 z-50 bg-[#050b12] border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 flex gap-1 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {TABS.map(t => (
             <button
               key={t.id}
@@ -141,7 +141,7 @@ export default function App() {
       </div>
 
       {/* Tab content */}
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {activeTab === 'settings' && <SettingsTab />}
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'income' && <IncomeTab />}

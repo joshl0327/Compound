@@ -1,4 +1,4 @@
-import { ONBOARDING_KEY } from '../lib/storage'
+import { ONBOARDING_KEY, STORAGE_KEY } from '../lib/storage'
 
 interface WelcomeModalProps {
   onQuickStart: () => void
@@ -18,7 +18,7 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
         try {
           const parsed = JSON.parse(ev.target?.result as string)
           // Store it directly — DataContext will load it on next mount
-          localStorage.setItem('compound_v4', JSON.stringify(parsed))
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed))
           localStorage.setItem(ONBOARDING_KEY, '1')
           window.location.reload()
         } catch {

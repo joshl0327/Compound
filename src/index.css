@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { @apply min-h-screen bg-bg text-slate-100; margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
+  input::placeholder { @apply text-muted; }
+  button { cursor: pointer; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { @apply bg-[#1e3a5f] rounded; }
+  input[type=number]::-webkit-inner-spin-button { opacity: 0.3; }
+}
+
+@layer components {
+  .card {
+    @apply bg-gradient-to-br from-surface to-surface2 border border-border rounded-2xl p-5;
+  }
+}

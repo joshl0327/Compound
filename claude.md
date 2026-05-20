@@ -324,12 +324,13 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ## Design Conventions
 
-- **Dark card styling**: `background: linear-gradient(145deg, #111c28, #0d1620)`
-- **Section titles**: `SectionTitle` component with colored accent bar
-- **Badge components**: Used for summary metrics at the top of tabs
-- **Tooltips**: Badge component supports `tooltip` prop — 5 Overview badges have tooltips
+- **Dark card styling**: use `className="card"` — the `.card` utility in `src/index.css` applies `bg-gradient-to-br from-surface to-surface2 border border-border rounded-2xl p-5`
+- **Custom Tailwind tokens**: `bg`, `surface`, `surface2`, `border`, `blue`, `green`, `orange`, `amber`, `red`, `muted`, `subtle`, `dim` — defined in `tailwind.config.ts`. Always use tokens over raw hex.
+- **Section titles**: `<SectionTitle accent="#hex">` component with colored accent bar
+- **Badge components**: `<Badge label value color sub tooltip>` — used for summary metrics at the top of tabs. Tooltip appears on hover.
 - **Empty states**: When a value is 0 or unset, show instructional placeholder text — never just "$0"
 - **Pencil icon SVG**: `<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />` used on all income source name fields
+- **Fonts**: `font-display` (Syne, headings), `font-body` (DM Sans, UI), `font-mono` (DM Mono, numbers)
 
 ---
 
@@ -349,16 +350,30 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 - Profile completeness card may not show if `compound_profile_done` is already set — clear via DevTools → Application → Local Storage
 - Essentials default to $0 — previously defaulted to Miami averages, removed as confusing
 - Legacy detailed-mode fields (`healthInsurance`, `fsa`, `otherPreTax`, `federalTax`, `stateTax`) still exist in data model and are used as fallback in net calculation when `taxesPerPaycheck` is not set
-- Expenses tab: Essentials and Debt Obligations are stacked vertically (not side-by-side as intended). Side-by-side layout requires a DOM reorder that is unsafe at this file size — deferred to React migration.
 - Suggested Next Steps removed from Overview — to be redesigned with better, more contextual logic before re-adding
+
+### Visual differences from pre-migration live version (active polish work)
+
+The React migration preserved all functionality and data but introduced visual differences vs. the old single-file app. These need a side-by-side pass:
+
+- **Badge row** — old version was a single tight scrollable row with uniform card sizing; new version may wrap or have inconsistent spacing
+- **App header** — old version had a more compact header with the Gross/Net income figures more prominently sized; new version is functional but proportions differ
+- **Typography weights/sizes** — some headings and labels are slightly heavier or larger than the original
+- **Card spacing** — padding and gap values differ from the original in some tabs
+- **Color fidelity** — a few components use raw hex where they should use Tailwind tokens, resulting in slightly off shades
+
+These are cosmetic only — no data or calculation logic is affected.
 
 ---
 
 ## Future Roadmap
 
-- **Side-by-side Expenses layout** (Essentials left, Debt right)
+### Current focus: visual polish pass
+Match the new React app's layout, spacing, and typography to the pre-migration live version. Work tab by tab, screenshot comparison. See "Visual differences" in Known Issues above.
+
+### After visual polish
+- **Side-by-side Expenses layout** (Essentials left, Debt right) — now unblocked by the React migration
 - **Suggested Next Steps redesign** — removed from Overview; needs rethinking with better contextual logic
-- **Per-W2-source retirement projection** in Invest & Retire tab
 - **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.)
 - **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
 - Mobile layout optimization

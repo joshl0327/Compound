@@ -5,6 +5,7 @@ import OverviewTab from './tabs/OverviewTab'
 import IncomeTab from './tabs/IncomeTab'
 import ExpensesTab from './tabs/ExpensesTab'
 import SavingsTab from './tabs/SavingsTab'
+import InvestRetireTab from './tabs/InvestRetireTab'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -47,7 +48,8 @@ export default function App() {
         {activeTab === 'income' && <IncomeTab />}
         {activeTab === 'expenses' && <ExpensesTab />}
         {activeTab === 'savings' && <SavingsTab />}
-        {activeTab !== 'settings' && activeTab !== 'overview' && activeTab !== 'income' && activeTab !== 'expenses' && activeTab !== 'savings' && (
+        {activeTab === 'invest' && <InvestRetireTab />}
+        {activeTab !== 'settings' && activeTab !== 'overview' && activeTab !== 'income' && activeTab !== 'expenses' && activeTab !== 'savings' && activeTab !== 'invest' && (
           <div className="text-dim text-sm text-center py-8 font-mono">
             {activeTab} tab — migrating…
           </div>

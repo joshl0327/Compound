@@ -1,6 +1,7 @@
 import { useUI } from './context/UIContext'
 import type { TabId } from './types'
 import SettingsTab from './tabs/SettingsTab'
+import OverviewTab from './tabs/OverviewTab'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -39,7 +40,8 @@ export default function App() {
       {/* Tab content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
         {activeTab === 'settings' && <SettingsTab />}
-        {activeTab !== 'settings' && (
+        {activeTab === 'overview' && <OverviewTab />}
+        {activeTab !== 'settings' && activeTab !== 'overview' && (
           <div className="text-dim text-sm text-center py-8 font-mono">
             {activeTab} tab — migrating…
           </div>

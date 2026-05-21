@@ -197,23 +197,38 @@ Implemented in `src/components/SankeyChart.tsx` using `d3-sankey` for layout mat
 
 **4-column structure:**
 - Col 0: Income sources (one node per `data.income.sources[]`)
-- Col 1: Gross income (aggregator)
-- Col 2: Pre-tax Retirement · Roth 401k (if nonzero) · Taxes · Take-home
+- Col 1: Gross income (structural aggregator, dark fill)
+- Col 2: 401(k) & HSA (trad401k + roth401k + HSA combined) · Taxes · Take-home
 - Col 3: Essentials · Discretionary · Debt · Liquid Savings · Retirement (Roth IRA) · Remaining or Overshoot
 
-**Labels:**
-- Col 0 (sources): left-side SVG text, name + amount
-- Col 2 terminals (Pre-tax Retirement, Taxes): right-side HTML label panel with colored left-border accent
-- Col 3 (buckets): same right-side panel, sorted below col-2 terminals by y-position
-- Take-home node: small "TAKE-HOME" SVG label above the node (pass-through, not a destination)
+**Node ordering:** `nodeSort(null)` preserves input array order within each column. Col-2 order top-to-bottom: 401(k) & HSA → Taxes → Take-Home.
 
-**Ribbons:** Custom `ribbonPath()` function draws the full filled bezier shape (not `sankeyLinkHorizontal()` which only draws a center curve). Fill uses `linearGradient` left→right, source → target color at ~0.6 opacity.
+**Label system (all SVG, no HTML overlay):**
+- Col 0 (sources): left of node, `text-anchor="end"`, centered on node midY
+- Col 2 (401k & HSA, Taxes): right of node, centered on node midY
+- Col 3 (spending buckets): right of node, centered on node midY
+- Gross Income: below the gross node, centered on node midX, color `#4a7fa5`
+- Take-Home: below the take-home node, centered on node midX, bright blue `#60a5fa`
+- **No percentages in labels** — contextual % lives in tooltips only (col 0/2: "X% of gross income"; col 3: "X% of take-home")
 
-**Health-weighted node colors:** Essentials goes orange when housing > 28%, Debt goes orange when DTI ≥ 36% (set in `buildSankeyData`). Overshoot node is always red. No flag text annotations on labels — the KPI badges communicate health status.
+**Take-home node:** distinct from the structural gross node — bright blue `#60a5fa` border at strokeWidth 2, subtle tint fill, SVG glow filter (`takehome-glow`). Red border when in overshoot state.
 
-**Source toggle:** "Sources ▾/▸" button collapses all sources into one "Total Income" node. Shown only when `sourceCalcs.length > 1`.
+**Ribbons:** Custom `ribbonPath()` draws the full filled bezier shape. Fill uses per-link `linearGradient`. Minimum `hw` of 4px ensures even tiny flows show a visible S-curve shape.
 
-**Drill-down panel:** Clicking a col-3 bucket node opens a line-item breakdown below the card. Clicking col-0 source node shows that source's gross/net breakdown.
+**Post-layout adjustments (in graph useMemo, after d3-sankey):**
+- Min node height: 8px (any node shorter than 8px has `y1` raised)
+- `applyDip(nodeId, px, 'source'|'target')` — shifts a node and its ribbon endpoint down by `px`; 'target' updates `link.y1` (col-3 fan-out), 'source' updates `link.y0` (col-0 fan-in)
+- Bottom 2 col-3 nodes (by position, not ID): dipped 45px / 22px so their ribbons curve downward — handles retirement, overshoot, remaining in any combination
+- Last col-0 source when 3+ sources exist: dipped 30px so a small bottom source curves upward into gross
+- Container div height: `dims.h + EXTRA_BOTTOM (100px)` to prevent clipping of dipped nodes
+
+**Layout constants:** `dims.h = 580`, `nodePadding = 20`, `LABEL_W = 220` (reserved right for SVG labels), `SRC_LABEL_W = 110` (reserved left).
+
+**Health-weighted node colors:** Essentials goes orange when housing > 28%, Debt goes orange when DTI ≥ 36%. Overshoot node is always red. KPI badges communicate thresholds — the Sankey shows the flow, not the verdict.
+
+**Tooltips:** each node tooltip includes the value and contextual % — col 0/2 nodes show "X% of gross income", col 3 nodes show "X% of take-home". Built by `pct(value, denominator)` helper in `sankeyHelpers.ts`.
+
+**Drill-down panel:** Clicking a col-3 bucket node (or col-0 source) opens a line-item breakdown below the card.
 
 ### Debt-Free Timeline
 `src/components/DebtTimeline.tsx` — horizontal SVG axis from `currentAge` to `targetAge` (from `primaryW2.retirement`). Milestones: Now, Net-worth-positive (if > 3 years away), Debt-free, Retire. Alternates above/below when milestones are within 2 years.
@@ -386,13 +401,27 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ### Overview tab redesign (complete)
 - **DonutChart removed** — replaced entirely by the Sankey
-- **New:** `src/lib/sankeyHelpers.ts` — pure helper functions: `buildSankeyData`, `buildSankeyDataCollapsed`, `computeLabelPositions`, `computeSituationalRead`, `computeNetWorthPositiveMonths` (22 unit tests)
-- **New:** `src/components/SankeyChart.tsx` — multi-layer Sankey using `d3-sankey` for layout, React SVG for rendering. Custom `ribbonPath()` function draws proper filled ribbon shapes.
+- **New:** `src/lib/sankeyHelpers.ts` — pure helper functions: `buildSankeyData`, `computeSituationalRead`, `computeNetWorthPositiveMonths`, `pct()` (65 unit tests)
+- **New:** `src/components/SankeyChart.tsx` — multi-layer Sankey using `d3-sankey` for layout, React SVG for rendering
 - **New:** `src/components/DebtTimeline.tsx` — horizontal age-axis milestone timeline
 - **Modified:** `src/components/LineChart.tsx` — optional `benchmarks?: Benchmark[]` prop for Fidelity guideline overlays
 - **New dep:** `d3-sankey` (layout math only, ~15KB)
 - Situational headline above badge strip replaces the old page title
 - Debt-free strip removed (replaced by DebtTimeline component in bottom row)
+
+### Sankey overhaul — visual clarity pass (complete)
+Major redesign of `SankeyChart.tsx` and `sankeyHelpers.ts`. All changes on `main`, 42 commits ahead of origin.
+
+- **Label system rebuilt**: replaced HTML overlay + `computeLabelPositions` collision avoidance with a single SVG `<text>` pass over all nodes. Labels are centered on each node's midY (no vertical border lines, no % in labels).
+- **Anchor node labels**: Gross Income and Take-Home display name + amount *below* their nodes. All other nodes display to the side, centered on their vertical midpoint.
+- **Take-home node style**: glowing bright blue border (`#60a5fa`, strokeWidth 2, SVG glow filter), subtle tinted fill — visually distinct from the dark structural gross node.
+- **401(k) & HSA node**: merged trad401k + roth401k + HSA into a single col-2 node, ordered first (top) in col-2.
+- **Node ordering**: `nodeSort(null)` enforces input array order within each column.
+- **Contextual tooltips**: `pct()` helper adds "X% of gross income" (col 0/2) or "X% of take-home" (col 3) to every node tooltip.
+- **Layout**: `nodePadding` increased 10→20, height 420→580, `EXTRA_BOTTOM=100` expands container below SVG for dipped nodes.
+- **Minimum node height**: 8px clamp post-layout.
+- **Post-layout dips**: `applyDip()` shifts bottom nodes down to create visible S-curves. Position-based (not ID-based): always applies to whichever nodes are physically last in col-3 (handles retirement, overshoot, remaining in any combination). Also handles 3+ income source case (last source dipped upward into gross).
+- **Sources toggle removed**: collapsed view and `buildSankeyDataCollapsed` deleted.
 
 ---
 
@@ -409,16 +438,21 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ## Future Roadmap
 
-### Sankey label improvements (pending)
-The current right-side label panel (col-2 terminals + col-3 buckets unified) is functional but not fully satisfying aesthetically. Known issues to address in a future pass:
-- The `TAKE-HOME` above-label for the pass-through node is functional but feels disconnected
-- The Taxes node label may not be visible when the taxes band is thin (< 10px of nodePadding above)
-- The collision avoidance works but can push labels into awkward gaps at certain data ratios
-- Overall label panel could benefit from a visual separator between col-2 (pre-tax) and col-3 (post-tax) sections
+### ⚡ Next session: Color system review (priority)
+The next chat will audit and potentially redesign the color system across the entire project. Before starting, read the **Color System** section above carefully — it is the current spec. Areas to examine:
 
-### After Overview stabilizes
+- The Sankey uses its own hardcoded hex palette (blue `#60a5fa`, purple `#a78bfa`, orange `#f97316`, green `#10b981`, dark `#3a5a7a`, structural `#1a2840`) that is **not** wired to Tailwind tokens
+- Tailwind tokens exist in `tailwind.config.ts` (`blue`, `green`, `orange`, `amber`, `red`, `muted`, `subtle`, `dim`, etc.) and are used in tabs/features — but the Sankey SVG cannot use Tailwind classes
+- The Taxes node uses `#3a5a7a` (same as the neutral/muted gray) — may look too dark/unimportant
+- The "Debt" col-3 node color (`#60a5fa`, same blue as income/take-home) is semantically ambiguous
+- No color token shared between Sankey and the rest of the app — if the palette changes, both must update independently
+- Consider whether a shared color constants file (`src/lib/colors.ts`) would help keep Sankey and UI in sync
+
+### After color pass
 - **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.) in Invest & Retire tab
 - **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
 - Mobile layout optimization
 - Inflation-adjusted retirement projections
 - Zip code-based essentials pre-population
+- KPI strip ↔ Sankey visual connection (currently two independent representations of the same data)
+- Taxes drill-down panel (currently clicking taxes does nothing)

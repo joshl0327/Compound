@@ -120,7 +120,7 @@ data = {
 
 | Tab | Purpose |
 |-----|---------|
-| **Overview** | Dashboard: DTI badges, savings rate, housing %, profile completeness card, debt payoff timeline, Take-Home Budget Summary |
+| **Overview** | Dashboard: situational headline, 7-badge KPI strip, multi-layer Sankey flow chart (income sources → gross → pre-tax split → spending buckets), debt-free timeline, retirement projection |
 | **Income** | Multi-source income (W2 + Other). Simple mode: salary + take-home. Detailed mode: full paycheck deductions per paystub. |
 | **Expenses** | Essentials (add/remove) + Debt Obligations + Other Expenses. All amounts are monthly. No plan columns. |
 | **Savings** | Emergency fund + general savings with Actual/Plan monthly columns. Header shows full post-tax savings breakdown and remaining. |
@@ -186,20 +186,44 @@ Pre-tax items (`trad401kMonthly`, `roth401kMonthly`, `hsaMonthly`) and employer 
 
 ## Overview Tab
 
-### Badges (top bar)
-Gross Income | Take-Home | Consumer Debt | Housing % | Total DTI | Retirement Rate | Total Savings Rate
+### Page structure (top → bottom)
+1. **Situational headline** — one generated sentence from health state (e.g. "Strong saver carrying $30k at 41.4% DTI"). Right-aligned stat card: "This month · +$X surplus" (red when overshoot). Hidden when no income entered.
+2. **KPI strip** — 7 badges: Gross Income | Take-Home | Consumer Debt | Housing % | Total DTI | Retirement Rate | Total Savings Rate
+3. **Sankey flow card** (`SankeyChart`) — multi-layer flow showing where each dollar goes
+4. **Bottom row** — Debt-Free Timeline (left) + Retirement Projection (right)
 
-- **Total DTI** subtitle: always `"Consumer DTI X%"` (removed "high/moderate/healthy" text)
-- **Consumer Debt** subtitle: `"excl. mortgage"`
+### Sankey chart
+Implemented in `src/components/SankeyChart.tsx` using `d3-sankey` for layout math only — all rendering is React SVG. Data helpers in `src/lib/sankeyHelpers.ts`.
 
-### Removed sections (intentionally)
-- **Monthly Savings summary card** — removed; data is visible in Savings tab and Budget Summary
-- **Suggested Next Steps** — removed; to be redesigned with better logic before re-adding
+**4-column structure:**
+- Col 0: Income sources (one node per `data.income.sources[]`)
+- Col 1: Gross income (aggregator)
+- Col 2: Pre-tax Retirement · Roth 401k (if nonzero) · Taxes · Take-home
+- Col 3: Essentials · Discretionary · Debt · Liquid Savings · Retirement (Roth IRA) · Remaining or Overshoot
 
-### Take-Home Budget Summary (Plan)
-Shows how planned take-home pay is allocated:
-- Essentials | Debt Payments | Discretionary | Savings (liquid + brokerage) | Retirement (post-tax Roth IRA only)
-- **Remaining** = `planSurplus - postTaxSavingsMonthly` — matches Plan tab Remaining exactly
+**Labels:**
+- Col 0 (sources): left-side SVG text, name + amount
+- Col 2 terminals (Pre-tax Retirement, Taxes): right-side HTML label panel with colored left-border accent
+- Col 3 (buckets): same right-side panel, sorted below col-2 terminals by y-position
+- Take-home node: small "TAKE-HOME" SVG label above the node (pass-through, not a destination)
+
+**Ribbons:** Custom `ribbonPath()` function draws the full filled bezier shape (not `sankeyLinkHorizontal()` which only draws a center curve). Fill uses `linearGradient` left→right, source → target color at ~0.6 opacity.
+
+**Health-weighted node colors:** Essentials goes orange when housing > 28%, Debt goes orange when DTI ≥ 36% (set in `buildSankeyData`). Overshoot node is always red. No flag text annotations on labels — the KPI badges communicate health status.
+
+**Source toggle:** "Sources ▾/▸" button collapses all sources into one "Total Income" node. Shown only when `sourceCalcs.length > 1`.
+
+**Drill-down panel:** Clicking a col-3 bucket node opens a line-item breakdown below the card. Clicking col-0 source node shows that source's gross/net breakdown.
+
+### Debt-Free Timeline
+`src/components/DebtTimeline.tsx` — horizontal SVG axis from `currentAge` to `targetAge` (from `primaryW2.retirement`). Milestones: Now, Net-worth-positive (if > 3 years away), Debt-free, Retire. Alternates above/below when milestones are within 2 years.
+
+### Retirement Projection
+Existing `LineChart` with `buildAggregateProjection`. Fidelity benchmark guidelines added via optional `benchmarks` prop — dashed horizontal lines at 1×/3×/6×/8× annual gross at ages 30/40/50/60.
+
+### KPI badge notes
+- **Total DTI** subtitle: always `"Consumer DTI X%"`
+- **Consumer Debt** subtitle: `"excl. mortgage"` when mortgage exists
 
 ---
 
@@ -360,13 +384,15 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 - Debt plan payments unified to `debt.planPayment` as single source of truth — Plan tab previously wrote to `data.plan.debtPayments` (a separate sandbox field) causing Overview/Expenses/Plan to diverge
 - Consumer Debt-Free date footer added to Debt Obligations section
 
-### Overview tab (in active redesign — see next steps)
-- Debt Payoff Timeline moved out of Overview (now lives in Plan tab)
-- DonutChart component added (`src/components/DonutChart.tsx`) — pure SVG, no library
-- LineChart enhanced with gradient area fill and end-point annotation
-- `buildProjection` extracted to `calculations.ts`; `buildAggregateProjection` added for cross-source retirement projection
-- Badge health tinting: Savings Rate and Retirement Rate earn green at ≥15%, health-status badges get subtle background tint
-- Debt-free strip shows Consumer Debt-Free date + consumer debt balance (DTI removed as redundant)
+### Overview tab redesign (complete)
+- **DonutChart removed** — replaced entirely by the Sankey
+- **New:** `src/lib/sankeyHelpers.ts` — pure helper functions: `buildSankeyData`, `buildSankeyDataCollapsed`, `computeLabelPositions`, `computeSituationalRead`, `computeNetWorthPositiveMonths` (22 unit tests)
+- **New:** `src/components/SankeyChart.tsx` — multi-layer Sankey using `d3-sankey` for layout, React SVG for rendering. Custom `ribbonPath()` function draws proper filled ribbon shapes.
+- **New:** `src/components/DebtTimeline.tsx` — horizontal age-axis milestone timeline
+- **Modified:** `src/components/LineChart.tsx` — optional `benchmarks?: Benchmark[]` prop for Fidelity guideline overlays
+- **New dep:** `d3-sankey` (layout math only, ~15KB)
+- Situational headline above badge strip replaces the old page title
+- Debt-free strip removed (replaced by DebtTimeline component in bottom row)
 
 ---
 
@@ -383,22 +409,14 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ## Future Roadmap
 
-### Current focus: Overview page redesign
-The Overview page has been through several design iterations and is not yet settled. The core goal: within 5 seconds, a user should know (1) their biggest financial challenge, (2) what's going well, and (3) what their money is doing. Design feedback is being gathered externally before the next implementation pass.
+### Sankey label improvements (pending)
+The current right-side label panel (col-2 terminals + col-3 buckets unified) is functional but not fully satisfying aesthetically. Known issues to address in a future pass:
+- The `TAKE-HOME` above-label for the pass-through node is functional but feels disconnected
+- The Taxes node label may not be visible when the taxes band is thin (< 10px of nodePadding above)
+- The collision avoidance works but can push labels into awkward gaps at certain data ratios
+- Overall label panel could benefit from a visual separator between col-2 (pre-tax) and col-3 (post-tax) sections
 
-**Design history (do not re-implement these):**
-- Badge row (7 metrics) + Debt Payoff Timeline + Budget Summary → flat data, no opinion
-- Badge row + Budget Allocation donut + Retirement Projection → better visuals, still no hierarchy
-- Three domain cards (Debt / Spending / Building Wealth) with health pills → peers found domain cards harder to scan than a linear strip
-- Current: enhanced badge strip (health-aware colors + tints) + donut + retirement chart → closer, still not settled
-
-**What's known about the right direction:**
-- The horizontal left-to-right badge strip reads naturally (Income → Obligations → Performance) — keep this structure
-- The page needs "opinion" — it should surface what's urgent and what's affirming, not treat all metrics as equal weight
-- The two chart cards below (donut + retirement) are directionally right but proportionally unbalanced (donut is visually heavy, retirement chart has empty space when data is sparse)
-- Avoid the "domain card" structure — peers found it harder to scan
-
-### After Overview redesign
+### After Overview stabilizes
 - **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.) in Invest & Retire tab
 - **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
 - Mobile layout optimization

@@ -215,3 +215,92 @@ export function computeLabelPositions(
 
   return positions
 }
+
+// ── Situational read ──
+
+interface SituationalInput {
+  planSurplus: number
+  dti: string
+  savingsRate: string
+  hasConsumerDebt: boolean
+  consumerDebtBalance: number
+  noIncome?: boolean
+}
+
+export interface SituationalRead {
+  headline: string
+  isOvershoot: boolean
+}
+
+export function computeSituationalRead(input: SituationalInput): SituationalRead {
+  const { planSurplus, dti, savingsRate, hasConsumerDebt, consumerDebtBalance, noIncome } = input
+  const dtiNum = parseFloat(dti)
+  const srNum = parseFloat(savingsRate)
+  const debtStr = consumerDebtBalance >= 1000
+    ? '$' + Math.round(consumerDebtBalance / 1000) + 'k'
+    : '$' + Math.round(consumerDebtBalance)
+
+  if (noIncome || (!dtiNum && !srNum && !hasConsumerDebt && planSurplus === 0)) {
+    return { headline: '', isOvershoot: false }
+  }
+  if (planSurplus < 0) {
+    return {
+      headline: `You're spending $${Math.round(Math.abs(planSurplus)).toLocaleString()}/mo more than you take home.`,
+      isOvershoot: true,
+    }
+  }
+  if (dtiNum >= 36 && srNum >= 15) {
+    return {
+      headline: `Strong saver carrying ${debtStr} at ${dti}% DTI. Aim some of that surplus at the debt.`,
+      isOvershoot: false,
+    }
+  }
+  if (dtiNum >= 36) {
+    return {
+      headline: `High debt load at ${dti}% DTI — consider redirecting discretionary cash to payoff.`,
+      isOvershoot: false,
+    }
+  }
+  if (!hasConsumerDebt && srNum >= 15) {
+    return {
+      headline: `Debt-free with ${savingsRate}% savings rate — keep the compounding going.`,
+      isOvershoot: false,
+    }
+  }
+  if (!hasConsumerDebt) {
+    return { headline: `Debt-free — grow the savings rate toward 15%.`, isOvershoot: false }
+  }
+  if (srNum >= 15) {
+    return { headline: `Saving ${savingsRate}% of gross income — on track.`, isOvershoot: false }
+  }
+  return {
+    headline: `Add your income, expenses, and debts to see your full picture.`,
+    isOvershoot: false,
+  }
+}
+
+// ── Net-worth-positive milestone ──
+
+interface NetWorthInput {
+  savingsBalance: number
+  retirementBalance: number
+  monthlyContrib: number
+  totalDebtBalance: number
+  monthlyDebtPayment: number
+}
+
+export function computeNetWorthPositiveMonths(input: NetWorthInput): number | null {
+  const { savingsBalance, retirementBalance, monthlyContrib, totalDebtBalance, monthlyDebtPayment } = input
+  const totalAssets = savingsBalance + retirementBalance
+  if (totalAssets >= totalDebtBalance) return null  // already positive
+  if (monthlyContrib <= 0 && totalAssets <= 0) return null  // no assets, nothing growing
+  if (monthlyContrib + monthlyDebtPayment <= 0) return null  // never converges
+
+  // Linear approximation: assets(t) = totalAssets + monthlyContrib*t
+  // debt(t) = totalDebtBalance - monthlyDebtPayment*t
+  // Solve: totalAssets + monthlyContrib*t = totalDebtBalance - monthlyDebtPayment*t
+  const rate = monthlyContrib + monthlyDebtPayment
+  const gap = totalDebtBalance - totalAssets
+  const months = Math.ceil(gap / rate)
+  return months > 0 ? months : null
+}

@@ -131,3 +131,79 @@ describe('computeLabelPositions', () => {
     expect(positions[positions.length - 1].top).toBeLessThanOrEqual(406)
   })
 })
+
+import { computeSituationalRead, computeNetWorthPositiveMonths } from './sankeyHelpers'
+
+describe('computeSituationalRead', () => {
+  it('returns overspend message when planSurplus < 0', () => {
+    const result = computeSituationalRead({
+      planSurplus: -500, dti: '30', savingsRate: '10',
+      hasConsumerDebt: true, consumerDebtBalance: 30000,
+    })
+    expect(result.headline).toMatch(/spending .* more than you take home/i)
+    expect(result.isOvershoot).toBe(true)
+  })
+
+  it('returns strong-saver-with-debt message when DTI ≥ 36 and savings ≥ 15%', () => {
+    const result = computeSituationalRead({
+      planSurplus: 1000, dti: '41.4', savingsRate: '26.3',
+      hasConsumerDebt: true, consumerDebtBalance: 30000,
+    })
+    expect(result.headline).toMatch(/strong saver/i)
+    expect(result.headline).toMatch(/DTI/i)
+  })
+
+  it('returns high-DTI message when DTI ≥ 36 and savings < 15%', () => {
+    const result = computeSituationalRead({
+      planSurplus: 200, dti: '38', savingsRate: '8',
+      hasConsumerDebt: true, consumerDebtBalance: 15000,
+    })
+    expect(result.headline).toMatch(/high debt load/i)
+  })
+
+  it('returns debt-free + strong savings message', () => {
+    const result = computeSituationalRead({
+      planSurplus: 2000, dti: '10', savingsRate: '20',
+      hasConsumerDebt: false, consumerDebtBalance: 0,
+    })
+    expect(result.headline).toMatch(/debt-free/i)
+    expect(result.headline).toMatch(/savings rate/i)
+  })
+
+  it('returns default message when no income', () => {
+    const result = computeSituationalRead({
+      planSurplus: 0, dti: '0', savingsRate: '0',
+      hasConsumerDebt: false, consumerDebtBalance: 0, noIncome: true,
+    })
+    expect(result.headline).toBe('')
+  })
+})
+
+describe('computeNetWorthPositiveMonths', () => {
+  it('returns null when no savings data', () => {
+    expect(computeNetWorthPositiveMonths({
+      savingsBalance: 0, retirementBalance: 0, monthlyContrib: 0,
+      totalDebtBalance: 50000, monthlyDebtPayment: 1000,
+    })).toBeNull()
+  })
+
+  it('returns month count when assets overtake debt', () => {
+    // Start: 10k assets, 30k debt. +500/mo assets, -1000/mo debt.
+    // Simple linear: when savingsBalance + monthlyContrib*t > totalDebtBalance - monthlyDebtPayment*t
+    // 10000 + 500t > 30000 - 1000t → 1500t > 20000 → t > 13.3 → t = 14
+    const result = computeNetWorthPositiveMonths({
+      savingsBalance: 10000, retirementBalance: 0, monthlyContrib: 500,
+      totalDebtBalance: 30000, monthlyDebtPayment: 1000,
+    })
+    expect(result).not.toBeNull()
+    expect(result!).toBeGreaterThan(0)
+  })
+
+  it('returns null when already net-worth-positive', () => {
+    const result = computeNetWorthPositiveMonths({
+      savingsBalance: 50000, retirementBalance: 0, monthlyContrib: 500,
+      totalDebtBalance: 10000, monthlyDebtPayment: 1000,
+    })
+    expect(result).toBeNull()
+  })
+})

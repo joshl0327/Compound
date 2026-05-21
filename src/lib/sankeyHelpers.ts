@@ -159,68 +159,6 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
   return { nodes, links }
 }
 
-export function buildSankeyDataCollapsed(input: SankeyInput): { nodes: SkNode[]; links: SkLink[] } {
-  const expanded = buildSankeyData(input)
-  const col0Collapsed: SkNode = {
-    id: 'total-income',
-    label: 'Total Income',
-    color: '#60a5fa',
-    col: 0,
-    tooltip: 'Combined gross income from all sources.',
-  }
-  const nonCol0 = expanded.nodes.filter(n => n.col !== 0)
-  const nonSrcLinks = expanded.links.filter(l => l.target !== 'gross')
-  const grossLink: SkLink = {
-    source: 'total-income',
-    target: 'gross',
-    value: input.grossMonthly,
-    sourceColor: '#60a5fa',
-    targetColor: STRUCTURAL,
-  }
-  return { nodes: [col0Collapsed, ...nonCol0], links: [grossLink, ...nonSrcLinks] }
-}
-
-// ── Label collision avoidance ──
-export interface LabelPos {
-  nodeId: string
-  top: number  // CSS px from top of SVG container
-}
-
-const MIN_LABEL_H = 44
-
-export function computeLabelPositions(
-  nodes: { id: string; y0: number; y1: number }[],
-  pxPerViewboxUnit: number,
-  containerHeight = 9999,
-): LabelPos[] {
-  const positions = nodes.map(n => ({
-    nodeId: n.id,
-    top: ((n.y0 + n.y1) / 2) * pxPerViewboxUnit - MIN_LABEL_H / 2,
-  }))
-  positions.sort((a, b) => a.top - b.top)
-
-  // Forward pass — push down
-  for (let i = 1; i < positions.length; i++) {
-    const prev = positions[i - 1]
-    if (positions[i].top < prev.top + MIN_LABEL_H) {
-      positions[i].top = prev.top + MIN_LABEL_H
-    }
-  }
-
-  // Backward pass — clamp last label to container, then pull earlier labels up
-  const last = positions.length - 1
-  if (positions[last]) {
-    positions[last].top = Math.min(positions[last].top, containerHeight - MIN_LABEL_H)
-    for (let i = last - 1; i >= 0; i--) {
-      if (positions[i].top > positions[i + 1].top - MIN_LABEL_H) {
-        positions[i].top = positions[i + 1].top - MIN_LABEL_H
-      }
-    }
-  }
-
-  return positions
-}
-
 // ── Situational read ──
 
 interface SituationalInput {

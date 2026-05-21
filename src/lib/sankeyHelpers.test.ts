@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSankeyData, buildSankeyDataCollapsed, computeLabelPositions } from './sankeyHelpers'
+import { buildSankeyData } from './sankeyHelpers'
 import type { SankeyInput } from './sankeyHelpers'
 
 const base: SankeyInput = {
@@ -98,37 +98,6 @@ describe('buildSankeyData (expanded)', () => {
   it('omits zero-value bucket nodes', () => {
     const { nodes } = buildSankeyData({ ...base, debtPlanTotal: 0 })
     expect(nodes.find(n => n.id === 'debt')).toBeUndefined()
-  })
-})
-
-describe('buildSankeyDataCollapsed', () => {
-  it('has exactly one col-0 node labeled Total Income', () => {
-    const { nodes } = buildSankeyDataCollapsed(base)
-    const col0 = nodes.filter(n => n.col === 0)
-    expect(col0).toHaveLength(1)
-    expect(col0[0].id).toBe('total-income')
-  })
-})
-
-describe('computeLabelPositions', () => {
-  it('pushes labels down on forward pass', () => {
-    const nodes = [
-      { id: 'a', y0: 0, y1: 10 },
-      { id: 'b', y0: 5, y1: 15 },
-    ]
-    const positions = computeLabelPositions(nodes, 1)
-    expect(positions[1].top).toBeGreaterThanOrEqual(positions[0].top + 44)
-  })
-
-  it('clamps last label to container height on backward pass', () => {
-    const nodes = [
-      { id: 'a', y0: 0, y1: 10 },
-      { id: 'b', y0: 50, y1: 60 },
-      { id: 'c', y0: 400, y1: 420 },
-    ]
-    // containerHeight = 450, last label should not exceed 450 - 44 = 406
-    const positions = computeLabelPositions(nodes, 1, 450)
-    expect(positions[positions.length - 1].top).toBeLessThanOrEqual(406)
   })
 })
 

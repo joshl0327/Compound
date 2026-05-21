@@ -201,7 +201,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                 rx={3}
                 fill={sn.isStructural ? '#1a2840' : sn.color}
                 fillOpacity={sn.isStructural ? 1 : fillOpacity}
-                stroke={isOvershootNode || (isTakehome && isOvershoot) ? '#ef4444' : borderColor}
+                stroke={isOvershootNode ? '#ef4444' : borderColor}
                 strokeWidth={isActive || isOvershootNode ? 1.5 : 0.8}
                 strokeOpacity={isOvershootNode ? 0.9 : 0.5}
                 style={{ cursor: sn.col === 3 || sn.col === 0 ? 'pointer' : 'default' }}

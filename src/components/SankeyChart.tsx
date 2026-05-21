@@ -29,7 +29,7 @@ interface SankeyChartProps {
 export default function SankeyChart({ input, data }: SankeyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const [dims, setDims] = useState({ w: 800, h: 420 })
+  const [dims, setDims] = useState({ w: 800, h: 520 })
   const [collapsed, setCollapsed] = useState(false)
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
@@ -41,7 +41,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
     if (!el) return
     const ro = new ResizeObserver(entries => {
       const { width } = entries[0].contentRect
-      setDims({ w: Math.max(width, 400), h: 420 })
+      setDims({ w: Math.max(width, 400), h: 520 })
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -60,13 +60,20 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
       .nodeId((d) => (d as SkNode).id)
       .nodeAlign(sankeyLeft)
       .nodeWidth(NODE_W)
-      .nodePadding(10)
+      .nodePadding(20)
       .extent([[SRC_LABEL_W, 10], [dims.w - LABEL_W, dims.h - 10]])
+    const MIN_NODE_H = 8
     try {
-      return layout({
+      const g = layout({
         nodes: rawNodes.map(n => ({ ...n })),
         links: rawLinks.map(l => ({ ...l })),
       })
+      g.nodes.forEach(n => {
+        if ((n.y1 ?? 0) - (n.y0 ?? 0) < MIN_NODE_H) {
+          n.y1 = (n.y0 ?? 0) + MIN_NODE_H
+        }
+      })
+      return g
     } catch {
       return null
     }

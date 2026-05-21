@@ -105,6 +105,27 @@ export function makeDefault(): AppData {
   }
 }
 
+function normalizeDateStr(raw: string | undefined): string {
+  if (!raw) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+  const d = new Date(raw)
+  if (isNaN(d.getTime())) return ''
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+function normalizeDebtDates(debts: AppData['debts']): AppData['debts'] {
+  return debts.map(d => ({
+    ...d,
+    promoEndDate: normalizeDateStr(d.promoEndDate),
+    loanStartDate: normalizeDateStr(d.loanStartDate),
+    loanEndDate: normalizeDateStr(d.loanEndDate),
+  }))
+}
+
 export function migrateData(parsed: Partial<AppData> & Record<string, unknown>, def: AppData): AppData {
   // Old format: data.income is a flat object (no .sources array)
   if (!parsed.income || !(parsed.income as { sources?: unknown }).sources) {
@@ -142,7 +163,7 @@ export function migrateData(parsed: Partial<AppData> & Record<string, unknown>, 
 
     return {
       income: { sources: [primary] },
-      debts: (parsed.debts as AppData['debts']) || [],
+      debts: normalizeDebtDates((parsed.debts as AppData['debts']) || []),
       budget: (parsed.budget as AppData['budget']) || def.budget,
       retirement: { hsa: (oldRet.hsa as AppData['retirement']['hsa']) || def.retirement.hsa },
       savings: { ...def.savings, ...((parsed.savings as Partial<AppData['savings']>) || {}) },
@@ -152,7 +173,8 @@ export function migrateData(parsed: Partial<AppData> & Record<string, unknown>, 
     }
   }
 
-  return parsed as AppData
+  const result = parsed as AppData
+  return { ...result, debts: normalizeDebtDates(result.debts || []) }
 }
 
 export function loadFromStorage(): AppData {

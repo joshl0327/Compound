@@ -59,6 +59,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
       .nodeAlign(sankeyLeft)
       .nodeWidth(NODE_W)
       .nodePadding(20)
+      .nodeSort(null)
       .extent([[SRC_LABEL_W, 10], [dims.w - LABEL_W, dims.h - 10]])
     const MIN_NODE_H = 8
     try {

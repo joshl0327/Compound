@@ -13,6 +13,7 @@ type LayoutLink = SankeyLink<SkNode, SkLink> & SkLink
 const LABEL_W = 220   // px reserved on right for SVG text labels
 const SRC_LABEL_W = 110  // px reserved on left for SVG text labels
 const NODE_W = 18
+const EXTRA_BOTTOM = 100  // extra container height below dims.h for dipped nodes
 
 interface DrillDownItem {
   name: string
@@ -72,16 +73,18 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
           n.y1 = (n.y0 ?? 0) + MIN_NODE_H
         }
       })
-      // Push the retirement node down so its incoming ribbon curves visibly
+      // Push the two smallest bottom nodes down so their ribbons curve visibly
       // rather than running flat alongside the bottom of take-home.
-      const RETIREMENT_DIP = 45
-      const retNode = g.nodes.find(n => (n as LayoutNode).id === 'retirement') as LayoutNode | undefined
-      if (retNode) {
-        retNode.y0 = (retNode.y0 ?? 0) + RETIREMENT_DIP
-        retNode.y1 = (retNode.y1 ?? 0) + RETIREMENT_DIP
-        const retLink = g.links.find(l => (l.target as LayoutNode).id === 'retirement')
-        if (retLink) (retLink as any).y1 = (retLink as any).y1 + RETIREMENT_DIP
+      const applyDip = (nodeId: string, dip: number) => {
+        const node = g.nodes.find(n => (n as LayoutNode).id === nodeId) as LayoutNode | undefined
+        if (!node) return
+        node.y0 = (node.y0 ?? 0) + dip
+        node.y1 = (node.y1 ?? 0) + dip
+        const lnk = g.links.find(l => (l.target as LayoutNode).id === nodeId)
+        if (lnk) (lnk as any).y1 = (lnk as any).y1 + dip
       }
+      applyDip('liquid-savings', 22)
+      applyDip('retirement', 45)
       return g
     } catch {
       return null
@@ -115,8 +118,8 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
         </div>
       </div>
 
-      {/* SVG + label overlay */}
-      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h }}>
+      {/* SVG + label overlay — extra height accommodates nodes dipped below dims.h */}
+      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h + EXTRA_BOTTOM }}>
         <svg
           ref={svgRef}
           width="100%"

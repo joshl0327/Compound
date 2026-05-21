@@ -10,8 +10,8 @@ import type { SankeyInput } from '../lib/sankeyHelpers'
 type LayoutNode = SankeyNode<SkNode, SkLink> & SkNode
 type LayoutLink = SankeyLink<SkNode, SkLink> & SkLink
 
-const LABEL_W = 220   // px reserved on right for col-3 labels
-const SRC_LABEL_W = 110  // px reserved on left for col-0 labels
+const LABEL_W = 220   // px reserved on right for SVG text labels
+const SRC_LABEL_W = 110  // px reserved on left for SVG text labels
 const NODE_W = 18
 
 interface DrillDownItem {
@@ -293,6 +293,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               )
             }
 
+            // col 1 (gross) is handled above by id; no other col-1 nodes exist
             return null
           })}
 

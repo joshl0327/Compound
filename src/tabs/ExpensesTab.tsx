@@ -379,7 +379,9 @@ export default function ExpensesTab() {
               {/* Debt list */}
               {data.debts.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                  {stableDebts.map((debt, i) => {
+                  {stableDebts.map((stableDebt, i) => {
+                    // stableDebts provides sort order only; use live values from data.debts
+                    const debt = data.debts.find(d => d.id === stableDebt.id) ?? stableDebt
                     if (debt.isMortgage) {
                       return (
                         <MortgageCard

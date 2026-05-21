@@ -73,18 +73,39 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
           n.y1 = (n.y0 ?? 0) + MIN_NODE_H
         }
       })
-      // Push the two smallest bottom nodes down so their ribbons curve visibly
-      // rather than running flat alongside the bottom of take-home.
-      const applyDip = (nodeId: string, dip: number) => {
+      // ── Post-layout curve adjustments ──
+      // Push a node down and update its ribbon endpoint so the ribbon stays
+      // aligned with the moved node. 'source' updates y0 (col-0 fan-in);
+      // 'target' updates y1 (col-3 fan-out).
+      const applyDip = (nodeId: string, dip: number, side: 'source' | 'target') => {
         const node = g.nodes.find(n => (n as LayoutNode).id === nodeId) as LayoutNode | undefined
         if (!node) return
         node.y0 = (node.y0 ?? 0) + dip
         node.y1 = (node.y1 ?? 0) + dip
-        const lnk = g.links.find(l => (l.target as LayoutNode).id === nodeId)
-        if (lnk) (lnk as any).y1 = (lnk as any).y1 + dip
+        const lnk = side === 'target'
+          ? g.links.find(l => (l.target as LayoutNode).id === nodeId)
+          : g.links.find(l => (l.source as LayoutNode).id === nodeId)
+        const prop = side === 'target' ? 'y1' : 'y0'
+        if (lnk) (lnk as any)[prop] = (lnk as any)[prop] + dip
       }
-      applyDip('liquid-savings', 22)
-      applyDip('retirement', 45)
+
+      // Cascade dips on the bottom 2 col-3 nodes. Position-based, not ID-based,
+      // so retirement/overshoot/remaining are handled in any combination.
+      const col3ByPos = [...g.nodes]
+        .filter(n => (n as LayoutNode).col === 3)
+        .sort((a, b) => (b.y0 ?? 0) - (a.y0 ?? 0))
+      ;[45, 22].forEach((dip, i) => {
+        if (col3ByPos[i]) applyDip((col3ByPos[i] as LayoutNode).id, dip, 'target')
+      })
+
+      // Dip the last col-0 source when there are 3+ income sources so a small
+      // bottom source curves upward into gross rather than running flat.
+      const col0ByPos = [...g.nodes]
+        .filter(n => (n as LayoutNode).col === 0)
+        .sort((a, b) => (b.y0 ?? 0) - (a.y0 ?? 0))
+      if (col0ByPos.length >= 3) {
+        applyDip((col0ByPos[0] as LayoutNode).id, 30, 'source')
+      }
       return g
     } catch {
       return null

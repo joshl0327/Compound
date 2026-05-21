@@ -38,22 +38,31 @@ describe('buildSankeyData (expanded)', () => {
     expect(gross?.col).toBe(1)
   })
 
-  it('includes pretax-ret and taxes and takehome in col 2', () => {
+  it('includes ret-hsa and taxes and takehome in col 2', () => {
     const { nodes } = buildSankeyData(base)
     const ids = nodes.filter(n => n.col === 2).map(n => n.id)
-    expect(ids).toContain('pretax-ret')
+    expect(ids).toContain('ret-hsa')
     expect(ids).toContain('taxes')
     expect(ids).toContain('takehome')
   })
 
-  it('omits roth401k col-2 node when roth401kMonthly is 0', () => {
-    const { nodes } = buildSankeyData(base)
-    expect(nodes.find(n => n.id === 'roth401k')).toBeUndefined()
+  it('ret-hsa node combines trad401k + roth401k + hsa', () => {
+    // base: trad401k=2563, roth401k=0, hsa=583 → retHsa=3146
+    const { links } = buildSankeyData(base)
+    const retLink = links.find(l => l.target === 'ret-hsa')
+    expect(retLink?.value).toBeCloseTo(3146, 0)
   })
 
-  it('includes roth401k col-2 node when nonzero', () => {
-    const { nodes } = buildSankeyData({ ...base, roth401kMonthly: 500 })
-    expect(nodes.find(n => n.id === 'roth401k')).toBeDefined()
+  it('ret-hsa includes roth401k when nonzero', () => {
+    // trad401k=2563, roth401k=500, hsa=583 → retHsa=3646
+    const { links } = buildSankeyData({ ...base, roth401kMonthly: 500 })
+    const retLink = links.find(l => l.target === 'ret-hsa')
+    expect(retLink?.value).toBeCloseTo(3646, 0)
+  })
+
+  it('omits ret-hsa node when all three are zero', () => {
+    const { nodes } = buildSankeyData({ ...base, trad401kMonthly: 0, roth401kMonthly: 0, hsaMonthly: 0 })
+    expect(nodes.find(n => n.id === 'ret-hsa')).toBeUndefined()
   })
 
   it('includes bucket nodes in col 3', () => {

@@ -80,22 +80,17 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
   nodes.push({ id: 'gross', label: 'Gross Income', color: STRUCTURAL, col: 1, isStructural: true, tooltip: `Total gross income: $${Math.round(grossMonthly).toLocaleString()}/mo.` })
 
   // ── Col 2: Pre-tax split ──
-  const pretaxRet = trad401kMonthly + hsaMonthly
-  if (pretaxRet > 0) {
+  const retHsa = trad401kMonthly + roth401kMonthly + hsaMonthly
+  if (retHsa > 0) {
     nodes.push({
-      id: 'pretax-ret',
-      label: 'Pre-tax Retirement',
+      id: 'ret-hsa',
+      label: '401(k) & HSA',
       color: '#a78bfa',
       col: 2,
-      tooltip: `Traditional 401(k) + HSA contributions (pre-tax). ${pct(pretaxRet, grossMonthly)} of gross income.`,
+      tooltip: `Traditional 401(k), Roth 401(k) + HSA contributions. ${pct(retHsa, grossMonthly)} of gross income.`,
       employerMatchAmt: employerMatch,
     })
-    links.push(link('gross', 'pretax-ret', pretaxRet, STRUCTURAL, '#a78bfa'))
-  }
-
-  if (roth401kMonthly > 0) {
-    nodes.push({ id: 'roth401k', label: 'Roth 401(k)', color: '#7c3aed', col: 2, tooltip: `Roth 401(k) payroll deduction — post-tax but removed before take-home. ${pct(roth401kMonthly, grossMonthly)} of gross income.` })
-    links.push(link('gross', 'roth401k', roth401kMonthly, STRUCTURAL, '#7c3aed'))
+    links.push(link('gross', 'ret-hsa', retHsa, STRUCTURAL, '#a78bfa'))
   }
 
   const taxes = grossMonthly - netMonthly - trad401kMonthly - hsaMonthly - roth401kMonthly

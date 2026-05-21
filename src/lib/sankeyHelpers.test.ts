@@ -207,3 +207,75 @@ describe('computeNetWorthPositiveMonths', () => {
     expect(result).toBeNull()
   })
 })
+
+describe('pct helper (via tooltip strings)', () => {
+  it('take-home node has no isStructural flag', () => {
+    const { nodes } = buildSankeyData(base)
+    const th = nodes.find(n => n.id === 'takehome')
+    expect(th).toBeDefined()
+    expect(th?.isStructural).toBeFalsy()
+  })
+
+  it('source tooltip contains % of gross income', () => {
+    const { nodes } = buildSankeyData(base)
+    const src = nodes.find(n => n.id === 'src-p1')
+    expect(src?.tooltip).toMatch(/of gross income/i)
+    expect(src?.tooltip).toMatch(/%/)
+  })
+
+  it('taxes tooltip contains % of gross income', () => {
+    const { nodes } = buildSankeyData(base)
+    const taxes = nodes.find(n => n.id === 'taxes')
+    expect(taxes?.tooltip).toMatch(/of gross income/i)
+    expect(taxes?.tooltip).toMatch(/%/)
+  })
+
+  it('take-home tooltip contains % of gross income', () => {
+    const { nodes } = buildSankeyData(base)
+    const th = nodes.find(n => n.id === 'takehome')
+    expect(th?.tooltip).toMatch(/of gross income/i)
+    expect(th?.tooltip).toMatch(/%/)
+  })
+
+  it('essentials tooltip contains % of take-home', () => {
+    const { nodes } = buildSankeyData(base)
+    const ess = nodes.find(n => n.id === 'essentials')
+    expect(ess?.tooltip).toMatch(/of take-home/i)
+    expect(ess?.tooltip).toMatch(/%/)
+  })
+
+  it('debt tooltip contains % of take-home', () => {
+    const { nodes } = buildSankeyData(base)
+    const debt = nodes.find(n => n.id === 'debt')
+    expect(debt?.tooltip).toMatch(/of take-home/i)
+  })
+
+  it('liquid-savings tooltip contains % of take-home', () => {
+    const { nodes } = buildSankeyData(base)
+    const liq = nodes.find(n => n.id === 'liquid-savings')
+    expect(liq?.tooltip).toMatch(/of take-home/i)
+  })
+
+  it('retirement (col 3) tooltip contains % of take-home', () => {
+    const { nodes } = buildSankeyData(base)
+    const ret = nodes.find(n => n.id === 'retirement')
+    expect(ret?.tooltip).toMatch(/of take-home/i)
+  })
+
+  it('essentials tooltip % uses netMonthly as denominator, not grossMonthly', () => {
+    // base: essTotalP=7065, netMonthly=12527 → 56.4%, grossMonthly=18017 → 39.2%
+    // tooltip must contain 56.4 (take-home %) not 39.2 (gross %)
+    const { nodes } = buildSankeyData(base)
+    const ess = nodes.find(n => n.id === 'essentials')
+    expect(ess?.tooltip).toContain('56.4')
+    expect(ess?.tooltip).not.toContain('39.2')
+  })
+
+  it('taxes tooltip % uses grossMonthly as denominator', () => {
+    // base: taxes = 18017 - 12527 - 2563 - 583 - 0 = 2344
+    // pct(2344, 18017) = 13.0%
+    const { nodes } = buildSankeyData(base)
+    const taxes = nodes.find(n => n.id === 'taxes')
+    expect(taxes?.tooltip).toContain('13.0')
+  })
+})

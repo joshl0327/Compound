@@ -40,6 +40,11 @@ export interface SankeyInput {
   sourceCalcs: SourceCalc[]
 }
 
+function pct(value: number, denominator: number): string {
+  if (denominator <= 0) return ''
+  return (value / denominator * 100).toFixed(1) + '%'
+}
+
 const STRUCTURAL = '#1a2840'
 
 function link(source: string, target: string, value: number, sourceColor: string, targetColor: string, isFlagged = false): SkLink {
@@ -66,13 +71,13 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
       label: c.src.name,
       color,
       col: 0,
-      tooltip: `${c.src.name}: $${Math.round(c.gross).toLocaleString()}/mo gross`,
+      tooltip: `${c.src.name}: $${Math.round(c.gross).toLocaleString()}/mo gross · ${pct(c.gross, grossMonthly)} of gross income`,
     })
     links.push(link(`src-${c.src.id}`, 'gross', c.gross, color, STRUCTURAL))
   })
 
   // ── Col 1: Gross ──
-  nodes.push({ id: 'gross', label: 'Gross Income', color: STRUCTURAL, col: 1, isStructural: true, tooltip: 'Total gross income before any deductions.' })
+  nodes.push({ id: 'gross', label: 'Gross Income', color: STRUCTURAL, col: 1, isStructural: true, tooltip: `Total gross income: $${Math.round(grossMonthly).toLocaleString()}/mo.` })
 
   // ── Col 2: Pre-tax split ──
   const pretaxRet = trad401kMonthly + hsaMonthly
@@ -82,24 +87,24 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
       label: 'Pre-tax Retirement',
       color: '#a78bfa',
       col: 2,
-      tooltip: 'Traditional 401(k) + HSA contributions (pre-tax, reduce taxable income).',
+      tooltip: `Traditional 401(k) + HSA contributions (pre-tax). ${pct(pretaxRet, grossMonthly)} of gross income.`,
       employerMatchAmt: employerMatch,
     })
     links.push(link('gross', 'pretax-ret', pretaxRet, STRUCTURAL, '#a78bfa'))
   }
 
   if (roth401kMonthly > 0) {
-    nodes.push({ id: 'roth401k', label: 'Roth 401(k)', color: '#7c3aed', col: 2, tooltip: 'Roth 401(k) payroll deduction — post-tax but removed before take-home.' })
+    nodes.push({ id: 'roth401k', label: 'Roth 401(k)', color: '#7c3aed', col: 2, tooltip: `Roth 401(k) payroll deduction — post-tax but removed before take-home. ${pct(roth401kMonthly, grossMonthly)} of gross income.` })
     links.push(link('gross', 'roth401k', roth401kMonthly, STRUCTURAL, '#7c3aed'))
   }
 
   const taxes = grossMonthly - netMonthly - trad401kMonthly - hsaMonthly - roth401kMonthly
   if (taxes > 0) {
-    nodes.push({ id: 'taxes', label: 'Taxes', color: '#3a5a7a', col: 2, tooltip: 'Federal, state, and local taxes estimated from your paycheck data.' })
+    nodes.push({ id: 'taxes', label: 'Taxes', color: '#3a5a7a', col: 2, tooltip: `Federal, state, and local taxes. ${pct(taxes, grossMonthly)} of gross income.` })
     links.push(link('gross', 'taxes', taxes, STRUCTURAL, '#3a5a7a'))
   }
 
-  nodes.push({ id: 'takehome', label: 'Take-home', color: '#60a5fa', col: 2, isStructural: true, tooltip: 'Money deposited to your bank account each month.' })
+  nodes.push({ id: 'takehome', label: 'Take-home', color: '#60a5fa', col: 2, tooltip: `Money deposited to your bank account each month. ${pct(netMonthly, grossMonthly)} of gross income.` })
   links.push(link('gross', 'takehome', netMonthly, STRUCTURAL, '#60a5fa'))
 
   // ── Col 3: Spending buckets ──
@@ -109,13 +114,13 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
       id: 'essentials', label: 'Essentials',
       color: housingFlagged ? '#f97316' : '#60a5fa',
       col: 3, isFlagged: housingFlagged,
-      tooltip: 'Fixed monthly costs — housing, utilities, groceries, insurance.',
+      tooltip: `Fixed monthly costs — housing, utilities, groceries, insurance. ${pct(essTotalP, netMonthly)} of take-home.`,
     })
     links.push(link('takehome', 'essentials', essTotalP, '#60a5fa', housingFlagged ? '#f97316' : '#60a5fa', housingFlagged))
   }
 
   if (discPlanTotal > 0) {
-    nodes.push({ id: 'discretionary', label: 'Discretionary', color: '#fbbf24', col: 3, tooltip: 'Flexible spending — dining, subscriptions, entertainment.' })
+    nodes.push({ id: 'discretionary', label: 'Discretionary', color: '#fbbf24', col: 3, tooltip: `Flexible spending — dining, subscriptions, entertainment. ${pct(discPlanTotal, netMonthly)} of take-home.` })
     links.push(link('takehome', 'discretionary', discPlanTotal, '#60a5fa', '#fbbf24'))
   }
 
@@ -125,18 +130,18 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
       id: 'debt', label: 'Debt',
       color: dtiFlagged ? '#f97316' : '#60a5fa',
       col: 3, isFlagged: dtiFlagged,
-      tooltip: `Consumer debt payments. Total DTI: ${dti}%.`,
+      tooltip: `Consumer debt payments. DTI ${dti}% · ${pct(debtPlanTotal, netMonthly)} of take-home.`,
     })
     links.push(link('takehome', 'debt', debtPlanTotal, '#60a5fa', dtiFlagged ? '#f97316' : '#60a5fa', dtiFlagged))
   }
 
   if (liquidSavingsMonthly > 0) {
-    nodes.push({ id: 'liquid-savings', label: 'Liquid Savings', color: '#10b981', col: 3, tooltip: 'Emergency fund + general savings contributions.' })
+    nodes.push({ id: 'liquid-savings', label: 'Liquid Savings', color: '#10b981', col: 3, tooltip: `Emergency fund + general savings. ${pct(liquidSavingsMonthly, netMonthly)} of take-home.` })
     links.push(link('takehome', 'liquid-savings', liquidSavingsMonthly, '#60a5fa', '#10b981'))
   }
 
   if (rothIraMonthly > 0) {
-    nodes.push({ id: 'retirement', label: 'Retirement', color: '#a78bfa', col: 3, tooltip: 'Roth IRA contribution funded from take-home income.' })
+    nodes.push({ id: 'retirement', label: 'Retirement', color: '#a78bfa', col: 3, tooltip: `Roth IRA contribution funded from take-home. ${pct(rothIraMonthly, netMonthly)} of take-home.` })
     links.push(link('takehome', 'retirement', rothIraMonthly, '#60a5fa', '#a78bfa'))
   }
 

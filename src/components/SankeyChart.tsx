@@ -1,0 +1,455 @@
+import { useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react'
+import { sankey, sankeyLinkHorizontal, sankeyLeft } from 'd3-sankey'
+import type { SankeyNode, SankeyLink } from 'd3-sankey'
+import { buildSankeyData, buildSankeyDataCollapsed, computeLabelPositions } from '../lib/sankeyHelpers'
+import type { SkNode, SkLink, LabelPos } from '../lib/sankeyHelpers'
+import { fmt, fmtShort } from '../lib/format'
+import type { AppData } from '../types'
+import type { SankeyInput } from '../lib/sankeyHelpers'
+
+type LayoutNode = SankeyNode<SkNode, SkLink> & SkNode
+type LayoutLink = SankeyLink<SkNode, SkLink> & SkLink
+
+const LABEL_W = 220   // px reserved on right for col-3 labels
+const SRC_LABEL_W = 110  // px reserved on left for col-0 labels
+const NODE_W = 18
+
+interface DrillDownItem {
+  name: string
+  amount: number
+  balance?: number
+  total: number
+}
+
+interface SankeyChartProps {
+  input: SankeyInput
+  data: AppData
+  dti: string
+  housingPct: string
+  savingsRate: string
+  retireRate: string
+  employerMatch: number
+}
+
+export default function SankeyChart({ input, data, dti, housingPct, savingsRate, retireRate, employerMatch }: SankeyChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [dims, setDims] = useState({ w: 800, h: 420 })
+  const [collapsed, setCollapsed] = useState(false)
+  const [activeNode, setActiveNode] = useState<string | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const [labelPositions, setLabelPositions] = useState<LabelPos[]>([])
+
+  // ── Measure container ──
+  useLayoutEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const { width } = entries[0].contentRect
+      setDims({ w: Math.max(width, 400), h: 420 })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // ── Build graph ──
+  const { nodes: rawNodes, links: rawLinks } = useMemo(
+    () => collapsed ? buildSankeyDataCollapsed(input) : buildSankeyData(input),
+    [input, collapsed]
+  )
+
+  // ── Run d3-sankey layout ──
+  const graph = useMemo(() => {
+    if (dims.w === 0) return null
+    const layout = sankey<SkNode, SkLink>()
+      .nodeId((d) => (d as SkNode).id)
+      .nodeAlign(sankeyLeft)
+      .nodeWidth(NODE_W)
+      .nodePadding(10)
+      .extent([[SRC_LABEL_W, 10], [dims.w - LABEL_W, dims.h - 10]])
+    try {
+      return layout({
+        nodes: rawNodes.map(n => ({ ...n })),
+        links: rawLinks.map(l => ({ ...l })),
+      })
+    } catch {
+      return null
+    }
+  }, [rawNodes, rawLinks, dims])
+
+  // ── Compute label positions ──
+  useLayoutEffect(() => {
+    if (!graph) return
+    const col3Nodes = graph.nodes.filter((n) => (n as LayoutNode).col === 3)
+    setLabelPositions(computeLabelPositions(col3Nodes as { id: string; y0: number; y1: number }[], 1, dims.h))
+  }, [graph, dims])
+
+  // ── Waterline: y0 of Gross→Takehome link ──
+  const waterlineY = useMemo(() => {
+    if (!graph) return null
+    const lnk = graph.links.find(
+      l => ((l.source as LayoutNode).id === 'gross' && (l.target as LayoutNode).id === 'takehome')
+    )
+    return lnk ? (lnk as any).y0 : null
+  }, [graph])
+
+  const handleNodeClick = useCallback((nodeId: string) => {
+    setActiveNode(prev => prev === nodeId ? null : nodeId)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => setTooltip(null), [])
+
+  if (!graph) return (
+    <div className="flex items-center justify-center h-64 text-sm" style={{ color: '#3a5a7a' }}>
+      Add your income to see the flow.
+    </div>
+  )
+
+  const isOvershoot = rawNodes.some(n => n.isOvershoot)
+
+  return (
+    <div>
+      {/* Card header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-0.5" style={{ color: '#3a5a7a' }}>Where it goes</div>
+          <div className="font-display font-bold text-[15px]" style={{ color: '#e8f0f8' }}>
+            {fmtShort(input.grossMonthly)}<span style={{ color: '#3a5a7a', fontWeight: 400, fontSize: 12 }}>/mo gross</span>
+          </div>
+        </div>
+        {input.sourceCalcs.length > 1 && (
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            className="text-[11px] px-3 py-1 rounded"
+            style={{ color: '#60a5fa', border: '1px solid #1a2840', background: '#0d1620' }}
+          >
+            {collapsed ? 'Sources ▸' : 'Sources ▾'}
+          </button>
+        )}
+      </div>
+
+      {/* SVG + label overlay */}
+      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h }}>
+        <svg
+          ref={svgRef}
+          width="100%"
+          height={dims.h}
+          viewBox={`0 0 ${dims.w} ${dims.h}`}
+          style={{ display: 'block', overflow: 'visible' }}
+          aria-label={`Income flow from ${fmtShort(input.grossMonthly)} gross to ${rawNodes.filter(n => n.col === 3).length} spending categories`}
+          role="img"
+        >
+          <defs>
+            {graph.links.map((l, i) => {
+              const sl = l as LayoutLink
+              return (
+                <linearGradient key={i} id={`grad-${i}`} x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={sl.sourceColor} stopOpacity={sl.isFlagged ? 0.5 : 0.35} />
+                  <stop offset="100%" stopColor={sl.targetColor} stopOpacity={sl.isFlagged ? 0.45 : 0.25} />
+                </linearGradient>
+              )
+            })}
+          </defs>
+
+          {/* Links */}
+          {graph.links.map((l, i) => {
+            const sl = l as LayoutLink
+            const pathGen = sankeyLinkHorizontal()
+            const d = pathGen(l as any) || ''
+            return (
+              <path
+                key={i}
+                d={d}
+                fill={`url(#grad-${i})`}
+                stroke={sl.targetColor}
+                strokeWidth={sl.isFlagged ? 1.5 : 1}
+                strokeOpacity={sl.isFlagged ? 0.9 : 0.6}
+                onMouseEnter={e => {
+                  const src = (l.source as LayoutNode).label
+                  const tgt = (l.target as LayoutNode).label
+                  setTooltip({ x: e.clientX, y: e.clientY, text: `${src} → ${tgt}: ${fmt(sl.value)}/mo` })
+                }}
+                onMouseLeave={handleMouseLeave}
+                style={{ cursor: 'default' }}
+              >
+                <title>{`${(l.source as LayoutNode).label} → ${(l.target as LayoutNode).label}: ${fmt(sl.value)}/mo`}</title>
+              </path>
+            )
+          })}
+
+          {/* Nodes */}
+          {graph.nodes.map((n) => {
+            const sn = n as LayoutNode
+            const isActive = activeNode === sn.id
+            const x0 = sn.x0 ?? 0
+            const x1 = sn.x1 ?? 0
+            const y0 = sn.y0 ?? 0
+            const y1 = sn.y1 ?? 0
+            const isOvershootNode = sn.isOvershoot
+            const isTakehome = sn.id === 'takehome'
+            const borderColor = isOvershootNode ? '#ef4444' : sn.isStructural ? '#60a5fa' : sn.color
+            const fillOpacity = isActive ? 0.5 : 0.25
+            return (
+              <rect
+                key={sn.id}
+                x={x0} y={y0}
+                width={x1 - x0} height={Math.max(y1 - y0, 2)}
+                rx={3}
+                fill={sn.isStructural ? '#1a2840' : sn.color}
+                fillOpacity={sn.isStructural ? 1 : fillOpacity}
+                stroke={isOvershootNode || (isTakehome && isOvershoot) ? '#ef4444' : borderColor}
+                strokeWidth={isActive || isOvershootNode ? 1.5 : 0.8}
+                strokeOpacity={isOvershootNode ? 0.9 : 0.5}
+                style={{ cursor: sn.col === 3 || sn.col === 0 ? 'pointer' : 'default' }}
+                onClick={() => (sn.col === 3 || sn.col === 0) && handleNodeClick(sn.id)}
+                onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, text: sn.tooltip })}
+                onMouseLeave={handleMouseLeave}
+                tabIndex={sn.col === 3 || sn.col === 0 ? 0 : undefined}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleNodeClick(sn.id) }}
+              >
+                <title>{`${sn.label}: ${fmt(sn.value ?? 0)}/mo`}</title>
+              </rect>
+            )
+          })}
+
+          {/* Waterline */}
+          {waterlineY !== null && (
+            <g>
+              <line
+                x1={SRC_LABEL_W - 8} y1={waterlineY}
+                x2={dims.w - LABEL_W + 8} y2={waterlineY}
+                stroke="#60a5fa" strokeWidth={0.8} strokeDasharray="5 3" opacity={0.6}
+              />
+              <text x={SRC_LABEL_W - 10} y={waterlineY - 3} textAnchor="end" fontSize={8} fill="#60a5fa" opacity={0.8}>
+                Take-home ↓ {fmt(input.netMonthly)}
+              </text>
+            </g>
+          )}
+
+          {/* Leader lines for col-3 right-side labels */}
+          {labelPositions.map(pos => {
+            const node = graph.nodes.find(n => (n as LayoutNode).id === pos.nodeId) as LayoutNode | undefined
+            if (!node) return null
+            const nodeRightX = node.x1 ?? 0
+            const nodeMidY = ((node.y0 ?? 0) + (node.y1 ?? 0)) / 2
+            const labelMidY = pos.top + 22
+            return (
+              <line
+                key={`leader-${pos.nodeId}`}
+                x1={nodeRightX + 4} y1={nodeMidY}
+                x2={dims.w - LABEL_W + 4} y2={labelMidY}
+                stroke={node.color} strokeWidth={0.8} opacity={0.5}
+                strokeDasharray={Math.abs(labelMidY - nodeMidY) > 20 ? '2 3' : undefined}
+              />
+            )
+          })}
+        </svg>
+
+        {/* Col-3 HTML labels */}
+        {labelPositions.map(pos => {
+          const node = graph.nodes.find(n => (n as LayoutNode).id === pos.nodeId) as LayoutNode | undefined
+          if (!node) return null
+          const sn = node as LayoutNode
+          const pctOfGross = input.grossMonthly > 0
+            ? ((sn.value ?? 0) / input.grossMonthly * 100).toFixed(1) + '%'
+            : ''
+          const flagLine = getFlagLine(sn.id, { dti, housingPct, savingsRate, retireRate, employerMatch, isOvershoot, input })
+
+          return (
+            <div
+              key={`lbl-${sn.id}`}
+              style={{
+                position: 'absolute',
+                top: pos.top,
+                left: dims.w - LABEL_W + 12,
+                width: LABEL_W - 16,
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ color: sn.color, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', lineHeight: 1 }}>
+                {sn.label}
+              </div>
+              <div style={{ color: '#e8f0f8', fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 500, lineHeight: 1.2 }}>
+                {fmt(sn.value ?? 0)}
+                <span style={{ color: '#3a5a7a', fontSize: 9, marginLeft: 6 }}>{pctOfGross}</span>
+              </div>
+              {flagLine && (
+                <div style={{ color: flagLine.color, fontSize: 8, fontStyle: 'italic', lineHeight: 1 }}>
+                  {flagLine.text}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Tooltip */}
+        {tooltip && (
+          <div
+            style={{
+              position: 'fixed',
+              left: tooltip.x + 12,
+              top: tooltip.y - 8,
+              background: 'rgba(7,14,22,0.95)',
+              border: '1px solid #1a2840',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 11,
+              color: '#c9d8e8',
+              pointerEvents: 'none',
+              zIndex: 50,
+              maxWidth: 220,
+            }}
+          >
+            {tooltip.text}
+          </div>
+        )}
+      </div>
+
+      {/* Drill-down panel */}
+      {activeNode && (
+        <DrillDownPanel
+          nodeId={activeNode}
+          data={data}
+          input={input}
+          onClose={() => setActiveNode(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Health flag helper ──
+function getFlagLine(
+  nodeId: string,
+  ctx: { dti: string; housingPct: string; savingsRate: string; retireRate: string; employerMatch: number; isOvershoot: boolean; input: SankeyInput }
+): { text: string; color: string } | null {
+  const { dti, housingPct, savingsRate, retireRate, employerMatch } = ctx
+  switch (nodeId) {
+    case 'debt':
+      if (parseFloat(dti) >= 36)
+        return { text: `↑ DTI ${dti}% — high`, color: '#ef4444' }
+      return null
+    case 'essentials':
+      if (parseFloat(housingPct) > 28)
+        return { text: `↑ Housing ${housingPct}% — above 28%`, color: '#f97316' }
+      return null
+    case 'liquid-savings':
+      if (parseFloat(savingsRate) >= 15)
+        return { text: `↑ ${savingsRate}% savings rate — strong`, color: '#10b981' }
+      return null
+    case 'pretax-ret':
+      if (parseFloat(retireRate) >= 15)
+        return { text: `↑ ${retireRate}% retire rate — strong`, color: '#10b981' }
+      if (employerMatch > 0)
+        return { text: `+${fmt(employerMatch)}/mo employer match`, color: '#a78bfa' }
+      return null
+    case 'overshoot':
+      return { text: `↑ Spending over take-home`, color: '#ef4444' }
+    default:
+      return null
+  }
+}
+
+// ── Drill-down panel ──
+function DrillDownPanel({ nodeId, data, input, onClose }: {
+  nodeId: string
+  data: AppData
+  input: SankeyInput
+  onClose: () => void
+}) {
+  const items = useMemo((): DrillDownItem[] => {
+    switch (nodeId) {
+      case 'essentials': {
+        const total = input.essTotalP
+        return data.budget.essentials.map(e => ({
+          name: e.name,
+          amount: parseFloat(e.plan || e.baseline) || 0,
+          total,
+        }))
+      }
+      case 'discretionary': {
+        const total = input.discPlanTotal
+        return data.budget.discretionary.map(e => ({
+          name: e.name,
+          amount: parseFloat(e.plan || e.baseline) || 0,
+          total,
+        }))
+      }
+      case 'debt': {
+        const total = input.debtPlanTotal
+        return data.debts
+          .filter(d => !d.isMortgage)
+          .map(d => ({
+            name: d.name,
+            amount: parseFloat(d.planPayment || d.minPayment) || 0,
+            balance: parseFloat(d.balance) || 0,
+            total,
+          }))
+      }
+      case 'liquid-savings': {
+        const efAmt = parseFloat(data.savings.emergencyFund.monthly) || 0
+        const genAmt = parseFloat(data.savings.generalSavings.monthly) || 0
+        const total = efAmt + genAmt
+        return [
+          { name: 'Emergency Fund', amount: efAmt, total },
+          { name: 'General Savings', amount: genAmt, total },
+        ].filter(i => i.amount > 0)
+      }
+      case 'retirement': {
+        const total = input.rothIraMonthly
+        return data.income.sources
+          .filter(s => s.type === 'w2' && parseFloat(s.retirement?.rothIra?.monthly || '0') > 0)
+          .map(s => ({
+            name: `${s.name} — Roth IRA`,
+            amount: parseFloat(s.retirement!.rothIra.monthly) || 0,
+            total,
+          }))
+      }
+      default:
+        return []
+    }
+  }, [nodeId, data, input])
+
+  const nodeLabels: Record<string, string> = {
+    essentials: 'Essentials', discretionary: 'Discretionary', debt: 'Debt',
+    'liquid-savings': 'Liquid Savings', retirement: 'Retirement',
+  }
+
+  return (
+    <div className="mt-3 rounded-xl p-4" style={{ background: '#060e18', border: '1px solid #1a2840' }}>
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#60a5fa' }}>
+          {nodeLabels[nodeId] ?? nodeId} — Line Items
+        </div>
+        <button onClick={onClose} style={{ color: '#3a5a7a', fontSize: 18, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+      </div>
+      {items.length === 0 ? (
+        <div className="text-[12px]" style={{ color: '#3a5a7a' }}>No items to show.</div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {items.map((item, i) => (
+            <div key={i}>
+              <div className="flex justify-between items-baseline mb-0.5">
+                <span className="text-[12px]" style={{ color: '#8b9cb5' }}>{item.name}</span>
+                <span className="font-mono text-[12px]" style={{ color: '#c9d8e8' }}>{fmt(item.amount)}</span>
+              </div>
+              {item.balance !== undefined && (
+                <div className="text-[10px] mb-0.5" style={{ color: '#3a5a7a' }}>
+                  Balance: {fmt(item.balance)}
+                </div>
+              )}
+              <div style={{ height: 3, background: '#1a2840', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${item.total > 0 ? Math.min(100, (item.amount / item.total) * 100) : 0}%`,
+                  background: '#60a5fa',
+                  borderRadius: 2,
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

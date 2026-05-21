@@ -1,7 +1,7 @@
 import { useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react'
 import { sankey, sankeyLeft } from 'd3-sankey'
 import type { SankeyNode, SankeyLink } from 'd3-sankey'
-import { buildSankeyData, buildSankeyDataCollapsed, computeLabelPositions } from '../lib/sankeyHelpers'
+import { buildSankeyData, computeLabelPositions } from '../lib/sankeyHelpers'
 import type { SkNode, SkLink, LabelPos } from '../lib/sankeyHelpers'
 import { fmt, fmtShort } from '../lib/format'
 import type { AppData } from '../types'
@@ -30,7 +30,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [dims, setDims] = useState({ w: 800, h: 520 })
-  const [collapsed, setCollapsed] = useState(false)
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const [labelPositions, setLabelPositions] = useState<LabelPos[]>([])
@@ -49,8 +48,8 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
 
   // ── Build graph ──
   const { nodes: rawNodes, links: rawLinks } = useMemo(
-    () => collapsed ? buildSankeyDataCollapsed(input) : buildSankeyData(input),
-    [input, collapsed]
+    () => buildSankeyData(input),
+    [input]
   )
 
   // ── Run d3-sankey layout ──
@@ -114,15 +113,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             {fmtShort(input.grossMonthly)}<span style={{ color: '#3a5a7a', fontWeight: 400, fontSize: 12 }}>/mo gross</span>
           </div>
         </div>
-        {input.sourceCalcs.length > 1 && (
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            className="text-[11px] px-3 py-1 rounded"
-            style={{ color: '#60a5fa', border: '1px solid #1a2840', background: '#0d1620' }}
-          >
-            {collapsed ? 'Sources ▸' : 'Sources ▾'}
-          </button>
-        )}
       </div>
 
       {/* SVG + label overlay */}

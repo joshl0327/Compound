@@ -137,6 +137,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
           role="img"
         >
           <defs>
+            <filter id="takehome-glow">
+              <feGaussianBlur stdDeviation="3.5" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
             {graph.links.map((l, i) => {
               const sl = l as LayoutLink
               return (
@@ -183,6 +190,28 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             const y1 = sn.y1 ?? 0
             const isOvershootNode = sn.isOvershoot
             const isTakehome = sn.id === 'takehome'
+            if (isTakehome) {
+              const stroke = isOvershoot ? '#ef4444' : '#60a5fa'
+              const strokeOpacity = isOvershoot ? 0.9 : 0.95
+              return (
+                <rect
+                  key={sn.id}
+                  x={x0} y={y0}
+                  width={x1 - x0} height={Math.max(y1 - y0, 2)}
+                  rx={3}
+                  fill="#60a5fa"
+                  fillOpacity={0.13}
+                  stroke={stroke}
+                  strokeWidth={2}
+                  strokeOpacity={strokeOpacity}
+                  filter="url(#takehome-glow)"
+                  onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, text: sn.tooltip })}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <title>{`${sn.label}: ${fmt(sn.value ?? 0)}/mo`}</title>
+                </rect>
+              )
+            }
             const borderColor = isOvershootNode ? '#ef4444' : sn.isStructural ? '#60a5fa' : sn.color
             const fillOpacity = isActive ? 0.5 : 0.25
             return (

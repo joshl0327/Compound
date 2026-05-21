@@ -1,8 +1,8 @@
 import { useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react'
 import { sankey, sankeyLeft } from 'd3-sankey'
 import type { SankeyNode, SankeyLink } from 'd3-sankey'
-import { buildSankeyData, computeLabelPositions } from '../lib/sankeyHelpers'
-import type { SkNode, SkLink, LabelPos } from '../lib/sankeyHelpers'
+import { buildSankeyData } from '../lib/sankeyHelpers'
+import type { SkNode, SkLink } from '../lib/sankeyHelpers'
 import { fmt, fmtShort } from '../lib/format'
 import type { AppData } from '../types'
 import type { SankeyInput } from '../lib/sankeyHelpers'
@@ -32,7 +32,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
   const [dims, setDims] = useState({ w: 800, h: 520 })
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
-  const [labelPositions, setLabelPositions] = useState<LabelPos[]>([])
 
   // ── Measure container ──
   useLayoutEffect(() => {
@@ -78,16 +77,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
     }
   }, [rawNodes, rawLinks, dims])
 
-  // ── Compute label positions for col-2 terminals + col-3 buckets ──
-  useLayoutEffect(() => {
-    if (!graph) return
-    // Include col-2 terminal nodes (not takehome, which continues rightward) and all col-3 nodes
-    const labelNodes = graph.nodes.filter(n => {
-      const sn = n as LayoutNode
-      return sn.col === 3 || (sn.col === 2 && sn.id !== 'takehome')
-    })
-    setLabelPositions(computeLabelPositions(labelNodes as { id: string; y0: number; y1: number }[], 1, dims.h))
-  }, [graph, dims])
 
   const handleNodeClick = useCallback((nodeId: string) => {
     setActiveNode(prev => prev === nodeId ? null : nodeId)
@@ -227,78 +216,88 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             )
           })}
 
-          {/* Col-0 source labels (left of source nodes, in reserved SRC_LABEL_W space) */}
-          {graph.nodes
-            .filter(n => (n as LayoutNode).col === 0)
-            .map(n => {
-              const sn = n as LayoutNode
-              const x = (sn.x0 ?? 0) - 8
-              const midY = ((sn.y0 ?? 0) + (sn.y1 ?? 0)) / 2
+          {/* Node labels — below-node for gross and take-home, midpoint-centered for all others */}
+          {graph.nodes.map(n => {
+            const sn = n as LayoutNode
+            const midY = ((sn.y0 ?? 0) + (sn.y1 ?? 0)) / 2
+            const midX = ((sn.x0 ?? 0) + (sn.x1 ?? 0)) / 2
+            const nodeRight = sn.x1 ?? 0
+            const nodeLeft = sn.x0 ?? 0
+            const nodeBottom = sn.y1 ?? 0
+
+            if (sn.id === 'gross') {
               return (
-                <g key={`src-lbl-${sn.id}`}>
-                  <text x={x} y={midY - 5} textAnchor="end" fontSize={9} fontWeight={600} fill={sn.color} fontFamily="DM Mono, monospace">
-                    {sn.label}
+                <g key={`lbl-${sn.id}`}>
+                  <text x={midX} y={nodeBottom + 14} textAnchor="middle"
+                        fontSize={7} fontWeight={700} fill="#4a7fa5"
+                        fontFamily="DM Mono, monospace" letterSpacing="0.1em">
+                    GROSS INCOME
                   </text>
-                  <text x={x} y={midY + 6} textAnchor="end" fontSize={8} fill="#4a7fa5" fontFamily="DM Mono, monospace">
-                    {fmt(sn.value ?? 0)}/mo
+                  <text x={midX} y={nodeBottom + 27} textAnchor="middle"
+                        fontSize={13} fontWeight={700} fill="#e8f0f8"
+                        fontFamily="DM Mono, monospace">
+                    {fmt(sn.value ?? 0)}
                   </text>
                 </g>
               )
-            })
-          }
+            }
 
-          {/* Take-home pass-through label — sits above the node, no right-side entry */}
-          {(() => {
-            const th = graph.nodes.find(n => (n as LayoutNode).id === 'takehome') as LayoutNode | undefined
-            if (!th || ((th.y1 ?? 0) - (th.y0 ?? 0)) < 6) return null
-            const midX = ((th.x0 ?? 0) + (th.x1 ?? 0)) / 2
-            return (
-              <text x={midX} y={(th.y0 ?? 0) - 4} textAnchor="middle" fontSize={7.5} fontWeight={700}
-                fill={th.color} fontFamily="DM Sans, monospace" letterSpacing="0.07em" opacity={0.7}>
-                TAKE-HOME
-              </text>
-            )
-          })()}
+            if (sn.id === 'takehome') {
+              return (
+                <g key={`lbl-${sn.id}`}>
+                  <text x={midX} y={nodeBottom + 14} textAnchor="middle"
+                        fontSize={7.5} fontWeight={700} fill="#60a5fa"
+                        fontFamily="DM Mono, monospace" letterSpacing="0.1em">
+                    TAKE-HOME
+                  </text>
+                  <text x={midX} y={nodeBottom + 28} textAnchor="middle"
+                        fontSize={13} fontWeight={700} fill="#e8f0f8"
+                        fontFamily="DM Mono, monospace">
+                    {fmt(sn.value ?? 0)}
+                  </text>
+                </g>
+              )
+            }
+
+            if (sn.col === 0) {
+              return (
+                <g key={`lbl-${sn.id}`}>
+                  <text x={nodeLeft - 8} y={midY - 2} textAnchor="end"
+                        fontSize={7} fontWeight={700} fill={sn.color}
+                        fontFamily="DM Mono, monospace" letterSpacing="0.06em">
+                    {sn.label.toUpperCase()}
+                  </text>
+                  <text x={nodeLeft - 8} y={midY + 10} textAnchor="end"
+                        fontSize={10} fontWeight={600} fill="#e8f0f8"
+                        fontFamily="DM Mono, monospace">
+                    {fmt(sn.value ?? 0)}
+                  </text>
+                </g>
+              )
+            }
+
+            if (sn.col === 2 || sn.col === 3) {
+              return (
+                <g key={`lbl-${sn.id}`}>
+                  <text x={nodeRight + 8} y={midY - 2}
+                        fontSize={6.5} fontWeight={700} fill={sn.color}
+                        fontFamily="DM Mono, monospace" letterSpacing="0.05em">
+                    {sn.label.toUpperCase()}
+                  </text>
+                  <text x={nodeRight + 8} y={midY + 10}
+                        fontSize={9.5} fontWeight={600} fill="#e8f0f8"
+                        fontFamily="DM Mono, monospace">
+                    {fmt(sn.value ?? 0)}
+                  </text>
+                </g>
+              )
+            }
+
+            return null
+          })}
+
         </svg>
 
-        {/* Right-side HTML labels — col-2 terminals at top, col-3 buckets below */}
-        {labelPositions.map(pos => {
-          const node = graph.nodes.find(n => (n as LayoutNode).id === pos.nodeId) as LayoutNode | undefined
-          if (!node) return null
-          const sn = node as LayoutNode
-          const pctOfGross = input.grossMonthly > 0
-            ? ((sn.value ?? 0) / input.grossMonthly * 100).toFixed(1) + '%'
-            : ''
-          const flagLine = getFlagLine(sn.id)
-
-          return (
-            <div
-              key={`lbl-${sn.id}`}
-              style={{
-                position: 'absolute',
-                top: pos.top,
-                left: dims.w - LABEL_W + 8,
-                width: LABEL_W - 12,
-                paddingLeft: 8,
-                borderLeft: `2px solid ${sn.color}`,
-                pointerEvents: 'none',
-              }}
-            >
-              <div style={{ color: sn.color, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', lineHeight: 1 }}>
-                {sn.label}
-              </div>
-              <div style={{ color: '#e8f0f8', fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 500, lineHeight: 1.2 }}>
-                {fmt(sn.value ?? 0)}
-                <span style={{ color: '#3a5a7a', fontSize: 9, marginLeft: 6 }}>{pctOfGross}</span>
-              </div>
-              {flagLine && (
-                <div style={{ color: flagLine.color, fontSize: 8, fontStyle: 'italic', lineHeight: 1 }}>
-                  {flagLine.text}
-                </div>
-              )}
-            </div>
-          )
-        })}
 
         {/* Tooltip */}
         {tooltip && (
@@ -356,11 +355,6 @@ function ribbonPath(link: LayoutLink): string {
   ].join(' ')
 }
 
-// ── Flag line: overshoot only ──
-function getFlagLine(nodeId: string): { text: string; color: string } | null {
-  if (nodeId !== 'overshoot') return null
-  return { text: 'spending over take-home', color: '#ef4444' }
-}
 
 // ── Drill-down panel ──
 function DrillDownPanel({ nodeId, data, input, onClose }: {

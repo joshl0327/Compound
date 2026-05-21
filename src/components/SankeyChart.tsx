@@ -72,11 +72,15 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
     }
   }, [rawNodes, rawLinks, dims])
 
-  // ── Compute label positions ──
+  // ── Compute label positions for col-2 terminals + col-3 buckets ──
   useLayoutEffect(() => {
     if (!graph) return
-    const col3Nodes = graph.nodes.filter((n) => (n as LayoutNode).col === 3)
-    setLabelPositions(computeLabelPositions(col3Nodes as { id: string; y0: number; y1: number }[], 1, dims.h))
+    // Include col-2 terminal nodes (not takehome, which continues rightward) and all col-3 nodes
+    const labelNodes = graph.nodes.filter(n => {
+      const sn = n as LayoutNode
+      return sn.col === 3 || (sn.col === 2 && sn.id !== 'takehome')
+    })
+    setLabelPositions(computeLabelPositions(labelNodes as { id: string; y0: number; y1: number }[], 1, dims.h))
   }, [graph, dims])
 
   const handleNodeClick = useCallback((nodeId: string) => {
@@ -217,46 +221,21 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             })
           }
 
-          {/* Col-2 node labels (above each node, in the nodePadding gap) */}
-          {graph.nodes
-            .filter(n => (n as LayoutNode).col === 2)
-            .map(n => {
-              const sn = n as LayoutNode
-              const nodeH = (sn.y1 ?? 0) - (sn.y0 ?? 0)
-              if (nodeH < 6) return null
-              const midX = ((sn.x0 ?? 0) + (sn.x1 ?? 0)) / 2
-              const topY = sn.y0 ?? 0
-              return (
-                <g key={`col2-lbl-${sn.id}`}>
-                  <text x={midX} y={topY - 4} textAnchor="middle" fontSize={7.5} fontWeight={700}
-                    fill={sn.color} fontFamily="DM Sans, monospace" letterSpacing="0.07em" opacity={0.9}>
-                    {sn.label.toUpperCase()}
-                  </text>
-                </g>
-              )
-            })
-          }
-
-          {/* Leader lines for col-3 right-side labels */}
-          {labelPositions.map(pos => {
-            const node = graph.nodes.find(n => (n as LayoutNode).id === pos.nodeId) as LayoutNode | undefined
-            if (!node) return null
-            const nodeRightX = node.x1 ?? 0
-            const nodeMidY = ((node.y0 ?? 0) + (node.y1 ?? 0)) / 2
-            const labelMidY = pos.top + 22
+          {/* Take-home pass-through label — sits above the node, no right-side entry */}
+          {(() => {
+            const th = graph.nodes.find(n => (n as LayoutNode).id === 'takehome') as LayoutNode | undefined
+            if (!th || ((th.y1 ?? 0) - (th.y0 ?? 0)) < 6) return null
+            const midX = ((th.x0 ?? 0) + (th.x1 ?? 0)) / 2
             return (
-              <line
-                key={`leader-${pos.nodeId}`}
-                x1={nodeRightX + 4} y1={nodeMidY}
-                x2={dims.w - LABEL_W + 4} y2={labelMidY}
-                stroke={node.color} strokeWidth={0.8} opacity={0.5}
-                strokeDasharray={Math.abs(labelMidY - nodeMidY) > 20 ? '2 3' : undefined}
-              />
+              <text x={midX} y={(th.y0 ?? 0) - 4} textAnchor="middle" fontSize={7.5} fontWeight={700}
+                fill={th.color} fontFamily="DM Sans, monospace" letterSpacing="0.07em" opacity={0.7}>
+                TAKE-HOME
+              </text>
             )
-          })}
+          })()}
         </svg>
 
-        {/* Col-3 HTML labels */}
+        {/* Right-side HTML labels — col-2 terminals at top, col-3 buckets below */}
         {labelPositions.map(pos => {
           const node = graph.nodes.find(n => (n as LayoutNode).id === pos.nodeId) as LayoutNode | undefined
           if (!node) return null
@@ -272,8 +251,10 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               style={{
                 position: 'absolute',
                 top: pos.top,
-                left: dims.w - LABEL_W + 12,
-                width: LABEL_W - 16,
+                left: dims.w - LABEL_W + 8,
+                width: LABEL_W - 12,
+                paddingLeft: 8,
+                borderLeft: `2px solid ${sn.color}`,
                 pointerEvents: 'none',
               }}
             >

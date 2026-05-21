@@ -43,7 +43,7 @@ export default function LineChart({ data, height: h = 200 }: LineChartProps) {
         return (
           <g key={i}>
             <line x1={pad.l} y1={y} x2={pad.l + chartW} y2={y} stroke="#1a2840" strokeWidth={1} strokeDasharray="4 4" />
-            <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#5a7a9a">${Math.round(v / 1000)}k</text>
+            <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#5a7a9a">{fmtShort(v)}</text>
           </g>
         )
       })}
@@ -68,7 +68,7 @@ export default function LineChart({ data, height: h = 200 }: LineChartProps) {
       />
       <text
         x={pad.l + chartW - 4}
-        y={pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH - 8}
+        y={Math.max(pad.t + 12, pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH - 8)}
         textAnchor="end"
         fontSize={9}
         fill="#a78bfa"

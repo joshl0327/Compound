@@ -186,6 +186,7 @@ const MIN_LABEL_H = 44
 export function computeLabelPositions(
   nodes: { id: string; y0: number; y1: number }[],
   pxPerViewboxUnit: number,
+  containerHeight = 9999,
 ): LabelPos[] {
   const positions = nodes.map(n => ({
     nodeId: n.id,
@@ -198,6 +199,17 @@ export function computeLabelPositions(
     const prev = positions[i - 1]
     if (positions[i].top < prev.top + MIN_LABEL_H) {
       positions[i].top = prev.top + MIN_LABEL_H
+    }
+  }
+
+  // Backward pass — clamp last label to container, then pull earlier labels up
+  const last = positions.length - 1
+  if (positions[last]) {
+    positions[last].top = Math.min(positions[last].top, containerHeight - MIN_LABEL_H)
+    for (let i = last - 1; i >= 0; i--) {
+      if (positions[i].top > positions[i + 1].top - MIN_LABEL_H) {
+        positions[i].top = positions[i + 1].top - MIN_LABEL_H
+      }
     }
   }
 

@@ -29,7 +29,7 @@ interface SankeyChartProps {
 export default function SankeyChart({ input, data }: SankeyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const [dims, setDims] = useState({ w: 800, h: 520 })
+  const [dims, setDims] = useState({ w: 800, h: 580 })
   const [activeNode, setActiveNode] = useState<string | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
 
@@ -39,7 +39,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
     if (!el) return
     const ro = new ResizeObserver(entries => {
       const { width } = entries[0].contentRect
-      setDims({ w: Math.max(width, 400), h: 520 })
+      setDims({ w: Math.max(width, 400), h: 580 })
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -72,6 +72,16 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
           n.y1 = (n.y0 ?? 0) + MIN_NODE_H
         }
       })
+      // Push the retirement node down so its incoming ribbon curves visibly
+      // rather than running flat alongside the bottom of take-home.
+      const RETIREMENT_DIP = 45
+      const retNode = g.nodes.find(n => (n as LayoutNode).id === 'retirement') as LayoutNode | undefined
+      if (retNode) {
+        retNode.y0 = (retNode.y0 ?? 0) + RETIREMENT_DIP
+        retNode.y1 = (retNode.y1 ?? 0) + RETIREMENT_DIP
+        const retLink = g.links.find(l => (l.target as LayoutNode).id === 'retirement')
+        if (retLink) (retLink as any).y1 = (retLink as any).y1 + RETIREMENT_DIP
+      }
       return g
     } catch {
       return null

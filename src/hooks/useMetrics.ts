@@ -60,8 +60,7 @@ export function useMetrics() {
   }, 0)
   const planTabDebtTotal = data.debts.reduce((s, d) => {
     if (d.isMortgage) return s
-    const v = data.plan?.debtPayments?.[d.id] !== undefined ? data.plan.debtPayments[d.id] : (d.minPayment || '0')
-    return s + (parseFloat(v) || 0)
+    return s + (parseFloat(d.planPayment || d.minPayment || '0') || 0)
   }, 0)
   const planTabDiscTotal = data.budget.discretionary.reduce((s, e) => {
     const v = data.plan?.discretionary?.[e.id] !== undefined ? data.plan.discretionary[e.id] : e.baseline

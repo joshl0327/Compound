@@ -25,7 +25,7 @@ export default function PlanTab() {
   }
 
   function setPlanDebt(id: string, val: string) {
-    setData(d => ({ ...d, plan: { ...d.plan, debtPayments: { ...d.plan.debtPayments, [id]: val } } }))
+    setData(d => ({ ...d, debts: d.debts.map(debt => debt.id === id ? { ...debt, planPayment: val } : debt) }))
   }
 
   function resetToBaseline() {
@@ -305,10 +305,7 @@ export default function PlanTab() {
           nonMortgageDebts.map(debt => {
             const balance = parseFloat(debt.balance) || 0
             const rate = parseFloat(debt.rate) || 0
-            const planPayRaw =
-              data.plan?.debtPayments?.[debt.id] !== undefined
-                ? data.plan.debtPayments[debt.id]
-                : debt.minPayment || ''
+            const planPayRaw = debt.planPayment || debt.minPayment || ''
             const planPay = parseFloat(planPayRaw) || 0
             const minPay = parseFloat(debt.minPayment) || 0
             const minResult = calcPayoff(balance, rate, minPay)

@@ -34,7 +34,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
   const displayRateLabel = debt.isPromo && promoMonthsLeft > 0 ? 'Post-Promo APR %' : 'APR %'
   const displayRateValue = debt.isPromo ? (debt.postPromoRate || '') : (debt.rate || '')
 
-  const inputBase = 'w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono outline-none border'
+  const inputBase = 'w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono border transition-colors focus:outline-none focus:ring-1 focus:ring-[#3a7ab5]'
 
   return (
     <div
@@ -79,7 +79,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
             onBlur={onCommitSort}
             onKeyDown={e => { if (e.key === 'Enter') onCommitSort?.() }}
             className={inputBase}
-            style={{ background: '#060e18', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+            style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
           />
         </div>
         <div>
@@ -96,7 +96,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
             onBlur={onCommitSort}
             onKeyDown={e => { if (e.key === 'Enter') onCommitSort?.() }}
             className={inputBase}
-            style={{ background: '#060e18', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+            style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
           />
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
             value={fmtCurrencyInput(debt.minPayment)}
             onChange={e => onChange({ ...debt, minPayment: stripCommas(e.target.value) })}
             className={inputBase}
-            style={{ background: '#060e18', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+            style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
           />
         </div>
         <div>
@@ -149,7 +149,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
                 value={debt.promoRate || '0'}
                 onChange={e => onChange({ ...debt, promoRate: e.target.value.replace(/[^0-9.]/g, '') })}
                 className={inputBase}
-                style={{ background: '#0a1520', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+                style={{ background: '#0a1520', borderColor: '#2a4060', color: '#e8f0f8' }}
               />
             </div>
             <div>
@@ -159,7 +159,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
                 value={debt.promoEndDate || ''}
                 onChange={e => onChange({ ...debt, promoEndDate: e.target.value })}
                 className={inputBase}
-                style={{ background: '#0a1520', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+                style={{ background: '#0a1520', borderColor: '#2a4060', color: '#e8f0f8' }}
               />
             </div>
           </div>

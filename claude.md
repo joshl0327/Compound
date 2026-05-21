@@ -343,6 +343,33 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ---
 
+## Recent Changes (since React migration)
+
+### Visual polish (complete)
+- Container widened to `max-w-7xl` (1280px) across header, nav, and tab content
+- Badge row fixed to single non-wrapping row (`repeat(7, 1fr)`)
+- Non-traffic-light badge values unified to blue (`#60a5fa`); traffic light reserved for Housing % and Total DTI only
+
+### Expenses tab (complete)
+- Side-by-side layout: Essentials + Other Expenses on left, Debt Obligations on right (50/50, collapses to single column below 768px)
+- Debt card pencil-icon edit mode — Balance, APR, Minimum are display-only; pencil opens a draft-state edit form with Save/Cancel; Plan Payment remains always-editable inline
+- Live data lookup fix: `stableDebts` provides sort order only; rendered debt values come from `data.debts` directly to prevent stale-prop reversion on keystrokes
+- Promo/mortgage date normalization on load — converts any non-`YYYY-MM-DD` stored format to ISO for `<input type="date">` display
+
+### Plan tab (complete)
+- Debt plan payments unified to `debt.planPayment` as single source of truth — Plan tab previously wrote to `data.plan.debtPayments` (a separate sandbox field) causing Overview/Expenses/Plan to diverge
+- Consumer Debt-Free date footer added to Debt Obligations section
+
+### Overview tab (in active redesign — see next steps)
+- Debt Payoff Timeline moved out of Overview (now lives in Plan tab)
+- DonutChart component added (`src/components/DonutChart.tsx`) — pure SVG, no library
+- LineChart enhanced with gradient area fill and end-point annotation
+- `buildProjection` extracted to `calculations.ts`; `buildAggregateProjection` added for cross-source retirement projection
+- Badge health tinting: Savings Rate and Retirement Rate earn green at ≥15%, health-status badges get subtle background tint
+- Debt-free strip shows Consumer Debt-Free date + consumer debt balance (DTI removed as redundant)
+
+---
+
 ## Known Issues / Decisions Log
 
 - Crypto/speculative assets belong under Invest (not Savings)
@@ -350,31 +377,29 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 - Profile completeness card may not show if `compound_profile_done` is already set — clear via DevTools → Application → Local Storage
 - Essentials default to $0 — previously defaulted to Miami averages, removed as confusing
 - Legacy detailed-mode fields (`healthInsurance`, `fsa`, `otherPreTax`, `federalTax`, `stateTax`) still exist in data model and are used as fallback in net calculation when `taxesPerPaycheck` is not set
-- Suggested Next Steps removed from Overview — to be redesigned with better, more contextual logic before re-adding
-
-### Visual differences from pre-migration live version (active polish work)
-
-The React migration preserved all functionality and data but introduced visual differences vs. the old single-file app. These need a side-by-side pass:
-
-- **Badge row** — old version was a single tight scrollable row with uniform card sizing; new version may wrap or have inconsistent spacing
-- **App header** — old version had a more compact header with the Gross/Net income figures more prominently sized; new version is functional but proportions differ
-- **Typography weights/sizes** — some headings and labels are slightly heavier or larger than the original
-- **Card spacing** — padding and gap values differ from the original in some tabs
-- **Color fidelity** — a few components use raw hex where they should use Tailwind tokens, resulting in slightly off shades
-
-These are cosmetic only — no data or calculation logic is affected.
+- `data.plan.debtPayments` still exists in the data model and localStorage but is no longer read — superseded by `debt.planPayment` as the single source of truth
 
 ---
 
 ## Future Roadmap
 
-### Current focus: visual polish pass
-Match the new React app's layout, spacing, and typography to the pre-migration live version. Work tab by tab, screenshot comparison. See "Visual differences" in Known Issues above.
+### Current focus: Overview page redesign
+The Overview page has been through several design iterations and is not yet settled. The core goal: within 5 seconds, a user should know (1) their biggest financial challenge, (2) what's going well, and (3) what their money is doing. Design feedback is being gathered externally before the next implementation pass.
 
-### After visual polish
-- **Side-by-side Expenses layout** (Essentials left, Debt right) — now unblocked by the React migration
-- **Suggested Next Steps redesign** — removed from Overview; needs rethinking with better contextual logic
-- **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.)
+**Design history (do not re-implement these):**
+- Badge row (7 metrics) + Debt Payoff Timeline + Budget Summary → flat data, no opinion
+- Badge row + Budget Allocation donut + Retirement Projection → better visuals, still no hierarchy
+- Three domain cards (Debt / Spending / Building Wealth) with health pills → peers found domain cards harder to scan than a linear strip
+- Current: enhanced badge strip (health-aware colors + tints) + donut + retirement chart → closer, still not settled
+
+**What's known about the right direction:**
+- The horizontal left-to-right badge strip reads naturally (Income → Obligations → Performance) — keep this structure
+- The page needs "opinion" — it should surface what's urgent and what's affirming, not treat all metrics as equal weight
+- The two chart cards below (donut + retirement) are directionally right but proportionally unbalanced (donut is visually heavy, retirement chart has empty space when data is sparse)
+- Avoid the "domain card" structure — peers found it harder to scan
+
+### After Overview redesign
+- **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.) in Invest & Retire tab
 - **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
 - Mobile layout optimization
 - Inflation-adjusted retirement projections

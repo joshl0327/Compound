@@ -79,15 +79,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
     setLabelPositions(computeLabelPositions(col3Nodes as { id: string; y0: number; y1: number }[], 1, dims.h))
   }, [graph, dims])
 
-  // ── Waterline: y0 of Gross→Takehome link ──
-  const waterlineY = useMemo(() => {
-    if (!graph) return null
-    const lnk = graph.links.find(
-      l => ((l.source as LayoutNode).id === 'gross' && (l.target as LayoutNode).id === 'takehome')
-    )
-    return lnk ? (lnk as any).y0 : null
-  }, [graph])
-
   const handleNodeClick = useCallback((nodeId: string) => {
     setActiveNode(prev => prev === nodeId ? null : nodeId)
   }, [])
@@ -206,19 +197,45 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             )
           })}
 
-          {/* Waterline */}
-          {waterlineY !== null && (
-            <g>
-              <line
-                x1={SRC_LABEL_W - 8} y1={waterlineY}
-                x2={dims.w - LABEL_W + 8} y2={waterlineY}
-                stroke="#60a5fa" strokeWidth={0.8} strokeDasharray="5 3" opacity={0.6}
-              />
-              <text x={SRC_LABEL_W - 10} y={waterlineY - 3} textAnchor="end" fontSize={8} fill="#60a5fa" opacity={0.8}>
-                Take-home ↓ {fmt(input.netMonthly)}
-              </text>
-            </g>
-          )}
+          {/* Col-0 source labels (left of source nodes, in reserved SRC_LABEL_W space) */}
+          {graph.nodes
+            .filter(n => (n as LayoutNode).col === 0)
+            .map(n => {
+              const sn = n as LayoutNode
+              const x = (sn.x0 ?? 0) - 8
+              const midY = ((sn.y0 ?? 0) + (sn.y1 ?? 0)) / 2
+              return (
+                <g key={`src-lbl-${sn.id}`}>
+                  <text x={x} y={midY - 5} textAnchor="end" fontSize={9} fontWeight={600} fill={sn.color} fontFamily="DM Mono, monospace">
+                    {sn.label}
+                  </text>
+                  <text x={x} y={midY + 6} textAnchor="end" fontSize={8} fill="#4a7fa5" fontFamily="DM Mono, monospace">
+                    {fmt(sn.value ?? 0)}/mo
+                  </text>
+                </g>
+              )
+            })
+          }
+
+          {/* Col-2 node labels (above each node, in the nodePadding gap) */}
+          {graph.nodes
+            .filter(n => (n as LayoutNode).col === 2)
+            .map(n => {
+              const sn = n as LayoutNode
+              const nodeH = (sn.y1 ?? 0) - (sn.y0 ?? 0)
+              if (nodeH < 6) return null
+              const midX = ((sn.x0 ?? 0) + (sn.x1 ?? 0)) / 2
+              const topY = sn.y0 ?? 0
+              return (
+                <g key={`col2-lbl-${sn.id}`}>
+                  <text x={midX} y={topY - 4} textAnchor="middle" fontSize={7.5} fontWeight={700}
+                    fill={sn.color} fontFamily="DM Sans, monospace" letterSpacing="0.07em" opacity={0.9}>
+                    {sn.label.toUpperCase()}
+                  </text>
+                </g>
+              )
+            })
+          }
 
           {/* Leader lines for col-3 right-side labels */}
           {labelPositions.map(pos => {

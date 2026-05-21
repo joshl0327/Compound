@@ -1,5 +1,63 @@
 import type { IncomeSource, FrequencyOption, SourceCalc, PayoffResult } from '../types'
 
+export interface DataPoint { age: number; balance: number }
+
+export function buildProjection(src: IncomeSource, sourceCalc: SourceCalc): DataPoint[] {
+  const ret = src.retirement || ({} as NonNullable<IncomeSource['retirement']>)
+  const currentAge = parseInt(ret.currentAge || '0')
+  const targetAge = parseInt(ret.targetAge || '65')
+  if (!currentAge || !targetAge || currentAge >= targetAge) return []
+
+  const tradBalance = parseFloat(ret.traditional401kBalance || '') || 0
+  const rothBalance = parseFloat(ret.roth401kBalance || '') || 0
+  const iraBalance = parseFloat((ret.rothIra || { currentBalance: '' }).currentBalance || '') || 0
+  const currentBalance = tradBalance + rothBalance + iraBalance
+
+  const monthlyContrib =
+    sourceCalc.trad401k + sourceCalc.roth401k + sourceCalc.match + sourceCalc.rothIra
+
+  const points: DataPoint[] = []
+  let balance = currentBalance
+  for (let age = currentAge; age <= targetAge; age++) {
+    points.push({ age, balance: Math.round(balance) })
+    balance = balance * 1.07 + monthlyContrib * 12
+  }
+  return points
+}
+
+export function buildAggregateProjection(
+  sources: IncomeSource[],
+  sourceCalcs: SourceCalc[],
+  hsaBalance: number,
+  investBalance: number
+): DataPoint[] {
+  const primarySrc = sources.find(s => s.type === 'w2' && parseInt(s.retirement?.currentAge || '0') > 0)
+  if (!primarySrc?.retirement) return []
+  const currentAge = parseInt(primarySrc.retirement.currentAge || '0')
+  const targetAge = parseInt(primarySrc.retirement.targetAge || '65')
+  if (!currentAge || currentAge >= targetAge) return []
+
+  const currentBalance = sources
+    .filter(s => s.type === 'w2')
+    .reduce((sum, src) => {
+      const r = src.retirement || {}
+      return sum
+        + (parseFloat(r.traditional401kBalance || '') || 0)
+        + (parseFloat(r.roth401kBalance || '') || 0)
+        + (parseFloat(r.rothIra?.currentBalance || '') || 0)
+    }, 0) + hsaBalance + investBalance
+
+  const monthlyContrib = sourceCalcs.reduce((s, c) => s + c.trad401k + c.roth401k + c.match + c.rothIra, 0)
+
+  const points: DataPoint[] = []
+  let balance = currentBalance
+  for (let age = currentAge; age <= targetAge; age++) {
+    points.push({ age, balance: Math.round(balance) })
+    balance = balance * 1.07 + monthlyContrib * 12
+  }
+  return points
+}
+
 export function calcPayoff(
   balance: string | number,
   annualRate: string | number,

@@ -1,38 +1,9 @@
 import { useData } from '../context/DataContext'
 import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
+import { buildProjection, DataPoint } from '../lib/calculations'
 import { Input, Card, SectionTitle, Badge, LineChart } from '../components'
 import type { IncomeSource, SourceCalc } from '../types'
-
-// -------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------
-
-interface DataPoint { age: number; balance: number }
-
-function buildProjection(src: IncomeSource, sourceCalc: SourceCalc): DataPoint[] {
-  const ret = src.retirement || ({} as NonNullable<IncomeSource['retirement']>)
-  const currentAge = parseInt(ret.currentAge || '0')
-  const targetAge = parseInt(ret.targetAge || '65')
-  if (!currentAge || !targetAge || currentAge >= targetAge) return []
-
-  const tradBalance = parseFloat(ret.traditional401kBalance || '') || 0
-  const rothBalance = parseFloat(ret.roth401kBalance || '') || 0
-  const iraBalance = parseFloat((ret.rothIra || { currentBalance: '' }).currentBalance || '') || 0
-  const currentBalance = tradBalance + rothBalance + iraBalance
-
-  const monthlyContrib =
-    sourceCalc.trad401k + sourceCalc.roth401k + sourceCalc.match + sourceCalc.rothIra
-  const annualReturn = 0.07
-
-  const points: DataPoint[] = []
-  let balance = currentBalance
-  for (let age = currentAge; age <= targetAge; age++) {
-    points.push({ age, balance: Math.round(balance) })
-    balance = balance * (1 + annualReturn) + monthlyContrib * 12
-  }
-  return points
-}
 
 // -------------------------------------------------------------------
 // Sub-components

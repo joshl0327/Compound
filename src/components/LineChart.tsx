@@ -1,3 +1,5 @@
+import { fmtShort } from '../lib/format'
+
 interface DataPoint { age: number; balance: number }
 
 interface LineChartProps {
@@ -21,8 +23,20 @@ export default function LineChart({ data, height: h = 200 }: LineChartProps) {
     `${pad.l + i * xStep},${pad.t + chartH - (d.balance / maxVal) * chartH}`
   ).join(' ')
 
+  const fillPoints = [
+    `${pad.l},${pad.t + chartH}`,
+    ...data.map((_, i) => `${pad.l + i * xStep},${pad.t + chartH - (data[i].balance / maxVal) * chartH}`),
+    `${pad.l + chartW},${pad.t + chartH}`,
+  ].join(' ')
+
   return (
     <svg width="100%" viewBox={`0 0 ${w} ${h}`}>
+      <defs>
+        <linearGradient id="retirementGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+        </linearGradient>
+      </defs>
       {[0, 1, 2, 3, 4].map(i => {
         const v = Math.round((maxVal / 4) * i)
         const y = pad.t + chartH - (v / maxVal) * chartH
@@ -43,6 +57,7 @@ export default function LineChart({ data, height: h = 200 }: LineChartProps) {
             </text>
           )
         })}
+      <polygon points={fillPoints} fill="url(#retirementGrad)" />
       <polyline points={points} fill="none" stroke="#a78bfa" strokeWidth={2.5} strokeLinejoin="round" />
       <circle cx={pad.l} cy={pad.t + chartH} r={3} fill="#a78bfa" />
       <circle
@@ -51,6 +66,17 @@ export default function LineChart({ data, height: h = 200 }: LineChartProps) {
         r={4}
         fill="#a78bfa"
       />
+      <text
+        x={pad.l + chartW - 4}
+        y={pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH - 8}
+        textAnchor="end"
+        fontSize={9}
+        fill="#a78bfa"
+        fontWeight={700}
+        fontFamily="DM Mono, monospace"
+      >
+        {fmtShort(data[data.length - 1].balance)}
+      </text>
     </svg>
   )
 }

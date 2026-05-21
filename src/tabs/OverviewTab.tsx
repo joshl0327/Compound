@@ -1,13 +1,13 @@
-import { Badge } from '../components'
+import { Badge, DonutChart, LineChart } from '../components'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
 import { useData } from '../context/DataContext'
-import { fmtCurrencyInput, stripCommas } from '../lib/format'
+import { buildAggregateProjection } from '../lib/calculations'
 
 export default function OverviewTab() {
-  const { data, setData } = useData()
+  const { data } = useData()
   const {
     grossMonthly, netMonthly,
     housingPct, consumerDti, dti,
@@ -15,26 +15,18 @@ export default function OverviewTab() {
     planSurplus, essTotalP, debtPlanTotal, discPlanTotal,
     liquidSavingsMonthly, investMonthly, rothIraMonthly,
     postTaxSavingsMonthly,
-    calcPayoff, debtColor, payoffDate,
+    sourceCalcs,
+    calcPayoff, payoffDate,
   } = useMetrics()
 
-  // Debt sorting (avalanche: highest rate first, snowball: lowest balance first)
+  // Consumer debts for debt-free strip
   const consumerDebts = data.debts.filter(d => !d.isMortgage)
-  const mortgageDebts = data.debts.filter(d => d.isMortgage)
-  const strategy = data.settings.debtStrategy
-  const sortedConsumer = [...consumerDebts].sort((a, b) => {
-    if (strategy === 'avalanche') return (parseFloat(b.rate) || 0) - (parseFloat(a.rate) || 0)
-    if (strategy === 'snowball') return (parseFloat(a.balance) || 0) - (parseFloat(b.balance) || 0)
-    return 0
-  })
-  const sortedDebts = [...sortedConsumer, ...mortgageDebts]
-  const consumerDebtCount = sortedConsumer.length
+  const hasMortgage = data.debts.some(d => d.isMortgage)
 
   // Consumer debt total balance for badge
   const consumerDebtBalance = consumerDebts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)
-  const hasMortgage = data.debts.some(d => d.isMortgage)
 
-  // Max payoff months for debt-free date
+  // Max payoff months across all consumer debts (using plan payment)
   const maxConsumerMonths = consumerDebts.length > 0
     ? Math.max(...consumerDebts.map(d => {
         const pay = parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0
@@ -49,6 +41,25 @@ export default function OverviewTab() {
   const dtiColor = parseFloat(dti) <= 0 ? '#3a5a7a'
     : parseFloat(dti) >= 36 ? '#ef4444'
     : parseFloat(dti) > 20 ? '#f97316' : '#10b981'
+
+  // Retirement projection
+  const sources = data.income?.sources || []
+  const hsaBal = parseFloat(data.retirement?.hsa?.currentBalance || '') || 0
+  const investBal = parseFloat(data.invest?.currentBalance || '') || 0
+  const retChartData = buildAggregateProjection(sources, sourceCalcs, hsaBal, investBal)
+  const projBal = retChartData.length > 0 ? retChartData[retChartData.length - 1].balance : 0
+  const primaryW2 = sources.find(s => s.type === 'w2' && s.retirement?.currentAge)
+  const retTargetAge = primaryW2?.retirement?.targetAge || '65'
+
+  // Budget allocation donut segments
+  const donutSegments = [
+    { label: 'Essentials', value: essTotalP, color: '#60a5fa' },
+    { label: 'Debt', value: debtPlanTotal, color: '#f97316' },
+    { label: 'Discretionary', value: discPlanTotal, color: '#f59e0b' },
+    { label: 'Savings', value: liquidSavingsMonthly + investMonthly, color: '#10b981' },
+    { label: 'Retirement', value: rothIraMonthly, color: '#a78bfa' },
+    { label: 'Remaining', value: Math.max(0, planSurplus - postTaxSavingsMonthly), color: '#3a5a7a' },
+  ]
 
   return (
     <div>
@@ -114,176 +125,59 @@ export default function OverviewTab() {
         />
       </div>
 
-      {/* Two-column grid */}
+      {/* Debt-free date strip */}
+      {maxConsumerMonths > 0 && (
+        <div
+          className="flex justify-between items-center rounded-xl px-5 py-3 mb-3.5"
+          style={{ background: 'linear-gradient(135deg, #0d1f10, #0a1c14)', border: '1px solid #10b98133' }}
+        >
+          <div>
+            <div className="text-[10px] text-[#5a7a9a] uppercase tracking-widest mb-0.5">Consumer Debt-Free</div>
+            <div className="font-mono text-[15px] font-bold text-[#10b981]">{payoffDate(maxConsumerMonths)}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] text-[#5a7a9a] uppercase tracking-widest mb-0.5">Total DTI</div>
+            <div className="font-mono text-[15px] font-bold" style={{ color: dtiColor }}>{dti}%</div>
+          </div>
+        </div>
+      )}
+
+      {/* Two-column chart grid */}
       <div className="grid gap-3.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
-        {/* Debt Payoff Timeline */}
+        {/* Budget Allocation Donut */}
         <Card>
-          <SectionTitle accent="#f97316">Debt Payoff Timeline</SectionTitle>
-          {data.debts.length === 0 ? (
-            <div className="text-[#3a5a7a] text-[13px] text-center py-5">
-              No debts added yet. Add them in the Expenses tab.
-            </div>
-          ) : (
-            <div>
-              {sortedDebts.map((debt, i) => {
-                const balance = parseFloat(debt.balance) || 0
-                const rate = parseFloat(debt.rate) || 0
-                const minPay = parseFloat(debt.minPayment) || 0
-                const planPay = parseFloat(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment) || minPay
-                const result = calcPayoff(balance, rate, planPay)
-                const months = result ? result.months : null
-                const extra = planPay - minPay
-                const color = debt.isMortgage ? '#2a4060' : debtColor(i, consumerDebtCount)
-
-                return (
-                  <div
-                    key={debt.id}
-                    className="rounded-[10px] mb-1.5"
-                    style={{
-                      padding: '10px 12px',
-                      background: '#0a1520',
-                      borderLeft: `3px solid ${color}`,
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="flex items-center gap-1.5 text-[13px] font-semibold">
-                          {debt.name}
-                          {debt.isMortgage && (
-                            <span
-                              className="text-[9px] font-semibold rounded"
-                              style={{
-                                background: '#1d4ed833',
-                                color: '#60a5fa',
-                                border: '1px solid #1d4ed855',
-                                padding: '1px 5px',
-                              }}
-                            >
-                              MORTGAGE
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-[#4a7fa5] mt-0.5">
-                          {fmt(balance)} at {rate}% APR
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className="font-mono text-[12px] font-bold"
-                          style={{ color: months ? '#10b981' : '#ef4444' }}
-                        >
-                          {months ? payoffDate(months) : 'Never'}
-                        </div>
-                        <div className="text-[11px] text-[#4a7fa5]">
-                          {months ? `${months} mo` : 'increase payment'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                      <div>
-                        <div
-                          className="text-[10px] text-[#5a7a9a] uppercase mb-1"
-                          style={{ letterSpacing: '0.06em' }}
-                        >
-                          Minimum
-                        </div>
-                        <div
-                          className="font-mono text-[12px] text-[#5a7a9a] rounded"
-                          style={{
-                            background: '#060e18',
-                            border: '1px solid #1e2d3d',
-                            padding: '5px 8px',
-                          }}
-                        >
-                          {fmt(minPay)}
-                        </div>
-                      </div>
-                      <div>
-                        <div
-                          className="text-[10px] text-[#5a7a9a] uppercase mb-1 flex items-center gap-1.5"
-                          style={{ letterSpacing: '0.06em' }}
-                        >
-                          Plan Payment
-                          {extra > 0.005 && (
-                            <span className="text-[10px] text-[#10b981] font-bold normal-case" style={{ letterSpacing: 0 }}>
-                              +{fmt(extra)} extra
-                            </span>
-                          )}
-                        </div>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={fmtCurrencyInput(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment)}
-                          onChange={e => {
-                            const v = stripCommas(e.target.value)
-                            setData(d => ({
-                              ...d,
-                              debts: d.debts.map(x =>
-                                x.id === debt.id ? { ...x, planPayment: v } : x
-                              ),
-                            }))
-                          }}
-                          className="w-full font-mono text-[12px] text-[#e8f0f8] outline-none box-border rounded"
-                          style={{
-                            background: '#0f1923',
-                            border: `1px solid ${color}44`,
-                            padding: '5px 8px',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {/* Consumer Debt-Free Date */}
-              {maxConsumerMonths > 0 && (
-                <div
-                  className="mt-2.5 rounded-[10px] flex justify-between items-center"
-                  style={{
-                    padding: '10px 14px',
-                    background: 'linear-gradient(135deg, #0d1f10, #0a1c14)',
-                    border: '1px solid #10b98133',
-                  }}
-                >
-                  <span className="text-[13px] text-[#8b9cb5] font-semibold">Consumer Debt-Free Date</span>
-                  <span className="font-mono text-[15px] text-[#10b981] font-bold">
-                    {payoffDate(maxConsumerMonths)}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          <SectionTitle accent="#60a5fa">Budget Allocation</SectionTitle>
+          <DonutChart
+            segments={donutSegments}
+            centerLabel="Take-Home"
+            centerValue={fmt(netMonthly)}
+          />
         </Card>
 
-        {/* Take-Home Budget Summary */}
+        {/* Retirement Projection */}
         <Card>
-          <SectionTitle accent="#a78bfa">Take-Home Budget Summary (Plan)</SectionTitle>
-          {[
-            ['Essentials', fmt(essTotalP)],
-            ['Debt Payments', fmt(debtPlanTotal)],
-            ['Discretionary', fmt(discPlanTotal)],
-            ['Savings', fmt(liquidSavingsMonthly + investMonthly)],
-            ['Retirement (post-tax)', fmt(rothIraMonthly)],
-          ].map(([label, value]) => (
-            <div key={label} className="flex justify-between mb-2">
-              <span className="text-[13px] text-[#8b9cb5]">{label}</span>
-              <span className="font-mono text-[13px] text-[#60a5fa] font-semibold">{value}</span>
+          <SectionTitle accent="#a78bfa">Retirement Projection</SectionTitle>
+          {projBal > 0 && (
+            <div className="flex gap-4 mb-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>
+                  Projected at {retTargetAge}
+                </div>
+                <div className="font-mono text-[15px] font-bold" style={{ color: '#60a5fa' }}>
+                  {fmtShort(projBal)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>
+                  Monthly at 4% rule
+                </div>
+                <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>
+                  {fmt(projBal * 0.04 / 12)}
+                </div>
+              </div>
             </div>
-          ))}
-          <div
-            className="flex justify-between pt-2 mt-1"
-            style={{ borderTop: '1px solid #1e2d3d' }}
-          >
-            <span className="text-[13px] font-bold text-[#e8f0f8]">Remaining</span>
-            <span
-              className="font-mono text-[15px] font-bold"
-              style={{ color: (planSurplus - postTaxSavingsMonthly) >= 0 ? '#10b981' : '#ef4444' }}
-            >
-              {fmt(planSurplus - postTaxSavingsMonthly)}
-            </span>
-          </div>
+          )}
+          <LineChart data={retChartData} height={180} />
         </Card>
       </div>
     </div>

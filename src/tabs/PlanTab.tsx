@@ -61,6 +61,14 @@ export default function PlanTab() {
 
   const nonMortgageDebts = data.debts.filter(d => !d.isMortgage)
 
+  const maxPlanMonths = nonMortgageDebts.length > 0
+    ? Math.max(...nonMortgageDebts.map(d => {
+        const pay = parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0
+        const result = calcPayoff(d.balance, d.rate, pay)
+        return result ? result.months : 0
+      }))
+    : 0
+
   return (
     <div>
       {/* Page heading */}
@@ -302,96 +310,112 @@ export default function PlanTab() {
         {nonMortgageDebts.length === 0 ? (
           <p className="text-[#5a7a9a] text-[13px]">No non-mortgage debts added yet.</p>
         ) : (
-          nonMortgageDebts.map(debt => {
-            const balance = parseFloat(debt.balance) || 0
-            const rate = parseFloat(debt.rate) || 0
-            const planPayRaw = debt.planPayment || debt.minPayment || ''
-            const planPay = parseFloat(planPayRaw) || 0
-            const minPay = parseFloat(debt.minPayment) || 0
-            const minResult = calcPayoff(balance, rate, minPay)
-            const planResult = calcPayoff(balance, rate, planPay)
+          <>
+            {nonMortgageDebts.map(debt => {
+              const balance = parseFloat(debt.balance) || 0
+              const rate = parseFloat(debt.rate) || 0
+              const planPayRaw = debt.planPayment || debt.minPayment || ''
+              const planPay = parseFloat(planPayRaw) || 0
+              const minPay = parseFloat(debt.minPayment) || 0
+              const minResult = calcPayoff(balance, rate, minPay)
+              const planResult = calcPayoff(balance, rate, planPay)
 
-            return (
-              <div
-                key={debt.id}
-                className="px-[14px] py-[14px] rounded-[10px] mb-2.5"
-                style={{ background: '#0a1520', borderLeft: '3px solid #f97316' }}
-              >
-                {/* Debt header */}
-                <div className="flex justify-between items-center mb-2.5">
-                  <div className="text-[13px] font-semibold text-slate-100">{debt.name}</div>
-                  <div className="text-[12px] text-[#5a7a9a] font-mono">
-                    {fmt(balance)} @ {rate}%
-                  </div>
-                </div>
-                {/* Two-column layout: min vs plan */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* Min Payment column */}
-                  <div className="rounded-lg px-3 py-2.5" style={{ background: '#060e18' }}>
-                    <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1.5">
-                      Min Payment — {fmt(minPay)}/mo
+              return (
+                <div
+                  key={debt.id}
+                  className="px-[14px] py-[14px] rounded-[10px] mb-2.5"
+                  style={{ background: '#0a1520', borderLeft: '3px solid #f97316' }}
+                >
+                  {/* Debt header */}
+                  <div className="flex justify-between items-center mb-2.5">
+                    <div className="text-[13px] font-semibold text-slate-100">{debt.name}</div>
+                    <div className="text-[12px] text-[#5a7a9a] font-mono">
+                      {fmt(balance)} @ {rate}%
                     </div>
-                    {minResult ? (
-                      <>
-                        <div className="text-[13px] font-semibold text-slate-100 font-mono">{minResult.months} months</div>
-                        <div className="text-[11px] text-[#5a7a9a]">{payoffDate(minResult.months)}</div>
-                        <div className="text-[11px] text-[#f97316] mt-0.5">{fmt(minResult.totalInterest)} in interest</div>
-                      </>
-                    ) : (
-                      <div className="text-[12px] text-[#ef4444]">Payment too low</div>
-                    )}
                   </div>
-                  {/* Plan Payment column */}
-                  <div
-                    className="rounded-lg px-3 py-2.5"
-                    style={{ background: '#060e18', border: '1px solid #f9741633' }}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <div className="text-[10px] text-[#f97316] uppercase tracking-[0.06em] whitespace-nowrap">
-                        Plan —
+                  {/* Two-column layout: min vs plan */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Min Payment column */}
+                    <div className="rounded-lg px-3 py-2.5" style={{ background: '#060e18' }}>
+                      <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1.5">
+                        Min Payment — {fmt(minPay)}/mo
                       </div>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={fmtCurrencyInput(planPayRaw)}
-                        onChange={e => setPlanDebt(debt.id, stripCommas(e.target.value))}
-                        className="w-full rounded text-[11px] font-mono text-[#f97316] outline-none px-1.5 py-0.5"
-                        style={{
-                          background: '#0f1923',
-                          border: '1px solid #f9741644',
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                      <div className="text-[10px] text-[#f97316] whitespace-nowrap">/mo</div>
+                      {minResult ? (
+                        <>
+                          <div className="text-[13px] font-semibold text-slate-100 font-mono">{minResult.months} months</div>
+                          <div className="text-[11px] text-[#5a7a9a]">{payoffDate(minResult.months)}</div>
+                          <div className="text-[11px] text-[#f97316] mt-0.5">{fmt(minResult.totalInterest)} in interest</div>
+                        </>
+                      ) : (
+                        <div className="text-[12px] text-[#ef4444]">Payment too low</div>
+                      )}
                     </div>
-                    {planResult ? (
-                      <>
-                        <div
-                          className="text-[13px] font-semibold font-mono"
-                          style={{
-                            color: minResult && planResult.months < minResult.months ? '#10b981' : '#e8f0f8',
-                          }}
-                        >
-                          {planResult.months} months
+                    {/* Plan Payment column */}
+                    <div
+                      className="rounded-lg px-3 py-2.5"
+                      style={{ background: '#060e18', border: '1px solid #f9741633' }}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="text-[10px] text-[#f97316] uppercase tracking-[0.06em] whitespace-nowrap">
+                          Plan —
                         </div>
-                        <div className="text-[11px] text-[#5a7a9a]">{payoffDate(planResult.months)}</div>
-                        <div
-                          className="text-[11px] mt-0.5"
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={fmtCurrencyInput(planPayRaw)}
+                          onChange={e => setPlanDebt(debt.id, stripCommas(e.target.value))}
+                          className="w-full rounded text-[11px] font-mono text-[#f97316] outline-none px-1.5 py-0.5"
                           style={{
-                            color: minResult && planResult.totalInterest < minResult.totalInterest ? '#10b981' : '#f97316',
+                            background: '#0f1923',
+                            border: '1px solid #f9741644',
+                            boxSizing: 'border-box',
                           }}
-                        >
-                          {fmt(planResult.totalInterest)} in interest
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-[12px] text-[#ef4444]">Payment too low</div>
-                    )}
+                        />
+                        <div className="text-[10px] text-[#f97316] whitespace-nowrap">/mo</div>
+                      </div>
+                      {planResult ? (
+                        <>
+                          <div
+                            className="text-[13px] font-semibold font-mono"
+                            style={{
+                              color: minResult && planResult.months < minResult.months ? '#10b981' : '#e8f0f8',
+                            }}
+                          >
+                            {planResult.months} months
+                          </div>
+                          <div className="text-[11px] text-[#5a7a9a]">{payoffDate(planResult.months)}</div>
+                          <div
+                            className="text-[11px] mt-0.5"
+                            style={{
+                              color: minResult && planResult.totalInterest < minResult.totalInterest ? '#10b981' : '#f97316',
+                            }}
+                          >
+                            {fmt(planResult.totalInterest)} in interest
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-[12px] text-[#ef4444]">Payment too low</div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              )
+            })}
+            {maxPlanMonths > 0 && (
+              <div
+                className="mt-2.5 flex justify-between items-center rounded-[10px] px-4 py-2.5"
+                style={{
+                  background: 'linear-gradient(135deg, #0d1f10, #0a1c14)',
+                  border: '1px solid #10b98133',
+                }}
+              >
+                <span className="text-[13px] text-[#8b9cb5] font-semibold">Consumer Debt-Free</span>
+                <span className="font-mono text-[15px] text-[#10b981] font-bold">
+                  {payoffDate(maxPlanMonths)}
+                </span>
               </div>
-            )
-          })
+            )}
+          </>
         )}
       </Card>
     </div>

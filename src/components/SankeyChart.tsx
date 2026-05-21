@@ -263,12 +263,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.col === 0) {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={nodeLeft - 8} y={midY - 2} textAnchor="end"
+                  <text x={nodeLeft - 8} y={midY - 6} textAnchor="end"
                         fontSize={7} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.06em">
-                    {sn.label.toUpperCase()}
+                    {sn.label}
                   </text>
-                  <text x={nodeLeft - 8} y={midY + 10} textAnchor="end"
+                  <text x={nodeLeft - 8} y={midY + 6} textAnchor="end"
                         fontSize={10} fontWeight={600} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
@@ -280,12 +280,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.col === 2 || sn.col === 3) {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={nodeRight + 8} y={midY - 2}
+                  <text x={nodeRight + 8} y={midY - 6}
                         fontSize={6.5} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.05em">
-                    {sn.label.toUpperCase()}
+                    {sn.label}
                   </text>
-                  <text x={nodeRight + 8} y={midY + 10}
+                  <text x={nodeRight + 8} y={midY + 6}
                         fontSize={9.5} fontWeight={600} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
@@ -346,7 +346,7 @@ function ribbonPath(link: LayoutLink): string {
   const x1 = target.x0 ?? 0
   const y0 = (link as any).y0 as number
   const y1 = (link as any).y1 as number
-  const hw = ((link as any).width as number ?? 2) / 2
+  const hw = Math.max(((link as any).width as number ?? 2) / 2, 4)
   const mx = (x0 + x1) / 2
   return [
     `M${x0},${y0 - hw}`,

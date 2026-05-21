@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react'
-import { sankey, sankeyLinkHorizontal, sankeyLeft } from 'd3-sankey'
+import { sankey, sankeyLeft } from 'd3-sankey'
 import type { SankeyNode, SankeyLink } from 'd3-sankey'
 import { buildSankeyData, buildSankeyDataCollapsed, computeLabelPositions } from '../lib/sankeyHelpers'
 import type { SkNode, SkLink, LabelPos } from '../lib/sankeyHelpers'
@@ -24,14 +24,9 @@ interface DrillDownItem {
 interface SankeyChartProps {
   input: SankeyInput
   data: AppData
-  dti: string
-  housingPct: string
-  savingsRate: string
-  retireRate: string
-  employerMatch: number
 }
 
-export default function SankeyChart({ input, data, dti, housingPct, savingsRate, retireRate, employerMatch }: SankeyChartProps) {
+export default function SankeyChart({ input, data }: SankeyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [dims, setDims] = useState({ w: 800, h: 420 })
@@ -144,26 +139,25 @@ export default function SankeyChart({ input, data, dti, housingPct, savingsRate,
               const sl = l as LayoutLink
               return (
                 <linearGradient key={i} id={`grad-${i}`} x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor={sl.sourceColor} stopOpacity={sl.isFlagged ? 0.5 : 0.35} />
-                  <stop offset="100%" stopColor={sl.targetColor} stopOpacity={sl.isFlagged ? 0.45 : 0.25} />
+                  <stop offset="0%" stopColor={sl.sourceColor} stopOpacity={sl.isFlagged ? 0.78 : 0.62} />
+                  <stop offset="100%" stopColor={sl.targetColor} stopOpacity={sl.isFlagged ? 0.72 : 0.55} />
                 </linearGradient>
               )
             })}
           </defs>
 
-          {/* Links */}
+          {/* Links — filled ribbon shapes via custom path */}
           {graph.links.map((l, i) => {
             const sl = l as LayoutLink
-            const pathGen = sankeyLinkHorizontal()
-            const d = pathGen(l as any) || ''
+            const d = ribbonPath(sl)
             return (
               <path
                 key={i}
                 d={d}
                 fill={`url(#grad-${i})`}
                 stroke={sl.targetColor}
-                strokeWidth={sl.isFlagged ? 1.5 : 1}
-                strokeOpacity={sl.isFlagged ? 0.9 : 0.6}
+                strokeWidth={0.5}
+                strokeOpacity={sl.isFlagged ? 0.6 : 0.3}
                 onMouseEnter={e => {
                   const src = (l.source as LayoutNode).label
                   const tgt = (l.target as LayoutNode).label
@@ -253,7 +247,7 @@ export default function SankeyChart({ input, data, dti, housingPct, savingsRate,
           const pctOfGross = input.grossMonthly > 0
             ? ((sn.value ?? 0) / input.grossMonthly * 100).toFixed(1) + '%'
             : ''
-          const flagLine = getFlagLine(sn.id, { dti, housingPct, savingsRate, retireRate, employerMatch, isOvershoot, input })
+          const flagLine = getFlagLine(sn.id)
 
           return (
             <div
@@ -318,36 +312,30 @@ export default function SankeyChart({ input, data, dti, housingPct, savingsRate,
   )
 }
 
-// ── Health flag helper ──
-function getFlagLine(
-  nodeId: string,
-  ctx: { dti: string; housingPct: string; savingsRate: string; retireRate: string; employerMatch: number; isOvershoot: boolean; input: SankeyInput }
-): { text: string; color: string } | null {
-  const { dti, housingPct, savingsRate, retireRate, employerMatch } = ctx
-  switch (nodeId) {
-    case 'debt':
-      if (parseFloat(dti) >= 36)
-        return { text: `↑ DTI ${dti}% — high`, color: '#ef4444' }
-      return null
-    case 'essentials':
-      if (parseFloat(housingPct) > 28)
-        return { text: `↑ Housing ${housingPct}% — above 28%`, color: '#f97316' }
-      return null
-    case 'liquid-savings':
-      if (parseFloat(savingsRate) >= 15)
-        return { text: `↑ ${savingsRate}% savings rate — strong`, color: '#10b981' }
-      return null
-    case 'pretax-ret':
-      if (parseFloat(retireRate) >= 15)
-        return { text: `↑ ${retireRate}% retire rate — strong`, color: '#10b981' }
-      if (employerMatch > 0)
-        return { text: `+${fmt(employerMatch)}/mo employer match`, color: '#a78bfa' }
-      return null
-    case 'overshoot':
-      return { text: `↑ Spending over take-home`, color: '#ef4444' }
-    default:
-      return null
-  }
+// ── Filled Sankey ribbon path ──
+// sankeyLinkHorizontal() only generates a center-line curve; this draws the full filled shape.
+function ribbonPath(link: LayoutLink): string {
+  const source = link.source as LayoutNode
+  const target = link.target as LayoutNode
+  const x0 = source.x1 ?? 0
+  const x1 = target.x0 ?? 0
+  const y0 = (link as any).y0 as number
+  const y1 = (link as any).y1 as number
+  const hw = ((link as any).width as number ?? 2) / 2
+  const mx = (x0 + x1) / 2
+  return [
+    `M${x0},${y0 - hw}`,
+    `C${mx},${y0 - hw} ${mx},${y1 - hw} ${x1},${y1 - hw}`,
+    `L${x1},${y1 + hw}`,
+    `C${mx},${y1 + hw} ${mx},${y0 + hw} ${x0},${y0 + hw}`,
+    'Z',
+  ].join(' ')
+}
+
+// ── Flag line: overshoot only ──
+function getFlagLine(nodeId: string): { text: string; color: string } | null {
+  if (nodeId !== 'overshoot') return null
+  return { text: 'spending over take-home', color: '#ef4444' }
 }
 
 // ── Drill-down panel ──

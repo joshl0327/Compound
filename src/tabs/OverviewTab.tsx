@@ -145,15 +145,7 @@ export default function OverviewTab() {
 
       {/* ── Sankey card ── */}
       <Card>
-        <SankeyChart
-          input={sankeyInput}
-          data={data}
-          dti={dti}
-          housingPct={housingPct}
-          savingsRate={savingsRate}
-          retireRate={retireRate}
-          employerMatch={employerMatch}
-        />
+        <SankeyChart input={sankeyInput} data={data} />
       </Card>
 
       {/* ── Bottom row ── */}

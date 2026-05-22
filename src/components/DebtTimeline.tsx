@@ -69,7 +69,7 @@ function buildMonthlyBalances(debts: SimDebt[], mode: Mode, extra: number, nMont
 }
 
 export default function DebtTimeline({ data, liquidSavingsBalance, retirementBalance, monthlyContrib, debtPlanTotal, surplus }: DebtTimelineProps) {
-  const [mode, setMode] = useState<Mode>('plan')
+  const [mode, setMode] = useState<Mode>('minimum')
   const [hoverMonth, setHoverMonth] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -253,9 +253,12 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 <line x1={x} y1={padT + cH} x2={x} y2={labelY + 5}
                   stroke={evt.color} strokeWidth={1} strokeOpacity={0.45} strokeDasharray="3 3" />
                 <circle cx={x} cy={padT + cH} r={3} fill={evt.color} fillOpacity={0.9} />
-                <text x={x} y={labelY} textAnchor="middle" fontSize={6.5} fill={evt.color} fontWeight={600}>
-                  ✓ {evt.name}
-                </text>
+                {(() => {
+                  // Allow label to drift into left padding area; clamp so it never clips the SVG edge
+                  const estHalfW = Math.min(52, (evt.name.length + 3) * 2.2)
+                  const cx = Math.max(estHalfW + 3, Math.min(padL + cW - estHalfW - 3, x))
+                  return <text x={cx} y={labelY} textAnchor="middle" fontSize={6.5} fill={evt.color} fontWeight={600}>✓ {evt.name}</text>
+                })()}
               </g>
             )
           })
@@ -306,27 +309,44 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         ))}
       </div>
 
-      {/* Stats */}
-      <div className="pt-2" style={{ borderTop: '1px solid rgba(13,148,136,0.1)' }}>
-        <div className="flex gap-4">
-          {activeTotalInterest > 0 && <span style={{ fontSize: 10, color: '#7a5050' }}>{fmt(Math.round(activeTotalInterest))} in interest</span>}
-          {debtPlanTotal > 0 && activeMaxMonths > 0 && <span style={{ fontSize: 10, color: '#10b981' }}>+{fmt(debtPlanTotal)}/mo freed at debt-free</span>}
-        </div>
-        {mode !== 'minimum' && (
-          <div className="flex flex-wrap gap-4 mt-2 pt-2" style={{ borderTop: '1px solid rgba(13,148,136,0.08)' }}>
-            <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#2e7a7a' }}>vs Min:</span>
-            <span style={{ fontSize: 10, color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
-              {Math.abs(monthsDiff)} month{Math.abs(monthsDiff) !== 1 ? 's' : ''} {monthsDiff >= 0 ? 'sooner' : 'longer'}
-            </span>
-            <span style={{ fontSize: 10, color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
-              {fmt(Math.round(Math.abs(interestDiff)))} {interestDiff >= 0 ? 'less' : 'more'} interest
-            </span>
-            {(mode === 'snowball' || mode === 'avalanche') && surplus > 0 && (
-              <span style={{ fontSize: 10, color: '#2e7a7a' }}>({fmt(surplus)}/mo surplus)</span>
+      {/* KPI row */}
+      {activeMaxMonths > 0 && (() => {
+        const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
+        const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
+        const cols = mode === 'minimum' ? 3 : 5
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, paddingTop: 8, marginTop: 4, borderTop: '1px solid rgba(13,148,136,0.1)' }}>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
+            </div>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
+            </div>
+            <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 8, marginRight: 8 }}>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
+            </div>
+            {mode !== 'minimum' && monthsDiff !== 0 && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
+                <div className="font-mono text-[13px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
+                  {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
+                </div>
+              </div>
+            )}
+            {mode !== 'minimum' && interestDiff !== 0 && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
+                <div className="font-mono text-[13px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
+                  {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
+                </div>
+              </div>
             )}
           </div>
-        )}
-      </div>
+        )
+      })()}
     </div>
   )
 }

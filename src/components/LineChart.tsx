@@ -123,7 +123,7 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
       {/* Main line + fill */}
       <polygon points={fillPoints} fill="url(#retirementGrad)" />
       <polyline points={points} fill="none" stroke="#34d399" strokeWidth={2.5} strokeLinejoin="round" />
-      <circle cx={pad.l} cy={pad.t + chartH} r={3} fill="#34d399" />
+      <circle cx={pad.l} cy={pad.t + chartH - (data[0].balance / maxVal) * chartH} r={3} fill="#34d399" />
       <circle
         cx={pad.l + chartW}
         cy={pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH}

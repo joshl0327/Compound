@@ -186,7 +186,12 @@ export default function OverviewTab() {
       <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Debt-free timeline */}
         <div>
-          <SectionTitle accent="#0d9488">Debt-Free Timeline</SectionTitle>
+          <SectionTitle accent="#0d9488" hint={<>
+            <div style={{ marginBottom: 6 }}>· <strong>Min:</strong> Minimum required payments only — slowest payoff, most interest</div>
+            <div style={{ marginBottom: 6 }}>· <strong>Plan:</strong> Your configured payment amounts</div>
+            <div style={{ marginBottom: 6 }}>· <strong>Snowball:</strong> Plan payments + surplus applied to smallest balance first, freed payments roll forward</div>
+            <div>· <strong>Avalanche:</strong> Plan payments + surplus applied to highest interest rate first — mathematically optimal</div>
+          </>}>Debt-Free Timeline</SectionTitle>
           <Card>
             <DebtTimeline
               data={data}

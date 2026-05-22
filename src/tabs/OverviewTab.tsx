@@ -8,6 +8,9 @@ import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
 import { useData } from '../context/DataContext'
 import { buildAggregateProjection } from '../lib/calculations'
+import { useMilestones } from '../hooks/useMilestones'
+import MilestoneBadges from '../components/MilestoneBadges'
+import MilestoneToast from '../components/MilestoneToast'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
 
@@ -122,6 +125,7 @@ export default function OverviewTab() {
     }, 0) + hsaBal + investBal
   const monthlyContrib = sourceCalcs.reduce((s, c) => s + c.trad401k + c.roth401k + c.match + c.rothIra, 0)
     + liquidSavingsMonthly
+  const { earnedDollar, earnedFidelity, newlyUnlocked } = useMilestones(retirementBalance, annualGross, retChartData)
 
   return (
     <div>
@@ -272,10 +276,18 @@ export default function OverviewTab() {
                 )}
               </>
             )}
-            <LineChart data={retChartData} height={180} benchmarks={grossMonthly > 0 ? benchmarks : []} />
+            <LineChart
+              data={retChartData}
+              height={180}
+              benchmarks={grossMonthly > 0 ? benchmarks : []}
+              badgeOverlay={retChartData.length > 0 ? (
+                <MilestoneBadges earnedDollar={earnedDollar} earnedFidelity={earnedFidelity} />
+              ) : undefined}
+            />
           </Card>
         </div>
       </div>
+      <MilestoneToast newlyUnlocked={newlyUnlocked} />
     </div>
   )
 }

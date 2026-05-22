@@ -16,7 +16,8 @@ interface DebtTimelineProps {
 type Mode = 'minimum' | 'plan' | 'snowball' | 'avalanche'
 interface SimDebt { name: string; balance: number; annualRate: number; planPayment: number }
 
-const BAND_PALETTE = ['#4a0404', '#7f1d1d', '#b91c1c', '#dc2626', '#c2410c', '#ea580c', '#f97316', '#f59e0b']
+// 10 hues evenly distributed ~36° apart around the wheel, all at 400-level brightness for dark bg
+const BAND_PALETTE = ['#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#7dd3fc']
 function bandColor(idx: number, total: number): string {
   if (total <= 1) return BAND_PALETTE[3]
   const pos = Math.round((idx / Math.max(total - 1, 1)) * (BAND_PALETTE.length - 1))
@@ -113,7 +114,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   if (planMaxMonths === 0) return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#3a5a7a' }}>Add payment amounts to see the payoff chart.</div>
 
   // ── Chart geometry ──
-  const w = 380, padL = 40, padR = 12, padT = 10, padB = 20, cW = w - padL - padR, cH = 118
+  const w = 380, padL = 40, padR = 12, padT = 10, padB = 20, cW = w - padL - padR, cH = 150
   const h = cH + padT + padB
   const nMonths = activeMaxMonths, maxY = totalDebtBalance || 1
   const now = new Date()
@@ -195,53 +196,53 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
 
   return (
     <div>
-      <div className="flex gap-1 mb-2 justify-end">
-        {(['minimum', 'plan', 'snowball', 'avalanche'] as Mode[]).map(m => (
-          <button key={m} style={btnStyle(m)}
-            onClick={() => { if (!((m === 'snowball' || m === 'avalanche') && surplus <= 0)) setMode(m) }}>
-            {m === 'minimum' ? 'Min' : m.charAt(0).toUpperCase() + m.slice(1)}
-          </button>
-        ))}
+      {/* KPI row (left) + scenario toggle (right) — single header row */}
+      <div className="flex items-start justify-between mb-2">
+        {activeMaxMonths > 0 && (() => {
+          const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
+          const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
+          return (
+            <div className="flex gap-4">
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
+                <div className="font-mono text-[14px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
+                <div className="font-mono text-[14px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
+              </div>
+              <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 16, marginRight: 0 }}>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
+                <div className="font-mono text-[14px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
+              </div>
+              {mode !== 'minimum' && monthsDiff !== 0 && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
+                  <div className="font-mono text-[14px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
+                    {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
+                  </div>
+                </div>
+              )}
+              {mode !== 'minimum' && interestDiff !== 0 && (
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
+                  <div className="font-mono text-[14px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
+                    {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+        <div className="flex gap-1 flex-shrink-0">
+          {(['minimum', 'plan', 'snowball', 'avalanche'] as Mode[]).map(m => (
+            <button key={m} style={btnStyle(m)}
+              onClick={() => { if (!((m === 'snowball' || m === 'avalanche') && surplus <= 0)) setMode(m) }}>
+              {m === 'minimum' ? 'Min' : m.charAt(0).toUpperCase() + m.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {/* KPI row — above chart */}
-      {activeMaxMonths > 0 && (() => {
-        const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
-        const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
-        const cols = mode === 'minimum' ? 3 : 5
-        return (
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, marginBottom: 8 }}>
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
-            </div>
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
-            </div>
-            <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 8, marginRight: 8 }}>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
-            </div>
-            {mode !== 'minimum' && monthsDiff !== 0 && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
-                <div className="font-mono text-[13px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
-                  {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
-                </div>
-              </div>
-            )}
-            {mode !== 'minimum' && interestDiff !== 0 && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
-                <div className="font-mono text-[13px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
-                  {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })()}
 
       <svg ref={svgRef} width="100%" viewBox={`0 0 ${w} ${h}`}
         onMouseMove={handleMouseMove} onMouseLeave={() => setHoverMonth(null)}
@@ -271,10 +272,6 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {/* X-axis baseline */}
         <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="#1a2840" strokeWidth={1.5} />
 
-        {/* Payoff dots on x-axis */}
-        {payoffEvents.map((evt, i) => (
-          <circle key={`dot${i}`} cx={toX(evt.month)} cy={padT + cH} r={3} fill={evt.color} fillOpacity={0.9} />
-        ))}
 
         {/* Payoff summary legend — top-right empty space */}
         {payoffEvents.length > 0 && (() => {
@@ -334,15 +331,6 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         })()}
       </svg>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 mb-2">
-        {stackOrder.map((series, i) => (
-          <div key={i} className="flex items-center gap-1">
-            <div style={{ width: 8, height: 8, borderRadius: 1, background: bandColor(i, totalLayers), flexShrink: 0 }} />
-            <span style={{ fontSize: 9, color: '#5a7a9a' }}>{series.name}</span>
-          </div>
-        ))}
-      </div>
 
     </div>
   )

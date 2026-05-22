@@ -124,15 +124,15 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           </text>
         ))}
 
-        {/* Per-debt dots on axis */}
+        {/* Per-debt stems + dots */}
         {debtItems.map((d, i) => {
           const x = ageToX(d.payoffAge)
-          const tickBottom = axisY + 6 + (i % 2) * 8
-          const nameY = axisY + 13 + (i % 2) * 8
+          const nameY = axisY + 16 + (i % 2) * 12
           const nameShort = d.name.length > 12 ? d.name.slice(0, 11) + '…' : d.name
           return (
             <g key={`di-${i}`}>
-              <line x1={x} y1={axisY + 3} x2={x} y2={tickBottom} stroke={d.color} strokeWidth={1} strokeOpacity={0.6} />
+              <line x1={x} y1={axisY + 3} x2={x} y2={nameY - 4}
+                stroke={d.color} strokeWidth={1} strokeOpacity={0.45} strokeDasharray="2 2" />
               <circle cx={x} cy={axisY} r={2.5} fill={d.color} fillOpacity={0.75} />
               <text x={x} y={nameY} textAnchor="middle" fontSize={6.5} fill={d.color} fillOpacity={0.85}>{nameShort}</text>
             </g>
@@ -145,9 +145,13 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           const tickLen = 8
           const labelY = m.above ? axisY - tickLen - 22 : axisY + tickLen + 10
           const subY = m.above ? labelY - 11 : labelY + 11
+          const stemY1 = m.above ? axisY - tickLen : axisY + tickLen
+          const stemY2 = m.above ? labelY + 4 : labelY - 12
           return (
             <g key={i}>
-              <line x1={x} y1={axisY - tickLen} x2={x} y2={axisY + tickLen} stroke={m.color} strokeWidth={1.5} />
+              {/* Dotted stem from axis to label */}
+              <line x1={x} y1={stemY1} x2={x} y2={stemY2}
+                stroke={m.color} strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
               <circle cx={x} cy={axisY} r={3} fill={m.color} />
               <text x={x} y={labelY} textAnchor="middle" fontSize={9} fill={m.color} fontWeight={600}>
                 {m.label}

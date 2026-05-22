@@ -1,9 +1,4 @@
-const DOLLAR_THRESHOLDS = [10_000, 100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000]
-const DOLLAR_LABELS: Record<number, string> = {
-  10_000: '$10K', 100_000: '$100K', 500_000: '$500K',
-  1_000_000: '$1M', 2_000_000: '$2M', 5_000_000: '$5M', 10_000_000: '$10M',
-}
-const FIDELITY_LABELS = ['1× by 30', '3× by 40', '6× by 50', '8× by 60']
+import { DOLLAR_THRESHOLDS, DOLLAR_LABELS, FIDELITY_LABELS } from '../lib/milestoneConstants'
 
 interface Props {
   earnedDollar: Set<number>

@@ -85,13 +85,18 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
 
   function monthLabel(months: number): string {
     const d = new Date(now.getFullYear(), now.getMonth() + months, 1)
-    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    const mon = d.toLocaleDateString('en-US', { month: 'short' })
+    const yr = d.getFullYear().toString().slice(-2)
+    return `${mon} '${yr}`
   }
 
-  // X-axis tick interval based on range
+  // X-axis tick interval based on range; skip ticks that crowd the end label
   const tickInterval = timelineMonths <= 18 ? 3 : timelineMonths <= 36 ? 6 : timelineMonths <= 72 ? 12 : 24
   const ticks: number[] = []
-  for (let m = tickInterval; m < timelineMonths; m += tickInterval) ticks.push(m)
+  for (let m = tickInterval; m < timelineMonths; m += tickInterval) {
+    if ((maxPayoffMonths - m) / timelineMonths < 0.09) continue
+    ticks.push(m)
+  }
 
   const showNwp = nwpMonths !== null && nwpMonths > 3 && nwpMonths < timelineMonths
 
@@ -148,14 +153,15 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           </g>
         )}
 
-        {/* Per-debt stems + dots — alternate above/below */}
+        {/* Per-debt stems + dots — alternate above/below; skip last (= debt-free marker) */}
         {debtItems.map((d, i) => {
+          if (d.months === maxPayoffMonths) return null
           const x = monthsToX(d.months)
           const above = i % 2 === 0
           const nameY = above ? axisY - 16 : axisY + 28
           const stemY1 = above ? axisY - 3 : axisY + 3
           const stemY2 = above ? nameY + 4 : nameY - 4
-          const nameShort = d.name.length > 13 ? d.name.slice(0, 12) + '…' : d.name
+          const nameShort = d.name.length > 15 ? d.name.slice(0, 14) + '…' : d.name
           return (
             <g key={`di-${i}`}>
               <line x1={x} y1={stemY1} x2={x} y2={stemY2}

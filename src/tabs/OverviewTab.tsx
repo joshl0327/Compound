@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Badge } from '../components'
+import { useMemo, useState } from 'react'
+import { useUI } from '../context/UIContext'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import LineChart from '../components/LineChart'
@@ -12,8 +12,36 @@ import { buildAggregateProjection } from '../lib/calculations'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
 
+function KpiCell({ label, value, labelColor = '#2e7a7a', valueColor = '#f0faf8', sub, tooltip, last = false }: {
+  label: string; value: string; labelColor?: string; valueColor?: string; sub?: string; tooltip?: string; last?: boolean
+}) {
+  const [tip, setTip] = useState(false)
+  return (
+    <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid rgba(13,148,136,0.2)', position: 'relative' }}>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+        {label}
+        {tooltip && (
+          <button
+            onMouseEnter={() => setTip(true)}
+            onMouseLeave={() => setTip(false)}
+            style={{ background: 'none', border: `1px solid ${labelColor}55`, borderRadius: '50%', width: 13, height: 13, fontSize: 8, color: tip ? labelColor : `${labelColor}88`, cursor: 'default', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >?</button>
+        )}
+      </div>
+      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: `${labelColor}bb` }}>{sub}</div>}
+      {tip && tooltip && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#032e2e', border: '1px solid rgba(13,148,136,0.25)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: '#5aabab', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
+          {tooltip}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function OverviewTab() {
   const { data } = useData()
+  const { bgGradient, setBgGradient } = useUI()
   const {
     grossMonthly, netMonthly,
     housingPct, consumerDti, dti,
@@ -95,59 +123,106 @@ export default function OverviewTab() {
   return (
     <div>
       {/* ── KPI strip ── */}
-      <div className="grid gap-2.5 mb-[18px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-        <Badge label="Gross Income" value={grossMonthly > 0 ? fmt(grossMonthly) : '—'} color="#0e7490" tint={false} sub={grossMonthly > 0 ? '/month' : 'Add income'} />
-        <Badge label="Take-Home" value={netMonthly > 0 ? fmt(netMonthly) : '—'} color="#38bdf8" tint={false} sub={netMonthly > 0 ? '/month' : undefined} />
-        <Badge
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid rgba(13,148,136,0.15)' }}>
+        <KpiCell
+          label="Gross Income"
+          value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
+          sub={grossMonthly > 0 ? '/month' : 'Add income'}
+        />
+        <KpiCell
+          label="Take-Home"
+          value={netMonthly > 0 ? fmt(netMonthly) : '—'}
+          labelColor="#2a7a8a"
+          sub={netMonthly > 0 ? '/month' : undefined}
+        />
+        <KpiCell
           label="Consumer Debt"
           value={consumerDebts.length > 0 ? fmtShort(consumerDebtBalance) : '—'}
-          color={consumerDebts.length > 0 ? '#4a7fa5' : '#3a5a7a'}
-          tint={false}
           sub={consumerDebts.length > 0 ? (data.debts.some(d => d.isMortgage) ? 'excl. mortgage' : undefined) : 'Add debts in Expenses'}
           tooltip="Your non-mortgage debt total. Paying this down frees up monthly cash flow and improves your DTI."
         />
-        <Badge label="Housing %" value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'} color={housingColor} tint={housingColor !== '#3a5a7a'} sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'} tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt." />
-        <Badge label="Total DTI" value={parseFloat(dti) > 0 ? dti + '%' : '—'} color={dtiColor} tint={dtiColor !== '#3a5a7a'} sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'} tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk." />
-        <Badge label="Retirement Rate" value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'} color={retireColor} tint={retireColor !== '#3a5a7a'} sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'} tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first." />
-        <Badge label="Total Savings Rate" value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'} color={savingsColor} tint={savingsColor !== '#3a5a7a'} sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'} tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively." />
+        <KpiCell
+          label="Housing %"
+          value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'}
+          labelColor={housingColor}
+          sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'}
+          tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt."
+        />
+        <KpiCell
+          label="Total DTI"
+          value={parseFloat(dti) > 0 ? dti + '%' : '—'}
+          labelColor={dtiColor}
+          sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'}
+          tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk."
+        />
+        <KpiCell
+          label="Retirement Rate"
+          value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
+          labelColor={retireColor}
+          sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'}
+          tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first."
+        />
+        <KpiCell
+          label="Total Savings Rate"
+          value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
+          labelColor={savingsColor}
+          sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'}
+          tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively."
+          last
+        />
       </div>
 
-      {/* ── Sankey card ── */}
+      {/* ── Temp: background toggle ── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button
+          onClick={() => setBgGradient(!bgGradient)}
+          style={{ fontSize: 10, padding: '3px 10px', borderRadius: 3, border: '1px solid rgba(13,148,136,0.3)', color: '#5a8a80', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Bg: {bgGradient ? 'Gradient ↺' : 'Flat ↺'}
+        </button>
+      </div>
+
+      {/* ── Sankey ── */}
+      <SectionTitle accent="#0d9488">Monthly Budget Flow</SectionTitle>
       <Card>
         <SankeyChart input={sankeyInput} data={data} />
       </Card>
 
       {/* ── Bottom row ── */}
-      <div className="grid gap-3.5 mt-3.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Debt-free timeline */}
-        <Card>
-          <SectionTitle bar={false}>Debt-Free Timeline</SectionTitle>
-          <DebtTimeline
-            data={data}
-            liquidSavingsBalance={liquidBalance}
-            retirementBalance={retirementBalance}
-            monthlyContrib={monthlyContrib}
-            debtPlanTotal={debtPlanTotal}
-          />
-        </Card>
+        <div>
+          <SectionTitle accent="#0d9488">Debt-Free Timeline</SectionTitle>
+          <Card>
+            <DebtTimeline
+              data={data}
+              liquidSavingsBalance={liquidBalance}
+              retirementBalance={retirementBalance}
+              monthlyContrib={monthlyContrib}
+              debtPlanTotal={debtPlanTotal}
+            />
+          </Card>
+        </div>
 
         {/* Retirement projection */}
-        <Card>
-          <SectionTitle bar={false}>Retirement Projection</SectionTitle>
-          {projBal > 0 && (
-            <div className="flex gap-4 mb-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>Projected at {retTargetAge}</div>
-                <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
+        <div>
+          <SectionTitle accent="#0d9488">Retirement Projection</SectionTitle>
+          <Card>
+            {projBal > 0 && (
+              <div className="flex gap-4 mb-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
+                  <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
+                  <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
+                </div>
               </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>Monthly at 4% rule</div>
-                <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
-              </div>
-            </div>
-          )}
-          <LineChart data={retChartData} height={180} benchmarks={grossMonthly > 0 ? benchmarks : []} />
-        </Card>
+            )}
+            <LineChart data={retChartData} height={180} benchmarks={grossMonthly > 0 ? benchmarks : []} />
+          </Card>
+        </div>
       </div>
     </div>
   )

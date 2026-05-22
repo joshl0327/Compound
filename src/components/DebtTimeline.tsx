@@ -74,8 +74,8 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const timelineMonths = Math.ceil(maxPayoffMonths * 1.1) // 10% right padding
 
   const w = 380
-  const axisY = 62
-  const h = 152
+  const axisY = 78
+  const h = 165
   const padL = 16
   const padR = 16
 
@@ -120,23 +120,22 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {/* Axis line */}
         <line x1={padL} y1={axisY} x2={w - padR} y2={axisY} stroke="#1a2840" strokeWidth={1.5} />
 
-        {/* X-axis ticks + date labels */}
+        {/* X-axis ticks + date labels — directly adjacent to axis */}
         {ticks.map(m => (
           <g key={m}>
-            <line x1={monthsToX(m)} y1={axisY - 3} x2={monthsToX(m)} y2={axisY + 3} stroke="#1a2840" strokeWidth={1} />
-            <text x={monthsToX(m)} y={h - 4} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">{monthLabel(m)}</text>
+            <line x1={monthsToX(m)} y1={axisY - 4} x2={monthsToX(m)} y2={axisY + 4} stroke="#2a3d55" strokeWidth={1} />
+            <text x={monthsToX(m)} y={axisY + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">{monthLabel(m)}</text>
           </g>
         ))}
-        {/* Always label the end */}
-        <text x={monthsToX(maxPayoffMonths)} y={h - 4} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
+        <text x={monthsToX(maxPayoffMonths)} y={axisY + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
           {monthLabel(maxPayoffMonths)}
         </text>
 
         {/* Now marker */}
         <circle cx={monthsToX(0)} cy={axisY} r={3} fill="#8b9cb5" />
-        <line x1={monthsToX(0)} y1={axisY - 3} x2={monthsToX(0)} y2={axisY - 18}
+        <line x1={monthsToX(0)} y1={axisY - 4} x2={monthsToX(0)} y2={axisY - 44}
           stroke="#8b9cb5" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-        <text x={monthsToX(0)} y={axisY - 21} textAnchor="middle" fontSize={9} fill="#8b9cb5" fontWeight={600}>Now</text>
+        <text x={monthsToX(0)} y={axisY - 47} textAnchor="middle" fontSize={9} fill="#8b9cb5" fontWeight={600}>Now</text>
 
         {/* Net-worth-positive marker */}
         {showNwp && (
@@ -153,7 +152,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {debtItems.map((d, i) => {
           const x = monthsToX(d.months)
           const above = i % 2 === 0
-          const nameY = above ? axisY - 16 : axisY + 18
+          const nameY = above ? axisY - 16 : axisY + 28
           const stemY1 = above ? axisY - 3 : axisY + 3
           const stemY2 = above ? nameY + 4 : nameY - 4
           const nameShort = d.name.length > 13 ? d.name.slice(0, 12) + '…' : d.name
@@ -171,12 +170,12 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {maxPayoffMonths > 0 && (
           <g>
             <circle cx={monthsToX(maxPayoffMonths)} cy={axisY} r={4} fill="#10b981" />
-            <line x1={monthsToX(maxPayoffMonths)} y1={axisY - 4} x2={monthsToX(maxPayoffMonths)} y2={axisY - 22}
+            <line x1={monthsToX(maxPayoffMonths)} y1={axisY - 4} x2={monthsToX(maxPayoffMonths)} y2={axisY - 44}
               stroke="#10b981" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-            <text x={monthsToX(maxPayoffMonths)} y={axisY - 25} textAnchor="middle" fontSize={9} fill="#10b981" fontWeight={700}>
+            <text x={monthsToX(maxPayoffMonths)} y={axisY - 47} textAnchor="middle" fontSize={9} fill="#10b981" fontWeight={700}>
               Debt-free
             </text>
-            <text x={monthsToX(maxPayoffMonths)} y={axisY - 35} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
+            <text x={monthsToX(maxPayoffMonths)} y={axisY - 36} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
               {fmt(totalDebtBalance)} paid
             </text>
           </g>

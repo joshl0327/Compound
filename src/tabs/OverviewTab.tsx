@@ -198,16 +198,50 @@ export default function OverviewTab() {
           <SectionTitle accent="#0d9488">Retirement Projection</SectionTitle>
           <Card>
             {projBal > 0 && (
-              <div className="flex gap-4 mb-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
-                  <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
+              <>
+                <div className="flex gap-4 mb-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
+                    <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
+                    <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
+                  </div>
+                  {grossMonthly > 0 && (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Income replaced</div>
+                      <div className="font-mono text-[15px] font-bold" style={{ color: (projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b' }}>
+                        {Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
-                  <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
-                </div>
-              </div>
+                {(trad401kMonthly + roth401kMonthly + hsaMonthly + rothIraMonthly + employerMatch) > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-3 pb-2" style={{ borderBottom: '1px solid rgba(13,148,136,0.1)' }}>
+                    {(trad401kMonthly + roth401kMonthly) > 0 && (
+                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                        401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(trad401kMonthly + roth401kMonthly)}/mo</span>
+                      </span>
+                    )}
+                    {employerMatch > 0 && (
+                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                        Match <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(employerMatch)}/mo</span>
+                      </span>
+                    )}
+                    {hsaMonthly > 0 && (
+                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                        HSA <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(hsaMonthly)}/mo</span>
+                      </span>
+                    )}
+                    {rothIraMonthly > 0 && (
+                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                        Roth IRA <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(rothIraMonthly)}/mo</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </>
             )}
             <LineChart data={retChartData} height={180} benchmarks={grossMonthly > 0 ? benchmarks : []} />
           </Card>

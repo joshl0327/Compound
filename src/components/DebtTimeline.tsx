@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { computeNetWorthPositiveMonths } from '../lib/sankeyHelpers'
 import { calcPayoff, debtColor } from '../lib/calculations'
 import type { AppData } from '../types'
-import { fmt } from '../lib/format'
+import { fmt, fmtShort } from '../lib/format'
 
 interface DebtTimelineProps {
   data: AppData
@@ -15,55 +15,56 @@ interface DebtTimelineProps {
 
 type Mode = 'plan' | 'snowball' | 'avalanche'
 
-interface DebtItem {
+interface DebtSeries {
   name: string
-  months: number
-  totalInterest: number
   color: string
+  monthlyBalances: number[]  // index = month offset from now
 }
 
-function simulateDebtPayoff(
+// Build per-debt monthly balance arrays for all three modes
+function buildMonthlyBalances(
   debts: { name: string; balance: number; annualRate: number; planPayment: number; color: string }[],
-  extraMonthly: number,
-  strategy: 'snowball' | 'avalanche',
-): DebtItem[] {
-  const sorted = strategy === 'snowball'
+  mode: Mode,
+  extra: number,
+  nMonths: number,
+): DebtSeries[] {
+  if (mode === 'plan' || extra <= 0) {
+    return debts.map(d => {
+      const rate = d.annualRate / 100 / 12
+      let b = d.balance
+      const arr = [b]
+      for (let m = 1; m <= nMonths; m++) {
+        b = b > 0 ? Math.max(0, b + b * rate - d.planPayment) : 0
+        arr.push(b)
+      }
+      return { name: d.name, color: d.color, monthlyBalances: arr }
+    })
+  }
+
+  const sorted = mode === 'snowball'
     ? [...debts].sort((a, b) => a.balance - b.balance)
     : [...debts].sort((a, b) => b.annualRate - a.annualRate)
 
   const n = sorted.length
   const balances = sorted.map(d => d.balance)
+  const history = sorted.map(d => [d.balance] as number[])
   const monthlyRates = sorted.map(d => d.annualRate / 100 / 12)
-  const interests = new Array<number>(n).fill(0)
-  const payoffMonths = new Array<number>(n).fill(0)
-  let rollingExtra = extraMonthly
-  let month = 0
+  let rollingExtra = extra
 
-  while (balances.some(b => b > 0.01) && month < 600) {
-    month++
+  for (let m = 1; m <= nMonths; m++) {
     const targetIdx = balances.findIndex(b => b > 0.01)
     for (let i = 0; i < n; i++) {
-      if (balances[i] <= 0.01) continue
+      if (balances[i] <= 0.01) { history[i].push(0); continue }
       const interest = balances[i] * monthlyRates[i]
-      interests[i] += interest
-      balances[i] += interest
-      const extra = i === targetIdx ? rollingExtra : 0
-      const payment = Math.min(sorted[i].planPayment + extra, balances[i])
-      balances[i] -= payment
-      if (balances[i] < 0.01) {
-        balances[i] = 0
-        if (!payoffMonths[i]) payoffMonths[i] = month
-        rollingExtra += sorted[i].planPayment
-      }
+      balances[i] = balances[i] + interest
+      const payment = Math.min(sorted[i].planPayment + (i === targetIdx ? rollingExtra : 0), balances[i])
+      balances[i] = Math.max(0, balances[i] - payment)
+      if (balances[i] < 0.01) { balances[i] = 0; rollingExtra += sorted[i].planPayment }
+      history[i].push(balances[i])
     }
   }
 
-  return sorted.map((d, i) => ({
-    name: d.name,
-    months: payoffMonths[i] || month,
-    totalInterest: interests[i],
-    color: d.color,
-  }))
+  return sorted.map((d, i) => ({ name: d.name, color: d.color, monthlyBalances: history[i] }))
 }
 
 export default function DebtTimeline({ data, liquidSavingsBalance, retirementBalance, monthlyContrib, debtPlanTotal, surplus }: DebtTimelineProps) {
@@ -72,8 +73,8 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const consumerDebts = data.debts.filter(d => !d.isMortgage)
   const totalDebtBalance = consumerDebts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)
 
-  // Plan items — analytical payoff per debt
-  const planItems = useMemo((): DebtItem[] => {
+  // Analytical payoff months per debt (for stats + scale)
+  const planItems = useMemo(() => {
     return consumerDebts
       .map((d, i) => {
         const pay = parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0
@@ -81,31 +82,48 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         if (!result || result.months <= 0) return null
         return { name: d.name, months: result.months, totalInterest: result.totalInterest, color: debtColor(i, consumerDebts.length) }
       })
-      .filter((x): x is DebtItem => x !== null)
+      .filter((x): x is NonNullable<typeof x> => x !== null)
       .sort((a, b) => a.months - b.months)
   }, [consumerDebts])
 
   const planMaxMonths = planItems.length > 0 ? planItems[planItems.length - 1].months : 0
   const planTotalInterest = planItems.reduce((s, d) => s + d.totalInterest, 0)
 
-  // What-if simulation items
-  const whatIfItems = useMemo((): DebtItem[] => {
-    if (mode === 'plan' || surplus <= 0) return []
-    const inputs = consumerDebts
-      .map((d, i) => ({
-        name: d.name,
-        balance: parseFloat(d.balance) || 0,
-        annualRate: parseFloat(d.rate) || 0,
-        planPayment: parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0,
-        color: debtColor(i, consumerDebts.length),
-      }))
-      .filter(d => d.balance > 0 && d.planPayment > 0)
-    return simulateDebtPayoff(inputs, surplus, mode as 'snowball' | 'avalanche')
-  }, [consumerDebts, surplus, mode])
+  // Chart data: month-by-month balances per debt
+  const simInputs = useMemo(() => consumerDebts.map((d, i) => ({
+    name: d.name,
+    balance: parseFloat(d.balance) || 0,
+    annualRate: parseFloat(d.rate) || 0,
+    planPayment: parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0,
+    color: debtColor(i, consumerDebts.length),
+  })).filter(d => d.balance > 0 && d.planPayment > 0), [consumerDebts])
 
-  const activeItems = mode !== 'plan' && whatIfItems.length > 0 ? whatIfItems : planItems
-  const activeMaxMonths = activeItems.length > 0 ? Math.max(...activeItems.map(d => d.months)) : 0
-  const activeTotalInterest = activeItems.reduce((s, d) => s + d.totalInterest, 0)
+  const seriesData = useMemo(() => {
+    if (planMaxMonths === 0) return []
+    return buildMonthlyBalances(simInputs, mode, surplus, planMaxMonths)
+  }, [simInputs, mode, surplus, planMaxMonths])
+
+  // What-if max payoff (for comparison stats)
+  const whatIfItems = useMemo(() => {
+    if (mode === 'plan' || surplus <= 0 || seriesData.length === 0) return planItems
+    return seriesData.map(s => ({
+      name: s.name,
+      months: s.monthlyBalances.findIndex(b => b < 0.01) || planMaxMonths,
+      totalInterest: s.monthlyBalances.reduce((sum, b, i, arr) => {
+        if (i === 0) return sum
+        const rate = (simInputs.find(d => d.name === s.name)?.annualRate ?? 0) / 100 / 12
+        return sum + arr[i - 1] * rate
+      }, 0),
+      color: s.color,
+    }))
+  }, [seriesData, mode, surplus, planItems, planMaxMonths, simInputs])
+
+  const activeMaxMonths = mode !== 'plan' && surplus > 0
+    ? Math.max(...whatIfItems.map(d => d.months === 0 ? planMaxMonths : d.months), 1)
+    : planMaxMonths
+  const activeTotalInterest = mode !== 'plan' && surplus > 0
+    ? whatIfItems.reduce((s, d) => s + d.totalInterest, 0)
+    : planTotalInterest
   const monthsSaved = planMaxMonths - activeMaxMonths
   const interestSaved = planTotalInterest - activeTotalInterest
 
@@ -118,25 +136,33 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   })
 
   if (consumerDebts.length === 0) {
-    return <div className="flex items-center justify-center h-32 text-center text-[12px]" style={{ color: '#10b981' }}>✓ No consumer debt</div>
+    return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#10b981' }}>✓ No consumer debt</div>
   }
   if (planMaxMonths === 0) {
-    return <div className="flex items-center justify-center h-32 text-center text-[12px]" style={{ color: '#3a5a7a' }}>Add payment amounts to see the payoff timeline.</div>
+    return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#3a5a7a' }}>Add payment amounts to see the payoff chart.</div>
   }
+
+  // ── Chart geometry ──
+  const w = 380
+  const padL = 40
+  const padR = 12
+  const padT = 8
+  const padB = 22
+  const cW = w - padL - padR
+  const cH = 120
+  const h = cH + padT + padB
 
   const now = new Date()
-  // Timeline scale is always fixed to plan so what-if markers visibly move left
-  const timelineMonths = Math.ceil(planMaxMonths * 1.1)
+  const step = planMaxMonths <= 36 ? 1 : planMaxMonths <= 72 ? 2 : 3
+  const sampleMonths: number[] = []
+  for (let m = 0; m <= planMaxMonths; m += step) sampleMonths.push(m)
+  if (sampleMonths[sampleMonths.length - 1] !== planMaxMonths) sampleMonths.push(planMaxMonths)
 
-  const w = 380
-  const axisY = 78
-  const h = 165
-  const padL = 16
-  const padR = 16
+  const maxY = totalDebtBalance || 1
 
-  function monthsToX(months: number) {
-    return padL + (months / timelineMonths) * (w - padL - padR)
-  }
+  function toX(month: number) { return padL + (month / planMaxMonths) * cW }
+  function toY(balance: number) { return padT + cH - (balance / maxY) * cH }
+
   function monthLabel(months: number): string {
     const d = new Date(now.getFullYear(), now.getMonth() + months, 1)
     const mon = d.toLocaleDateString('en-US', { month: 'short' })
@@ -144,22 +170,62 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
     return `${mon} '${yr}`
   }
 
-  const tickInterval = timelineMonths <= 18 ? 3 : timelineMonths <= 36 ? 6 : timelineMonths <= 72 ? 12 : 24
+  // Stack debts: largest starting balance at bottom for stability
+  const stackOrder = [...seriesData].sort((a, b) =>
+    (b.monthlyBalances[0] ?? 0) - (a.monthlyBalances[0] ?? 0)
+  )
+
+  // Build stacked polygon paths
+  // cumulative[sampleIdx] = total balance at that sample point (bottom to current layer)
+  const stackedPolygons = stackOrder.map((series, layerIdx) => {
+    const lowerCumulative = stackOrder
+      .slice(0, layerIdx)
+      .map(lower => sampleMonths.map(m => lower.monthlyBalances[m] ?? 0))
+
+    const topPoints = sampleMonths.map((m, si) => {
+      const cumBelow = lowerCumulative.reduce((sum, arr) => sum + (arr[si] ?? 0), 0)
+      const own = series.monthlyBalances[m] ?? 0
+      return { x: toX(m), y: toY(cumBelow + own) }
+    })
+    const bottomPoints = sampleMonths.map((m, si) => {
+      const cumBelow = lowerCumulative.reduce((sum, arr) => sum + (arr[si] ?? 0), 0)
+      return { x: toX(m), y: toY(cumBelow) }
+    })
+
+    const pts = [
+      ...topPoints,
+      ...bottomPoints.slice().reverse(),
+    ].map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+
+    // Label: midpoint of band at x=0 if band is tall enough
+    const midY0 = (topPoints[0].y + bottomPoints[0].y) / 2
+    const bandHeight = bottomPoints[0].y - topPoints[0].y
+    const nameShort = series.name.length > 14 ? series.name.slice(0, 13) + '…' : series.name
+
+    return { pts, color: series.color, midY0, bandHeight, nameShort }
+  })
+
+  // X-axis tick marks
+  const tickInterval = planMaxMonths <= 18 ? 3 : planMaxMonths <= 36 ? 6 : planMaxMonths <= 72 ? 12 : 24
   const ticks: number[] = []
-  for (let m = tickInterval; m < timelineMonths; m += tickInterval) {
-    if ((planMaxMonths - m) / timelineMonths < 0.09) continue
+  for (let m = tickInterval; m < planMaxMonths; m += tickInterval) {
+    if ((planMaxMonths - m) / planMaxMonths < 0.08) continue
     ticks.push(m)
   }
 
-  const showNwp = nwpMonths !== null && nwpMonths > 3 && nwpMonths < timelineMonths
+  // Y-axis ticks
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({ value: maxY * pct, y: toY(maxY * pct) }))
 
   const btnStyle = (m: Mode) => ({
-    fontSize: 9, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' as const,
-    padding: '2px 8px', borderRadius: 3, cursor: 'pointer',
+    fontSize: 9, fontWeight: 600 as const, letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+    padding: '2px 8px', borderRadius: 3, cursor: 'pointer' as const,
     background: mode === m ? 'rgba(13,148,136,0.18)' : 'none',
     border: `1px solid ${mode === m ? '#0d9488' : 'rgba(13,148,136,0.2)'}`,
     color: mode === m ? '#5aabab' : '#2e7a7a',
   })
+
+  // NWP marker x position
+  const showNwp = nwpMonths !== null && nwpMonths > 0 && nwpMonths <= planMaxMonths
 
   return (
     <div>
@@ -172,82 +238,48 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         </>}
       </div>
 
-      <svg width="100%" viewBox={`0 0 ${w} ${h}`}>
-        <line x1={padL} y1={axisY} x2={w - padR} y2={axisY} stroke="#1a2840" strokeWidth={1.5} />
+      <svg width="100%" viewBox={`0 0 ${w} ${h + 1}`}>
+        {/* Y-axis grid + labels */}
+        {yTicks.map(({ value, y }) => (
+          <g key={value}>
+            <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="#1a2840" strokeWidth={1} strokeDasharray="3 4" />
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={8} fill="#3a5a7a">{fmtShort(value)}</text>
+          </g>
+        ))}
+
+        {/* Stacked area polygons */}
+        {stackedPolygons.map((p, i) => (
+          <g key={i}>
+            <polygon points={p.pts} fill={p.color} fillOpacity={0.22} stroke={p.color} strokeWidth={0.5} strokeOpacity={0.5} />
+            {p.bandHeight > 14 && (
+              <text x={padL + 5} y={p.midY0 + 3} fontSize={6.5} fill={p.color} fillOpacity={0.8}>{p.nameShort}</text>
+            )}
+          </g>
+        ))}
+
+        {/* NWP vertical marker */}
+        {showNwp && (
+          <g>
+            <line x1={toX(nwpMonths!)} y1={padT} x2={toX(nwpMonths!)} y2={padT + cH}
+              stroke="#60a5fa" strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
+            <text x={toX(nwpMonths!) + 3} y={padT + 10} fontSize={7} fill="#60a5fa">Net-worth+</text>
+          </g>
+        )}
+
+        {/* X-axis baseline */}
+        <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="#1a2840" strokeWidth={1.5} />
 
         {/* X-axis ticks + labels */}
         {ticks.map(m => (
           <g key={m}>
-            <line x1={monthsToX(m)} y1={axisY - 4} x2={monthsToX(m)} y2={axisY + 4} stroke="#2a3d55" strokeWidth={1} />
-            <text x={monthsToX(m)} y={axisY + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">{monthLabel(m)}</text>
+            <line x1={toX(m)} y1={padT + cH} x2={toX(m)} y2={padT + cH + 4} stroke="#2a3d55" strokeWidth={1} />
+            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">{monthLabel(m)}</text>
           </g>
         ))}
-        <text x={monthsToX(planMaxMonths)} y={axisY + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
+        <text x={toX(planMaxMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
           {monthLabel(planMaxMonths)}
         </text>
-
-        {/* Now marker */}
-        <circle cx={monthsToX(0)} cy={axisY} r={3} fill="#8b9cb5" />
-        <line x1={monthsToX(0)} y1={axisY - 4} x2={monthsToX(0)} y2={axisY - 44}
-          stroke="#8b9cb5" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-        <text x={monthsToX(0)} y={axisY - 47} textAnchor="middle" fontSize={9} fill="#8b9cb5" fontWeight={600}>Now</text>
-
-        {/* Net-worth-positive */}
-        {showNwp && (
-          <g>
-            <circle cx={monthsToX(nwpMonths!)} cy={axisY} r={3} fill="#60a5fa" />
-            <line x1={monthsToX(nwpMonths!)} y1={axisY + 3} x2={monthsToX(nwpMonths!)} y2={axisY + 30}
-              stroke="#60a5fa" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-            <text x={monthsToX(nwpMonths!)} y={axisY + 39} textAnchor="middle" fontSize={8} fill="#60a5fa">Net-worth+</text>
-            <text x={monthsToX(nwpMonths!)} y={axisY + 48} textAnchor="middle" fontSize={7} fill="#3a5a7a">assets &gt; debt</text>
-          </g>
-        )}
-
-        {/* Ghost plan debt-free marker when in what-if mode */}
-        {mode !== 'plan' && monthsSaved > 0 && (
-          <g>
-            <circle cx={monthsToX(planMaxMonths)} cy={axisY} r={3} fill="#10b981" fillOpacity={0.25} />
-            <line x1={monthsToX(planMaxMonths)} y1={axisY - 4} x2={monthsToX(planMaxMonths)} y2={axisY - 30}
-              stroke="#10b981" strokeWidth={1} strokeOpacity={0.15} strokeDasharray="3 2" />
-            <text x={monthsToX(planMaxMonths)} y={axisY - 33} textAnchor="middle" fontSize={7.5} fill="#10b981" fillOpacity={0.3}>
-              Plan
-            </text>
-          </g>
-        )}
-
-        {/* Per-debt stems + dots */}
-        {activeItems.map((d, i) => {
-          if (d.months === activeMaxMonths) return null
-          const x = monthsToX(d.months)
-          const above = i % 2 === 0
-          const nameY = above ? axisY - 16 : axisY + 28
-          const stemY1 = above ? axisY - 3 : axisY + 3
-          const stemY2 = above ? nameY + 4 : nameY - 4
-          const nameShort = d.name.length > 15 ? d.name.slice(0, 14) + '…' : d.name
-          return (
-            <g key={`di-${i}`}>
-              <line x1={x} y1={stemY1} x2={x} y2={stemY2}
-                stroke={d.color} strokeWidth={1} strokeOpacity={0.45} strokeDasharray="2 2" />
-              <circle cx={x} cy={axisY} r={2.5} fill={d.color} fillOpacity={0.8} />
-              <text x={x} y={nameY} textAnchor="middle" fontSize={7} fill={d.color} fillOpacity={0.9}>{nameShort}</text>
-            </g>
-          )
-        })}
-
-        {/* Active debt-free marker */}
-        {activeMaxMonths > 0 && (
-          <g>
-            <circle cx={monthsToX(activeMaxMonths)} cy={axisY} r={4} fill="#10b981" />
-            <line x1={monthsToX(activeMaxMonths)} y1={axisY - 4} x2={monthsToX(activeMaxMonths)} y2={axisY - 44}
-              stroke="#10b981" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-            <text x={monthsToX(activeMaxMonths)} y={axisY - 47} textAnchor="middle" fontSize={9} fill="#10b981" fontWeight={700}>
-              Debt-free
-            </text>
-            <text x={monthsToX(activeMaxMonths)} y={axisY - 36} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">
-              {fmt(totalDebtBalance)} paid
-            </text>
-          </g>
-        )}
+        <text x={toX(0)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="#3a5a7a">Now</text>
       </svg>
 
       {/* Stats bar */}
@@ -260,24 +292,12 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
             <span style={{ fontSize: 10, color: '#10b981' }}>+{fmt(debtPlanTotal)}/mo freed at debt-free</span>
           )}
         </div>
-
-        {/* What-if comparison */}
         {mode !== 'plan' && monthsSaved > 0 && (
           <div className="flex gap-4 mt-2 pt-2" style={{ borderTop: '1px solid rgba(13,148,136,0.08)' }}>
-            <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#2e7a7a' }}>
-              vs Plan:
-            </span>
-            <span style={{ fontSize: 10, color: '#34d399' }}>
-              {monthsSaved} month{monthsSaved !== 1 ? 's' : ''} sooner
-            </span>
-            {interestSaved > 0 && (
-              <span style={{ fontSize: 10, color: '#34d399' }}>
-                {fmt(Math.round(interestSaved))} less interest
-              </span>
-            )}
-            <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-              ({fmt(surplus)}/mo surplus applied)
-            </span>
+            <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#2e7a7a' }}>vs Plan:</span>
+            <span style={{ fontSize: 10, color: '#34d399' }}>{monthsSaved} month{monthsSaved !== 1 ? 's' : ''} sooner</span>
+            {interestSaved > 0 && <span style={{ fontSize: 10, color: '#34d399' }}>{fmt(Math.round(interestSaved))} less interest</span>}
+            <span style={{ fontSize: 10, color: '#2e7a7a' }}>({fmt(surplus)}/mo surplus applied)</span>
           </div>
         )}
       </div>

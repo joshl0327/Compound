@@ -1,7 +1,7 @@
 import { useData } from '../context/DataContext'
 import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
-import { buildProjection, DataPoint } from '../lib/calculations'
+import { buildProjection } from '../lib/calculations'
 import { Input, Card, SectionTitle, Badge, LineChart } from '../components'
 import type { IncomeSource, SourceCalc } from '../types'
 

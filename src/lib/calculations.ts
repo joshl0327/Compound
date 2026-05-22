@@ -40,7 +40,7 @@ export function buildAggregateProjection(
   const currentBalance = sources
     .filter(s => s.type === 'w2')
     .reduce((sum, src) => {
-      const r = src.retirement || {}
+      const r = src.retirement || ({} as NonNullable<IncomeSource['retirement']>)
       return sum
         + (parseFloat(r.traditional401kBalance || '') || 0)
         + (parseFloat(r.roth401kBalance || '') || 0)

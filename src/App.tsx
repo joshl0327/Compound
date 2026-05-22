@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useUI } from './context/UIContext'
 import { useData } from './context/DataContext'
-import { useMetrics } from './hooks/useMetrics'
 import type { TabId } from './types'
 import SettingsTab from './tabs/SettingsTab'
 import OverviewTab from './tabs/OverviewTab'
@@ -13,7 +12,6 @@ import PlanTab from './tabs/PlanTab'
 import WelcomeModal from './onboarding/WelcomeModal'
 import QuickStart from './onboarding/QuickStart'
 import { ONBOARDING_KEY, makeDefault, migrateData } from './lib/storage'
-import { fmt } from './lib/format'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -28,7 +26,7 @@ const TABS: { id: TabId; label: string }[] = [
 export default function App() {
   const { activeTab, setActiveTab } = useUI()
   const { data, setData } = useData()
-  const { grossMonthly, netMonthly } = useMetrics()
+
 
   const [onboardScreen, setOnboardScreen] = useState<'welcome' | 'quickstart' | 'done'>(() => {
     try {

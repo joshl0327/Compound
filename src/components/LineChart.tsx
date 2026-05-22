@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { fmtShort } from '../lib/format'
 
 interface DataPoint { age: number; balance: number }
@@ -19,6 +20,8 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
   const pad = { t: 10, r: 20, b: 30, l: 55 }
   const chartW = w - pad.l - pad.r
   const chartH = h - pad.t - pad.b
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
   if (!data || data.length < 2) {
     return <div className="text-muted text-[13px] text-center py-10">Enter your age and target age to see projections</div>
@@ -44,8 +47,29 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
     b.age >= minAge && b.age <= maxAge && b.value <= maxVal
   )
 
+  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const svgX = (e.clientX - rect.left) * (w / rect.width)
+    const idx = Math.round((svgX - pad.l) / xStep)
+    setHoverIdx(Math.max(0, Math.min(data.length - 1, idx)))
+  }
+
+  const hd = hoverIdx !== null ? data[hoverIdx] : null
+  const hx = hoverIdx !== null ? pad.l + hoverIdx * xStep : 0
+  const hy = hd ? pad.t + chartH - (hd.balance / maxVal) * chartH : 0
+  const tipLeft = hx > w * 0.6
+
   return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`}>
+    <svg
+      ref={svgRef}
+      width="100%"
+      viewBox={`0 0 ${w} ${h}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverIdx(null)}
+      style={{ cursor: 'crosshair' }}
+    >
       <defs>
         <linearGradient id="retirementGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#34d399" stopOpacity="0.18" />
@@ -65,7 +89,7 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
         )
       })}
 
-      {/* Fidelity benchmark lines (behind the main line) */}
+      {/* Fidelity benchmark lines */}
       {visibleBenchmarks.map(b => {
         const y = pad.t + chartH - (b.value / maxVal) * chartH
         const x = pad.l + ((b.age - minAge) / ageRange) * chartW
@@ -78,7 +102,6 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
             <text x={pad.l + chartW - 2} y={y - 3} textAnchor="end" fontSize={8} fill="#3a5a7a">
               {b.label}
             </text>
-            {/* Age tick on x-axis */}
             <line x1={x} y1={pad.t + chartH} x2={x} y2={pad.t + chartH + 4} stroke="#3a5a7a" strokeWidth={1} opacity={0.5} />
           </g>
         )
@@ -113,6 +136,28 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
       >
         {fmtShort(data[data.length - 1].balance)}
       </text>
+
+      {/* Hover crosshair + tooltip */}
+      {hd && (
+        <g>
+          <line x1={hx} y1={pad.t} x2={hx} y2={pad.t + chartH}
+            stroke="#5aabab" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 3" />
+          <circle cx={hx} cy={hy} r={4} fill="#34d399" stroke="#022e2e" strokeWidth={1.5} />
+          <rect
+            x={tipLeft ? hx - 78 : hx + 6} y={hy - 30}
+            width={72} height={26} rx={3}
+            fill="#032e2e" stroke="rgba(13,148,136,0.3)" strokeWidth={1}
+          />
+          <text x={tipLeft ? hx - 72 : hx + 12} y={hy - 18}
+            fontSize={8} fill="#2e7a7a" fontFamily="DM Mono, monospace">
+            Age {hd.age}
+          </text>
+          <text x={tipLeft ? hx - 72 : hx + 12} y={hy - 8}
+            fontSize={9} fill="#34d399" fontWeight={700} fontFamily="DM Mono, monospace">
+            {fmtShort(hd.balance)}
+          </text>
+        </g>
+      )}
     </svg>
   )
 }

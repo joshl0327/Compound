@@ -199,7 +199,7 @@ export default function OverviewTab() {
 
         {/* Retirement projection */}
         <div>
-          <SectionTitle accent="#0d9488">Retirement Projection</SectionTitle>
+          <SectionTitle accent="#0d9488" hint="Projected at 7% nominal annual growth. Inflation-adjusted figures assume 2% inflation. Benchmark lines are Fidelity's age-based savings targets (multiples of annual salary: 3× by 40, 6× by 50, 8× by 60). HSA projection settings coming to Invest & Retire.">Retirement Projection</SectionTitle>
           <Card>
             {projBal > 0 && (
               <>
@@ -207,12 +207,12 @@ export default function OverviewTab() {
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
                     <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
-                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>≈ {fmtShort(projBalReal)} today</div>
+                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>{fmtShort(projBalReal)} today</div>
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
                     <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
-                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>≈ {fmt(projBalReal * 0.04 / 12)} today</div>
+                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>{fmt(projBalReal * 0.04 / 12)} today</div>
                   </div>
                   {grossMonthly > 0 && (
                     <div>
@@ -221,7 +221,7 @@ export default function OverviewTab() {
                         {Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%
                       </div>
                       <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>
-                        ≈ {Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}% today
+                        {Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}% today
                       </div>
                     </div>
                   )}

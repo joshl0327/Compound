@@ -26,7 +26,7 @@ const TABS: { id: TabId; label: string }[] = [
 ]
 
 export default function App() {
-  const { activeTab, setActiveTab } = useUI()
+  const { activeTab, setActiveTab, bgGradient } = useUI()
   const { data, setData } = useData()
   const { grossMonthly, netMonthly } = useMetrics()
 
@@ -72,7 +72,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-bg font-body">
+    <div
+      className="min-h-screen font-body"
+      style={{ background: bgGradient
+        ? 'linear-gradient(135deg, #065a5a 0%, #044a4a 40%, #034242 100%)'
+        : '#034242'
+      }}
+    >
       {onboardScreen === 'welcome' && (
         <WelcomeModal
           onQuickStart={() => setOnboardScreen('quickstart')}
@@ -89,48 +95,51 @@ export default function App() {
         />
       )}
 
-      {/* Top header bar */}
-      <div className="bg-[#050b12] border-b border-border px-4 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue flex items-center justify-center text-bg font-display font-extrabold text-sm">C</div>
-            <span className="font-display font-bold text-slate-100 text-base tracking-wide">Compound</span>
+      {/* Header + nav — single sticky bar */}
+      <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'rgba(3,52,52,0.72)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+        <div className="max-w-7xl mx-auto flex items-center" style={{ height: 48 }}>
+          {/* Wordmark */}
+          <span className="text-slate-100 flex-shrink-0" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 700, fontSize: 18, letterSpacing: '-0.02em' }}>Compound</span>
+
+          {/* Tabs — pushed to the right */}
+          <div className="flex items-center gap-1 ml-auto overflow-x-auto">
+            {TABS.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`px-3 whitespace-nowrap border-b-2 transition-colors text-xs font-medium`}
+                style={{
+                  height: 48,
+                  borderBottomColor: activeTab === t.id ? '#0d9488' : 'transparent',
+                  color: activeTab === t.id ? '#0d9488' : '#5aabab',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
-          {/* Right: Export/Import */}
-          <div className="flex items-center gap-3">
+
+          {/* Export / Import */}
+          <div className="flex items-center gap-2 ml-6 flex-shrink-0">
             <button
               onClick={handleExport}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-300 border border-border rounded hover:border-subtle hover:text-slate-100 transition-colors"
+              className="text-xs font-medium transition-colors"
+              style={{ color: '#2e7a7a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#5aabab')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#2e7a7a')}
             >
               Export
             </button>
             <button
               onClick={handleImport}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-300 border border-border rounded hover:border-subtle hover:text-slate-100 transition-colors"
+              className="text-xs font-medium transition-colors"
+              style={{ color: '#2e7a7a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#5aabab')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#2e7a7a')}
             >
               Import
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Tab nav */}
-      <div className="sticky top-0 z-50 bg-[#050b12] border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`px-3 py-3.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === t.id
-                  ? 'border-blue text-blue'
-                  : 'border-transparent text-dim hover:text-slate-300'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
         </div>
       </div>
 

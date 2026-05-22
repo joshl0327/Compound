@@ -120,7 +120,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
   const handleMouseLeave = useCallback(() => setTooltip(null), [])
 
   if (!graph) return (
-    <div className="flex items-center justify-center h-64 text-sm" style={{ color: '#3a5a7a' }}>
+    <div className="flex items-center justify-center h-64 text-sm" style={{ color: '#2e7a7a' }}>
       Add your income to see the flow.
     </div>
   )
@@ -129,8 +129,6 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
 
   return (
     <div>
-      <h2 className="m-0 mb-4 text-[15px] font-bold text-slate-100 font-display">Monthly Budget Flow</h2>
-
       {/* SVG + label overlay — extra height accommodates nodes dipped below dims.h */}
       <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h + EXTRA_BOTTOM }}>
         <svg
@@ -256,7 +254,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               return (
                 <g key={`lbl-${sn.id}`}>
                   <text x={midX} y={nodeBottom + 16} textAnchor="middle"
-                        fontSize={9} fontWeight={700} fill="#4a7fa5"
+                        fontSize={9} fontWeight={700} fill="#2e7a7a"
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     GROSS INCOME
                   </text>
@@ -334,12 +332,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               position: 'fixed',
               left: tooltip.x + 12,
               top: tooltip.y - 8,
-              background: 'rgba(7,14,22,0.95)',
-              border: '1px solid #1a2840',
+              background: 'rgba(3,42,42,0.96)',
+              border: '1px solid #0a5252',
               borderRadius: 6,
               padding: '6px 10px',
               fontSize: 11,
-              color: '#c9d8e8',
+              color: '#e8f5f2',
               pointerEvents: 'none',
               zIndex: 50,
               maxWidth: 220,
@@ -450,33 +448,33 @@ function DrillDownPanel({ nodeId, data, input, onClose }: {
   }
 
   return (
-    <div className="mt-3 rounded-xl p-4" style={{ background: '#060e18', border: '1px solid #1a2840' }}>
+    <div className="mt-3 p-4" style={{ background: '#032e2e', border: '1px solid #0a5252', borderRadius: 5 }}>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#60a5fa' }}>
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#0d9488' }}>
           {nodeLabels[nodeId] ?? nodeId} — Line Items
         </div>
-        <button onClick={onClose} style={{ color: '#3a5a7a', fontSize: 18, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+        <button onClick={onClose} style={{ color: '#2e7a7a', fontSize: 18, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
       </div>
       {items.length === 0 ? (
-        <div className="text-[12px]" style={{ color: '#3a5a7a' }}>No items to show.</div>
+        <div className="text-[12px]" style={{ color: '#2e7a7a' }}>No items to show.</div>
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((item, i) => (
             <div key={i}>
               <div className="flex justify-between items-baseline mb-0.5">
-                <span className="text-[12px]" style={{ color: '#8b9cb5' }}>{item.name}</span>
-                <span className="font-mono text-[12px]" style={{ color: '#c9d8e8' }}>{fmt(item.amount)}</span>
+                <span className="text-[12px]" style={{ color: '#5aabab' }}>{item.name}</span>
+                <span className="font-mono text-[12px]" style={{ color: '#e8f5f2' }}>{fmt(item.amount)}</span>
               </div>
               {item.balance !== undefined && (
-                <div className="text-[10px] mb-0.5" style={{ color: '#3a5a7a' }}>
+                <div className="text-[10px] mb-0.5" style={{ color: '#2e7a7a' }}>
                   Balance: {fmt(item.balance)}
                 </div>
               )}
-              <div style={{ height: 3, background: '#1a2840', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: 3, background: '#0a3838', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   width: `${item.total > 0 ? Math.min(100, (item.amount / item.total) * 100) : 0}%`,
-                  background: '#60a5fa',
+                  background: '#0d9488',
                   borderRadius: 2,
                 }} />
               </div>

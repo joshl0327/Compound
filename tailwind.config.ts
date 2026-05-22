@@ -5,18 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg:       '#070e16',
-        surface:  '#111c28',
-        surface2: '#0d1620',
-        border:   '#1a2840',
+        bg:       '#034242',
+        surface:  '#043a3a',
+        surface2: '#032e2e',
+        border:   '#0a5252',
+        accent:   '#0d9488',
         blue:     '#60a5fa',
         green:    '#10b981',
         orange:   '#f97316',
         amber:    '#fbbf24',
         red:      '#ef4444',
-        muted:    '#3a5a7a',
-        subtle:   '#4a7fa5',
-        dim:      '#8b9cb5',
+        muted:    '#1a5555',
+        subtle:   '#2e7a7a',
+        dim:      '#5aabab',
       },
       fontFamily: {
         display: ['Syne', 'sans-serif'],

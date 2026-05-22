@@ -8,6 +8,8 @@ interface UIContextValue {
   setShowSuggestions: (v: boolean) => void
   importMessage: string
   setImportMessage: (v: string) => void
+  bgGradient: boolean
+  setBgGradient: (v: boolean) => void
 }
 
 const UIContext = createContext<UIContextValue | null>(null)
@@ -16,9 +18,15 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [importMessage, setImportMessage] = useState('')
+  const [bgGradient, setBgGradientRaw] = useState(() => localStorage.getItem('compound_bg') === 'gradient')
+
+  function setBgGradient(v: boolean) {
+    setBgGradientRaw(v)
+    localStorage.setItem('compound_bg', v ? 'gradient' : 'flat')
+  }
 
   return (
-    <UIContext.Provider value={{ activeTab, setActiveTab, showSuggestions, setShowSuggestions, importMessage, setImportMessage }}>
+    <UIContext.Provider value={{ activeTab, setActiveTab, showSuggestions, setShowSuggestions, importMessage, setImportMessage, bgGradient, setBgGradient }}>
       {children}
     </UIContext.Provider>
   )

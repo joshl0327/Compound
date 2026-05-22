@@ -157,7 +157,7 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
         )}
       </svg>
       {badgeOverlay && (
-        <div style={{ position: 'absolute', top: 8, left: 8, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: 8, left: `calc(${(pad.l / w * 100).toFixed(2)}% + 4px)`, pointerEvents: 'none' }}>
           {badgeOverlay}
         </div>
       )}

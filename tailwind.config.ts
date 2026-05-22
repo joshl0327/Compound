@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg:       '#034242',
+        bg:       '#022e2e',
         surface:  '#043a3a',
         surface2: '#032e2e',
         border:   '#0a5252',

@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 @layer base {
-  html, body, #root { @apply min-h-screen text-slate-100; background: #034242; margin: 0; padding: 0; }
+  html, body, #root { @apply min-h-screen text-slate-100; background: #022e2e; margin: 0; padding: 0; }
   * { box-sizing: border-box; }
   input::placeholder { @apply text-muted; }
   button { cursor: pointer; }

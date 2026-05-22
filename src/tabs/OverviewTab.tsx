@@ -12,26 +12,26 @@ import { buildAggregateProjection } from '../lib/calculations'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
 
-function KpiCell({ label, value, labelColor = '#5a8a80', valueColor = '#e8f5f2', sub, tooltip }: {
-  label: string; value: string; labelColor?: string; valueColor?: string; sub?: string; tooltip?: string
+function KpiCell({ label, value, labelColor = '#2e7a7a', valueColor = '#f0faf8', sub, tooltip, last = false }: {
+  label: string; value: string; labelColor?: string; valueColor?: string; sub?: string; tooltip?: string; last?: boolean
 }) {
   const [tip, setTip] = useState(false)
   return (
-    <div style={{ padding: '11px 14px', borderRight: '1px solid rgba(13,148,136,0.1)', position: 'relative' }}>
-      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid rgba(13,148,136,0.2)', position: 'relative' }}>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
         {tooltip && (
           <button
             onMouseEnter={() => setTip(true)}
             onMouseLeave={() => setTip(false)}
-            style={{ background: 'none', border: `1px solid ${labelColor}44`, borderRadius: '50%', width: 13, height: 13, fontSize: 8, color: tip ? labelColor : `${labelColor}88`, cursor: 'default', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            style={{ background: 'none', border: `1px solid ${labelColor}55`, borderRadius: '50%', width: 13, height: 13, fontSize: 8, color: tip ? labelColor : `${labelColor}88`, cursor: 'default', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
           >?</button>
         )}
       </div>
-      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 18, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 3 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: `${labelColor}99` }}>{sub}</div>}
+      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: `${labelColor}bb` }}>{sub}</div>}
       {tip && tooltip && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#0b1c18', border: '1px solid rgba(13,148,136,0.2)', borderRadius: 5, padding: 12, marginTop: 4, fontSize: 11, color: '#5a8a80', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#032e2e', border: '1px solid rgba(13,148,136,0.25)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: '#5aabab', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
           {tooltip}
         </div>
       )}
@@ -123,7 +123,7 @@ export default function OverviewTab() {
   return (
     <div>
       {/* ── KPI strip ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid rgba(10,82,82,0.5)', borderRadius: 5, overflow: 'hidden', background: 'rgba(2,34,34,0.7)', marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid rgba(13,148,136,0.15)' }}>
         <KpiCell
           label="Gross Income"
           value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
@@ -168,6 +168,7 @@ export default function OverviewTab() {
           labelColor={savingsColor}
           sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'}
           tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively."
+          last
         />
       </div>
 

@@ -75,8 +75,8 @@ export default function App() {
     <div
       className="min-h-screen font-body"
       style={{ background: bgGradient
-        ? 'linear-gradient(135deg, #065a5a 0%, #044a4a 40%, #034242 100%)'
-        : '#034242'
+        ? 'linear-gradient(135deg, #044040 0%, #033535 40%, #022e2e 100%)'
+        : '#022e2e'
       }}
     >
       {onboardScreen === 'welcome' && (

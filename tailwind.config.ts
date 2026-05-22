@@ -20,9 +20,9 @@ export default {
         dim:      '#5aabab',
       },
       fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        body:    ['DM Sans', 'sans-serif'],
-        mono:    ['DM Mono', 'monospace'],
+        display: ['IBM Plex Sans', 'sans-serif'],
+        body:    ['IBM Plex Sans', 'sans-serif'],
+        mono:    ['IBM Plex Mono', 'monospace'],
       },
     },
   },

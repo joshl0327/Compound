@@ -173,9 +173,9 @@ export default function OverviewTab() {
 
       {/* ── Sankey ── */}
       <SectionTitle accent="#0d9488">Monthly Budget Flow</SectionTitle>
-      <Card>
+      <div>
         <SankeyChart input={sankeyInput} data={data} />
-      </Card>
+      </div>
 
       {/* ── Bottom row ── */}
       <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr' }}>

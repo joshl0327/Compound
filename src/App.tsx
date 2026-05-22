@@ -91,7 +91,7 @@ export default function App() {
       )}
 
       {/* Header + nav — single sticky bar */}
-      <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'rgba(3,52,52,0.72)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+      <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'rgba(1,16,16,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
         <div className="max-w-7xl mx-auto flex items-center" style={{ height: 48 }}>
           {/* Wordmark */}
           <span className="text-slate-100 flex-shrink-0" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 700, fontSize: 18, letterSpacing: '-0.02em' }}>Compound</span>

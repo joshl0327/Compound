@@ -130,13 +130,6 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
         r={4}
         fill="#34d399"
       />
-      <text
-        x={pad.l + chartW - 4}
-        y={Math.max(pad.t + 12, pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH - 8)}
-        textAnchor="end" fontSize={9} fill="#34d399" fontWeight={700} fontFamily="DM Mono, monospace"
-      >
-        {fmtShort(data[data.length - 1].balance)}
-      </text>
 
       {/* Hover crosshair + tooltip */}
       {hd && (

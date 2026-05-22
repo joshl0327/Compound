@@ -208,28 +208,29 @@ export default function OverviewTab() {
           <Card>
             {projBal > 0 && (
               <>
-                <div className="flex gap-4 mb-1">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
-                    <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
-                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>{fmtShort(projBalReal)} today</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
-                    <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
-                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>{fmt(projBalReal * 0.04 / 12)} today</div>
-                  </div>
-                  {grossMonthly > 0 && (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Income replaced</div>
-                      <div className="font-mono text-[15px] font-bold" style={{ color: (projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b' }}>
-                        {Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%
-                      </div>
-                      <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>
-                        {Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}% today
-                      </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', marginBottom: 10 }}>
+                  {/* Nominal — left half */}
+                  {[
+                    { label: `Projected at ${retTargetAge}`, value: fmtShort(projBal), color: '#34d399' },
+                    { label: '4% Monthly', value: fmt(projBal * 0.04 / 12), color: '#10b981' },
+                    { label: 'Income Replaced', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: i === 2 ? '1px solid rgba(13,148,136,0.2)' : 'none' }}>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>{s.label}</div>
+                      <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>
-                  )}
+                  ))}
+                  {/* Today's dollars — right half */}
+                  {[
+                    { label: `Value today`, value: fmtShort(projBalReal), color: '#2a9070' },
+                    { label: 'Monthly today', value: fmt(projBalReal * 0.04 / 12), color: '#2a9070' },
+                    { label: 'Income today', value: grossMonthly > 0 ? `${Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBalReal * 0.04 / 12) / grossMonthly >= 1 ? '#2a9070' : '#c07a30') : '#3a5a7a' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ paddingLeft: i === 0 ? 10 : 0 }}>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>{s.label}</div>
+                      <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
+                    </div>
+                  ))}
                 </div>
 
                 {(trad401kMonthly + roth401kMonthly + hsaMonthly + rothIraMonthly + employerMatch) > 0 && (

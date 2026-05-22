@@ -75,7 +75,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
 
   const w = 380
   const axisY = 62
-  const h = 140
+  const h = 152
   const padL = 16
   const padR = 16
 
@@ -142,21 +142,24 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {showNwp && (
           <g>
             <circle cx={monthsToX(nwpMonths!)} cy={axisY} r={3} fill="#60a5fa" />
-            <line x1={monthsToX(nwpMonths!)} y1={axisY + 3} x2={monthsToX(nwpMonths!)} y2={axisY + 18}
+            <line x1={monthsToX(nwpMonths!)} y1={axisY + 3} x2={monthsToX(nwpMonths!)} y2={axisY + 30}
               stroke="#60a5fa" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 2" />
-            <text x={monthsToX(nwpMonths!)} y={axisY + 27} textAnchor="middle" fontSize={8} fill="#60a5fa">Net-worth+</text>
-            <text x={monthsToX(nwpMonths!)} y={axisY + 36} textAnchor="middle" fontSize={7} fill="#3a5a7a">assets &gt; debt</text>
+            <text x={monthsToX(nwpMonths!)} y={axisY + 39} textAnchor="middle" fontSize={8} fill="#60a5fa">Net-worth+</text>
+            <text x={monthsToX(nwpMonths!)} y={axisY + 48} textAnchor="middle" fontSize={7} fill="#3a5a7a">assets &gt; debt</text>
           </g>
         )}
 
-        {/* Per-debt stems + dots */}
+        {/* Per-debt stems + dots — alternate above/below */}
         {debtItems.map((d, i) => {
           const x = monthsToX(d.months)
-          const nameY = axisY - 16 - (i % 2) * 12
+          const above = i % 2 === 0
+          const nameY = above ? axisY - 16 : axisY + 18
+          const stemY1 = above ? axisY - 3 : axisY + 3
+          const stemY2 = above ? nameY + 4 : nameY - 4
           const nameShort = d.name.length > 13 ? d.name.slice(0, 12) + '…' : d.name
           return (
             <g key={`di-${i}`}>
-              <line x1={x} y1={axisY - 3} x2={x} y2={nameY + 4}
+              <line x1={x} y1={stemY1} x2={x} y2={stemY2}
                 stroke={d.color} strokeWidth={1} strokeOpacity={0.45} strokeDasharray="2 2" />
               <circle cx={x} cy={axisY} r={2.5} fill={d.color} fillOpacity={0.8} />
               <text x={x} y={nameY} textAnchor="middle" fontSize={7} fill={d.color} fillOpacity={0.9}>{nameShort}</text>

@@ -100,7 +100,7 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
               x1={pad.l} y1={y} x2={pad.l + chartW} y2={y}
               stroke="#3a5a7a" strokeWidth={1} strokeDasharray="3 4" opacity={0.5}
             />
-            <text x={Math.min(x + 4, pad.l + chartW - 2)} y={y - 3} textAnchor="start" fontSize={8} fill="#3a5a7a">
+            <text x={pad.l + chartW - 2} y={y - 3} textAnchor="end" fontSize={8} fill="#3a5a7a">
               {b.label}
             </text>
             <line x1={x} y1={pad.t + chartH} x2={x} y2={pad.t + chartH + 4} stroke="#3a5a7a" strokeWidth={1} opacity={0.5} />

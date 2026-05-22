@@ -113,7 +113,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   if (planMaxMonths === 0) return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#3a5a7a' }}>Add payment amounts to see the payoff chart.</div>
 
   // ── Chart geometry ──
-  const w = 380, padL = 40, padR = 12, padT = 32, padB = 20, cW = w - padL - padR, cH = 110
+  const w = 380, padL = 40, padR = 12, padT = 10, padB = 20, cW = w - padL - padR, cH = 118
   const h = cH + padT + padB
   const nMonths = activeMaxMonths, maxY = totalDebtBalance || 1
   const now = new Date()
@@ -204,6 +204,45 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         ))}
       </div>
 
+      {/* KPI row — above chart */}
+      {activeMaxMonths > 0 && (() => {
+        const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
+        const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
+        const cols = mode === 'minimum' ? 3 : 5
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, marginBottom: 8 }}>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
+            </div>
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
+            </div>
+            <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 8, marginRight: 8 }}>
+              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
+              <div className="font-mono text-[13px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
+            </div>
+            {mode !== 'minimum' && monthsDiff !== 0 && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
+                <div className="font-mono text-[13px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
+                  {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
+                </div>
+              </div>
+            )}
+            {mode !== 'minimum' && interestDiff !== 0 && (
+              <div>
+                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
+                <div className="font-mono text-[13px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
+                  {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       <svg ref={svgRef} width="100%" viewBox={`0 0 ${w} ${h}`}
         onMouseMove={handleMouseMove} onMouseLeave={() => setHoverMonth(null)}
         style={{ cursor: 'crosshair' }}>
@@ -232,36 +271,32 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {/* X-axis baseline */}
         <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="#1a2840" strokeWidth={1.5} />
 
-        {/* Payoff markers — dashed line rises through chart to label above remaining stack */}
-        {(() => {
-          const usedLabelYs: number[] = []
-          return payoffEvents.map((evt, i) => {
-            const x = toX(evt.month)
-            // Total remaining debt after this payoff (the paying debt is now 0)
-            const remaining = stackOrder.reduce((s, series) => {
-              const b = series.monthlyBalances[Math.min(evt.month, series.monthlyBalances.length - 1)] ?? 0
-              return s + (b < 0.01 ? 0 : b)
-            }, 0)
-            // Place label just above the remaining stack; nudge up if colliding with neighbours
-            // Clamp: no closer than 22px from x-axis, no higher than 8px from SVG top
-            let labelY = Math.max(8, Math.min(padT + cH - 22, toY(remaining) - 10))
-            for (const u of usedLabelYs) { if (Math.abs(labelY - u) < 13) labelY = u - 14 }
-            labelY = Math.max(8, labelY)
-            usedLabelYs.push(labelY)
-            return (
-              <g key={`pe${i}`}>
-                <line x1={x} y1={padT + cH} x2={x} y2={labelY + 5}
-                  stroke={evt.color} strokeWidth={1} strokeOpacity={0.45} strokeDasharray="3 3" />
-                <circle cx={x} cy={padT + cH} r={3} fill={evt.color} fillOpacity={0.9} />
-                {(() => {
-                  // Allow label to drift into left padding area; clamp so it never clips the SVG edge
-                  const estHalfW = Math.min(52, (evt.name.length + 3) * 2.2)
-                  const cx = Math.max(estHalfW + 3, Math.min(padL + cW - estHalfW - 3, x))
-                  return <text x={cx} y={labelY} textAnchor="middle" fontSize={6.5} fill={evt.color} fontWeight={600}>✓ {evt.name}</text>
-                })()}
-              </g>
-            )
-          })
+        {/* Payoff dots on x-axis */}
+        {payoffEvents.map((evt, i) => (
+          <circle key={`dot${i}`} cx={toX(evt.month)} cy={padT + cH} r={3} fill={evt.color} fillOpacity={0.9} />
+        ))}
+
+        {/* Payoff summary legend — top-right empty space */}
+        {payoffEvents.length > 0 && (() => {
+          const lineH = 10
+          const legX = padL + cW - 4
+          const legY = padT + 8
+          return (
+            <g>
+              {payoffEvents.map((evt, i) => {
+                const name = evt.name.length > 14 ? evt.name.slice(0, 13) + '…' : evt.name
+                const ty = legY + i * lineH
+                return (
+                  <g key={`leg${i}`}>
+                    <rect x={legX - 3} y={ty - 5} width={5} height={5} rx={1} fill={evt.color} fillOpacity={0.85} />
+                    <text x={legX - 7} y={ty} textAnchor="end" fontSize={7} fill="#7a9a9a">
+                      {name} — {monthLabel(evt.month)}
+                    </text>
+                  </g>
+                )
+              })}
+            </g>
+          )
         })()}
 
         {/* X-axis date labels */}
@@ -309,44 +344,6 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         ))}
       </div>
 
-      {/* KPI row */}
-      {activeMaxMonths > 0 && (() => {
-        const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
-        const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
-        const cols = mode === 'minimum' ? 3 : 5
-        return (
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, paddingTop: 8, marginTop: 4, borderTop: '1px solid rgba(13,148,136,0.1)' }}>
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
-            </div>
-            <div>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
-            </div>
-            <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 8, marginRight: 8 }}>
-              <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
-              <div className="font-mono text-[13px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
-            </div>
-            {mode !== 'minimum' && monthsDiff !== 0 && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
-                <div className="font-mono text-[13px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
-                  {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
-                </div>
-              </div>
-            )}
-            {mode !== 'minimum' && interestDiff !== 0 && (
-              <div>
-                <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
-                <div className="font-mono text-[13px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
-                  {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
-                </div>
-              </div>
-            )}
-          </div>
-        )
-      })()}
     </div>
   )
 }

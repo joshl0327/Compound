@@ -172,7 +172,7 @@ export default function OverviewTab() {
 
 
       {/* ── Sankey ── */}
-      <SectionTitle accent="#0d9488">Monthly Budget Flow</SectionTitle>
+      <SectionTitle accent="#0d9488" hint="Click any category on the right to see a line-item breakdown.">Monthly Budget Flow</SectionTitle>
       <div>
         <SankeyChart input={sankeyInput} data={data} />
       </div>

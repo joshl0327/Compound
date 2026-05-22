@@ -128,9 +128,9 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
   const isOvershoot = rawNodes.some(n => n.isOvershoot)
 
   return (
-    <div>
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
       {/* SVG + label overlay — extra height accommodates nodes dipped below dims.h */}
-      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h + EXTRA_BOTTOM }}>
+      <div ref={containerRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative', height: dims.h + EXTRA_BOTTOM }}>
         <svg
           ref={svgRef}
           width="100%"
@@ -348,14 +348,15 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
         )}
       </div>
 
-      {/* Drill-down panel */}
       {activeNode && (
-        <DrillDownPanel
-          nodeId={activeNode}
-          data={data}
-          input={input}
-          onClose={() => setActiveNode(null)}
-        />
+        <div style={{ flex: '0 0 300px', alignSelf: 'flex-start', paddingTop: 4 }}>
+          <DrillDownPanel
+            nodeId={activeNode}
+            data={data}
+            input={input}
+            onClose={() => setActiveNode(null)}
+          />
+        </div>
       )}
     </div>
   )
@@ -448,7 +449,7 @@ function DrillDownPanel({ nodeId, data, input, onClose }: {
   }
 
   return (
-    <div className="mt-3 p-4" style={{ background: '#032e2e', border: '1px solid #0a5252', borderRadius: 5 }}>
+    <div className="p-4" style={{ background: '#032e2e', border: '1px solid #0a5252', borderRadius: 5 }}>
       <div className="flex justify-between items-center mb-3">
         <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#0d9488' }}>
           {nodeLabels[nodeId] ?? nodeId} — Line Items

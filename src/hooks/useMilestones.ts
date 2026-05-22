@@ -64,14 +64,21 @@ export function useMilestones(
 ): MilestoneResult {
   const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([])
 
-  // Initialize prevRef from localStorage so page-load never fires toasts
+  // Read localStorage once on first render; reuse for both prevRef init and earned baseline
+  const initialStoredRef = useRef<{ dollar: Set<number>; fidelity: Set<string> } | null>(null)
+  if (initialStoredRef.current === null) {
+    initialStoredRef.current = readStored()
+  }
+
+  // prevRef initialized from localStorage so page-load never fires toasts
   const prevRef = useRef<{ dollar: Set<number>; fidelity: Set<string> } | null>(null)
   if (prevRef.current === null) {
-    const s = readStored()
-    prevRef.current = { dollar: s.dollar, fidelity: s.fidelity }
+    const s = initialStoredRef.current
+    prevRef.current = { dollar: new Set(s.dollar), fidelity: new Set(s.fidelity) }
   }
 
   const earned = useMemo(() => {
+    // Re-read on each compute so high-water mark from other tabs/sessions is picked up
     const stored = readStored()
     const currentAge = projectionPoints[0]?.age ?? 0
     return {

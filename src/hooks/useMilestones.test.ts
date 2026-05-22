@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { computeDollarEarned, computeFidelityEarned } from './useMilestones'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { computeDollarEarned, computeFidelityEarned, useMilestones } from './useMilestones'
 import type { DataPoint } from '../lib/calculations'
 
 describe('computeDollarEarned', () => {
@@ -88,5 +89,69 @@ describe('computeFidelityEarned', () => {
 
   it('returns empty set when projectionPoints is empty', () => {
     expect(computeFidelityEarned(28, 100_000, [], new Set()).size).toBe(0)
+  })
+})
+
+describe('useMilestones', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('returns empty newlyUnlocked on first render when balance is 0', () => {
+    const { result } = renderHook(() => useMilestones(0, 100_000, []))
+    expect(result.current.newlyUnlocked).toEqual([])
+  })
+
+  it('fires newlyUnlocked when balance crosses a threshold', async () => {
+    const points = [{ age: 28, balance: 0 }]
+    const { result, rerender } = renderHook(
+      ({ balance }) => useMilestones(balance, 100_000, points),
+      { initialProps: { balance: 0 } }
+    )
+    expect(result.current.newlyUnlocked).toEqual([])
+
+    await act(async () => {
+      rerender({ balance: 15_000 })
+    })
+
+    expect(result.current.newlyUnlocked).toContain('$10K')
+  })
+
+  it('writes to localStorage when a new milestone is unlocked', async () => {
+    const points = [{ age: 28, balance: 0 }]
+    const { rerender } = renderHook(
+      ({ balance }) => useMilestones(balance, 100_000, points),
+      { initialProps: { balance: 0 } }
+    )
+
+    await act(async () => {
+      rerender({ balance: 15_000 })
+    })
+
+    const stored = JSON.parse(localStorage.getItem('compound_milestones_v1') || 'null')
+    expect(stored).not.toBeNull()
+    expect(stored.dollar).toContain(10_000)
+  })
+
+  it('does not fire newlyUnlocked on page load for already-stored milestones', () => {
+    localStorage.setItem('compound_milestones_v1', JSON.stringify({
+      dollar: [10_000],
+      fidelity: [],
+    }))
+    const points = [{ age: 28, balance: 15_000 }]
+    const { result } = renderHook(() => useMilestones(15_000, 100_000, points))
+    expect(result.current.newlyUnlocked).toEqual([])
+  })
+
+  it('preserves stored milestones when balance drops', async () => {
+    localStorage.setItem('compound_milestones_v1', JSON.stringify({
+      dollar: [10_000, 100_000],
+      fidelity: [],
+    }))
+    const points = [{ age: 28, balance: 5_000 }]
+    const { result } = renderHook(() => useMilestones(5_000, 100_000, points))
+    expect(result.current.earnedDollar.has(10_000)).toBe(true)
+    expect(result.current.earnedDollar.has(100_000)).toBe(true)
   })
 })

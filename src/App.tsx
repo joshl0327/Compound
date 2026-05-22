@@ -24,7 +24,7 @@ const TABS: { id: TabId; label: string }[] = [
 ]
 
 export default function App() {
-  const { activeTab, setActiveTab, bgGradient } = useUI()
+  const { activeTab, setActiveTab } = useUI()
   const { data, setData } = useData()
 
 
@@ -72,10 +72,7 @@ export default function App() {
   return (
     <div
       className="min-h-screen font-body"
-      style={{ background: bgGradient
-        ? 'linear-gradient(135deg, #044040 0%, #033535 40%, #022e2e 100%)'
-        : '#022e2e'
-      }}
+      style={{ background: '#022e2e' }}
     >
       {onboardScreen === 'welcome' && (
         <WelcomeModal

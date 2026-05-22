@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useUI } from '../context/UIContext'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import LineChart from '../components/LineChart'
@@ -41,7 +40,6 @@ function KpiCell({ label, value, labelColor = '#2e7a7a', valueColor = '#f0faf8',
 
 export default function OverviewTab() {
   const { data } = useData()
-  const { bgGradient, setBgGradient } = useUI()
   const {
     grossMonthly, netMonthly,
     housingPct, consumerDti, dti,
@@ -172,15 +170,6 @@ export default function OverviewTab() {
         />
       </div>
 
-      {/* ── Temp: background toggle ── */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button
-          onClick={() => setBgGradient(!bgGradient)}
-          style={{ fontSize: 10, padding: '3px 10px', borderRadius: 3, border: '1px solid rgba(13,148,136,0.3)', color: '#5a8a80', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          Bg: {bgGradient ? 'Gradient ↺' : 'Flat ↺'}
-        </button>
-      </div>
 
       {/* ── Sankey ── */}
       <SectionTitle accent="#0d9488">Monthly Budget Flow</SectionTitle>

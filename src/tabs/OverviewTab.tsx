@@ -183,16 +183,16 @@ export default function OverviewTab() {
       </div>
 
       {/* ── Bottom row ── */}
-      <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr' }}>
+      <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'stretch' }}>
         {/* Debt-free timeline */}
-        <div>
+        <div className="flex flex-col">
           <SectionTitle accent="#0d9488" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Min:</strong> Minimum required payments only — slowest payoff, most interest</div>
             <div style={{ marginBottom: 6 }}>· <strong>Plan:</strong> Your configured payment amounts</div>
             <div style={{ marginBottom: 6 }}>· <strong>Snowball:</strong> Plan payments + surplus applied to smallest balance first, freed payments roll forward</div>
             <div>· <strong>Avalanche:</strong> Plan payments + surplus applied to highest interest rate first — mathematically optimal</div>
           </>}>Debt-Free Timeline</SectionTitle>
-          <Card>
+          <Card className="flex-1">
             <DebtTimeline
               data={data}
               liquidSavingsBalance={liquidBalance}
@@ -205,14 +205,14 @@ export default function OverviewTab() {
         </div>
 
         {/* Retirement projection */}
-        <div>
+        <div className="flex flex-col">
           <SectionTitle accent="#0d9488" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Growth:</strong> 7% nominal annual return</div>
             <div style={{ marginBottom: 6 }}>· <strong>Inflation:</strong> "Today's dollars" values adjust for 2% annual inflation</div>
             <div style={{ marginBottom: 6 }}>· <strong>Benchmarks:</strong> Fidelity targets — 3× salary by 40, 6× by 50, 8× by 60</div>
             <div>· <strong>HSA:</strong> Projection settings coming to Invest &amp; Retire</div>
           </>}>Retirement Projection</SectionTitle>
-          <Card>
+          <Card className="flex-1">
             {projBal > 0 && (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', marginBottom: 10 }}>

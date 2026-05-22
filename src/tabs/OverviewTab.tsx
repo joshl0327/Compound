@@ -108,6 +108,7 @@ export default function OverviewTab() {
   ]
 
   // ── DebtTimeline inputs ──
+  const surplus = Math.max(0, netMonthly - essTotalP - discPlanTotal - debtPlanTotal - liquidSavingsMonthly - rothIraMonthly)
   const liquidBalance = parseFloat(data.savings.emergencyFund.current || '0') || 0
   const retirementBalance = sources
     .filter(s => s.type === 'w2')
@@ -193,6 +194,7 @@ export default function OverviewTab() {
               retirementBalance={retirementBalance}
               monthlyContrib={monthlyContrib}
               debtPlanTotal={debtPlanTotal}
+              surplus={surplus}
             />
           </Card>
         </div>

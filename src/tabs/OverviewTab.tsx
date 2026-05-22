@@ -199,7 +199,12 @@ export default function OverviewTab() {
 
         {/* Retirement projection */}
         <div>
-          <SectionTitle accent="#0d9488" hint="Projected at 7% nominal annual growth. Inflation-adjusted figures assume 2% inflation. Benchmark lines are Fidelity's age-based savings targets (multiples of annual salary: 3× by 40, 6× by 50, 8× by 60). HSA projection settings coming to Invest & Retire.">Retirement Projection</SectionTitle>
+          <SectionTitle accent="#0d9488" hint={<>
+            <div style={{ marginBottom: 6 }}>· <strong>Growth:</strong> 7% nominal annual return</div>
+            <div style={{ marginBottom: 6 }}>· <strong>Inflation:</strong> "Today's dollars" values adjust for 2% annual inflation</div>
+            <div style={{ marginBottom: 6 }}>· <strong>Benchmarks:</strong> Fidelity targets — 3× salary by 40, 6× by 50, 8× by 60</div>
+            <div>· <strong>HSA:</strong> Projection settings coming to Invest &amp; Retire</div>
+          </>}>Retirement Projection</SectionTitle>
           <Card>
             {projBal > 0 && (
               <>
@@ -226,7 +231,7 @@ export default function OverviewTab() {
                     </div>
                   )}
                 </div>
-                <div className="text-[9px] mb-2" style={{ color: '#1a5a5a' }}>2% inflation assumed</div>
+
                 {(trad401kMonthly + roth401kMonthly + hsaMonthly + rothIraMonthly + employerMatch) > 0 && (
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-3 pb-2" style={{ borderBottom: '1px solid rgba(13,148,136,0.1)' }}>
                     {trad401kMonthly > 0 && (

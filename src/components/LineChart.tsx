@@ -60,6 +60,7 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
   const hx = hoverIdx !== null ? pad.l + hoverIdx * xStep : 0
   const hy = hd ? pad.t + chartH - (hd.balance / maxVal) * chartH : 0
   const tipLeft = hx > w * 0.6
+  const tipY = Math.max(pad.t + 2, hy - 30)
 
   return (
     <svg
@@ -144,15 +145,15 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
             stroke="#5aabab" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 3" />
           <circle cx={hx} cy={hy} r={4} fill="#34d399" stroke="#022e2e" strokeWidth={1.5} />
           <rect
-            x={tipLeft ? hx - 78 : hx + 6} y={hy - 30}
+            x={tipLeft ? hx - 78 : hx + 6} y={tipY}
             width={72} height={26} rx={3}
             fill="#032e2e" stroke="rgba(13,148,136,0.3)" strokeWidth={1}
           />
-          <text x={tipLeft ? hx - 72 : hx + 12} y={hy - 18}
+          <text x={tipLeft ? hx - 72 : hx + 12} y={tipY + 12}
             fontSize={8} fill="#2e7a7a" fontFamily="DM Mono, monospace">
             Age {hd.age}
           </text>
-          <text x={tipLeft ? hx - 72 : hx + 12} y={hy - 8}
+          <text x={tipLeft ? hx - 72 : hx + 12} y={tipY + 22}
             fontSize={9} fill="#34d399" fontWeight={700} fontFamily="DM Mono, monospace">
             {fmtShort(hd.balance)}
           </text>

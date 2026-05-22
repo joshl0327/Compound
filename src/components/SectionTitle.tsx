@@ -5,7 +5,7 @@ interface SectionTitleProps {
   children: ReactNode
   accent?: string
   bar?: boolean
-  hint?: string
+  hint?: ReactNode
 }
 
 export default function SectionTitle({ children, accent = '#3b82f6', bar = true, hint }: SectionTitleProps) {

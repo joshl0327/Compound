@@ -94,6 +94,10 @@ export default function OverviewTab() {
   const projBal = retChartData.length > 0 ? retChartData[retChartData.length - 1].balance : 0
   const primaryW2 = sources.find(s => s.type === 'w2' && s.retirement?.currentAge)
   const retTargetAge = primaryW2?.retirement?.targetAge || '65'
+  const currentRetireAge = parseInt(primaryW2?.retirement?.currentAge || '0') || 0
+  const yearsToRetire = Math.max(0, parseInt(retTargetAge) - currentRetireAge)
+  const inflFactor = yearsToRetire > 0 ? Math.pow(1.02, yearsToRetire) : 1
+  const projBalReal = projBal / inflFactor
   const annualGross = grossMonthly * 12
 
   const benchmarks: Benchmark[] = [
@@ -199,14 +203,16 @@ export default function OverviewTab() {
           <Card>
             {projBal > 0 && (
               <>
-                <div className="flex gap-4 mb-2">
+                <div className="flex gap-4 mb-1">
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Projected at {retTargetAge}</div>
                     <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
+                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>≈ {fmtShort(projBalReal)} today</div>
                   </div>
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Monthly at 4% rule</div>
                     <div className="font-mono text-[15px] font-bold" style={{ color: '#10b981' }}>{fmt(projBal * 0.04 / 12)}</div>
+                    <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>≈ {fmt(projBalReal * 0.04 / 12)} today</div>
                   </div>
                   {grossMonthly > 0 && (
                     <div>
@@ -214,19 +220,29 @@ export default function OverviewTab() {
                       <div className="font-mono text-[15px] font-bold" style={{ color: (projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b' }}>
                         {Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%
                       </div>
+                      <div className="font-mono text-[10px] mt-0.5" style={{ color: '#2e7a7a' }}>
+                        ≈ {Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}% today
+                      </div>
                     </div>
                   )}
                 </div>
+                <div className="text-[9px] mb-2" style={{ color: '#1a5a5a' }}>2% inflation assumed</div>
                 {(trad401kMonthly + roth401kMonthly + hsaMonthly + rothIraMonthly + employerMatch) > 0 && (
                   <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-3 pb-2" style={{ borderBottom: '1px solid rgba(13,148,136,0.1)' }}>
-                    {(trad401kMonthly + roth401kMonthly) > 0 && (
+                    {trad401kMonthly > 0 && (
                       <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(trad401kMonthly + roth401kMonthly)}/mo</span>
+                        Trad 401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(trad401kMonthly)}/mo</span>
+                      </span>
+                    )}
+                    {roth401kMonthly > 0 && (
+                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                        Roth 401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(roth401kMonthly)}/mo</span>
                       </span>
                     )}
                     {employerMatch > 0 && (
                       <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        Match <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(employerMatch)}/mo</span>
+                        Match{trad401kMonthly > 0 && roth401kMonthly === 0 ? ' → Trad' : roth401kMonthly > 0 && trad401kMonthly === 0 ? ' → Roth' : ''}{' '}
+                        <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(employerMatch)}/mo</span>
                       </span>
                     )}
                     {hsaMonthly > 0 && (

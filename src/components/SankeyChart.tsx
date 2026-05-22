@@ -129,15 +129,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
 
   return (
     <div>
-      {/* Card header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-0.5" style={{ color: '#3a5a7a' }}>Where it goes</div>
-          <div className="font-display font-bold text-[15px]" style={{ color: '#e8f0f8' }}>
-            {fmtShort(input.grossMonthly)}<span style={{ color: '#3a5a7a', fontWeight: 400, fontSize: 12 }}>/mo gross</span>
-          </div>
-        </div>
-      </div>
+      <h2 className="m-0 mb-4 text-[15px] font-bold text-slate-100 font-display">Monthly Budget Flow</h2>
 
       {/* SVG + label overlay — extra height accommodates nodes dipped below dims.h */}
       <div ref={containerRef} style={{ position: 'relative', width: '100%', height: dims.h + EXTRA_BOTTOM }}>
@@ -205,7 +197,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             const isOvershootNode = sn.isOvershoot
             const isTakehome = sn.id === 'takehome'
             if (isTakehome) {
-              const stroke = isOvershoot ? '#ef4444' : '#60a5fa'
+              const stroke = isOvershoot ? '#ef4444' : '#38bdf8'
               const strokeOpacity = isOvershoot ? 0.9 : 0.95
               return (
                 <rect
@@ -213,7 +205,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                   x={x0} y={y0}
                   width={x1 - x0} height={Math.max(y1 - y0, 2)}
                   rx={3}
-                  fill="#60a5fa"
+                  fill="#38bdf8"
                   fillOpacity={0.13}
                   stroke={stroke}
                   strokeWidth={2}
@@ -226,7 +218,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                 </rect>
               )
             }
-            const borderColor = isOvershootNode ? '#ef4444' : sn.isStructural ? '#60a5fa' : sn.color
+            const borderColor = isOvershootNode ? '#ef4444' : sn.isStructural ? '#0e7490' : sn.color
             const fillOpacity = isActive ? 0.5 : 0.25
             return (
               <rect
@@ -234,7 +226,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                 x={x0} y={y0}
                 width={x1 - x0} height={Math.max(y1 - y0, 2)}
                 rx={3}
-                fill={sn.isStructural ? '#1a2840' : sn.color}
+                fill={sn.isStructural ? '#0e7490' : sn.color}
                 fillOpacity={sn.isStructural ? 1 : fillOpacity}
                 stroke={isOvershootNode ? '#ef4444' : borderColor}
                 strokeWidth={isActive || isOvershootNode ? 1.5 : 0.8}
@@ -263,13 +255,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.id === 'gross') {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={midX} y={nodeBottom + 14} textAnchor="middle"
-                        fontSize={7} fontWeight={700} fill="#4a7fa5"
+                  <text x={midX} y={nodeBottom + 16} textAnchor="middle"
+                        fontSize={9} fontWeight={700} fill="#4a7fa5"
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     GROSS INCOME
                   </text>
-                  <text x={midX} y={nodeBottom + 27} textAnchor="middle"
-                        fontSize={13} fontWeight={700} fill="#e8f0f8"
+                  <text x={midX} y={nodeBottom + 32} textAnchor="middle"
+                        fontSize={15} fontWeight={700} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -280,13 +272,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.id === 'takehome') {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={midX} y={nodeBottom + 14} textAnchor="middle"
-                        fontSize={7.5} fontWeight={700} fill="#60a5fa"
+                  <text x={midX} y={nodeBottom + 16} textAnchor="middle"
+                        fontSize={9} fontWeight={700} fill="#38bdf8"
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     TAKE-HOME
                   </text>
-                  <text x={midX} y={nodeBottom + 28} textAnchor="middle"
-                        fontSize={13} fontWeight={700} fill="#e8f0f8"
+                  <text x={midX} y={nodeBottom + 32} textAnchor="middle"
+                        fontSize={15} fontWeight={700} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -297,13 +289,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.col === 0) {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={nodeLeft - 8} y={midY - 6} textAnchor="end"
-                        fontSize={7} fontWeight={700} fill={sn.color}
+                  <text x={nodeLeft - 8} y={midY - 7} textAnchor="end"
+                        fontSize={9} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.06em">
                     {sn.label}
                   </text>
-                  <text x={nodeLeft - 8} y={midY + 6} textAnchor="end"
-                        fontSize={10} fontWeight={600} fill="#e8f0f8"
+                  <text x={nodeLeft - 8} y={midY + 8} textAnchor="end"
+                        fontSize={12} fontWeight={600} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -314,13 +306,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.col === 2 || sn.col === 3) {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={nodeRight + 8} y={midY - 6}
-                        fontSize={6.5} fontWeight={700} fill={sn.color}
+                  <text x={nodeRight + 8} y={midY - 7}
+                        fontSize={9} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.05em">
                     {sn.label}
                   </text>
-                  <text x={nodeRight + 8} y={midY + 6}
-                        fontSize={9.5} fontWeight={600} fill="#e8f0f8"
+                  <text x={nodeRight + 8} y={midY + 8}
+                        fontSize={12} fontWeight={600} fill="#e8f0f8"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>

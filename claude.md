@@ -207,11 +207,11 @@ Implemented in `src/components/SankeyChart.tsx` using `d3-sankey` for layout mat
 - Col 0 (sources): left of node, `text-anchor="end"`, centered on node midY
 - Col 2 (401k & HSA, Taxes): right of node, centered on node midY
 - Col 3 (spending buckets): right of node, centered on node midY
-- Gross Income: below the gross node, centered on node midX, color `#4a7fa5`
-- Take-Home: below the take-home node, centered on node midX, bright blue `#60a5fa`
+- Gross Income: below the gross node, centered on node midX, color `#0e7490` (structural teal label)
+- Take-Home: below the take-home node, centered on node midX, sky blue `#38bdf8`
 - **No percentages in labels** — contextual % lives in tooltips only (col 0/2: "X% of gross income"; col 3: "X% of take-home")
 
-**Take-home node:** distinct from the structural gross node — bright blue `#60a5fa` border at strokeWidth 2, subtle tint fill, SVG glow filter (`takehome-glow`). Red border when in overshoot state.
+**Take-home node:** distinct from the structural gross node — sky blue `#38bdf8` border at strokeWidth 2, subtle tint fill, SVG glow filter (`takehome-glow`). Red border when in overshoot state.
 
 **Ribbons:** Custom `ribbonPath()` draws the full filled bezier shape. Fill uses per-link `linearGradient`. Minimum `hw` of 4px ensures even tiny flows show a visible S-curve shape.
 
@@ -293,18 +293,51 @@ Consolidated from two separate sections into one. Each debt card:
 
 ---
 
-## Color System
+## Semantic Color System — Financial Categories
 
-One base color for all metric values. Traffic light only for ratios with universal thresholds.
+All financial categories use a consistent semantic palette based on emotional valence:
+money arriving is dark teal-blue (structural, grounded), money building wealth is
+green, money leaving is warm (amber → orange → red scaled by how avoidable/harmful
+the outflow is). Take-home is sky blue — the bright, usable emergence from the dark
+income source.
 
-| Color | Hex | Meaning |
-|---|---|---|
-| Blue | `#60a5fa` | All metric values (income, debt totals, savings rates, etc.) |
-| Green | `#10b981` | Healthy status **only** (DTI/Housing % within range, positive surplus) |
-| Orange | `#f97316` | Caution status (DTI/Housing % moderate) |
-| Red | `#ef4444` | Danger status (DTI/Housing % high, negative surplus) |
-| Amber gradient | `#f97316` → `#fbbf24` | Debt cards — priority order (highest priority = most orange) |
-| Neutral gray | `#3a5a7a` | Empty/unset values |
+W2 income streams (primary earner and partner/second job) share the same color —
+they represent the stable, reliable foundation of the household. Additional/side
+hustle income gets a distinct but complementary teal to signal it is bonus money,
+not something to depend on.
+
+| Category                        | Hex       | Notes                                               |
+|---------------------------------|-----------|-----------------------------------------------------|
+| W2 Income (Partner/Second job)  | `#164e63` | Shared by all W2 earners in the household           |
+| Additional Income               | `#155e75` | Side hustle / freelance — same family, distinct hue |
+| Gross income node               | `#0e7490` | Mid teal — structural anchor, readable on dark bg   |
+| Taxes                           | `#94a3b8` | Muted gray — unavoidable, no alarm                  |
+| 401(k) & HSA                    | `#10b981` | Cooler teal-green — tax-advantaged                  |
+| Take-home node                  | `#38bdf8` | Sky blue — money you actually control               |
+| Essentials                      | `#f59e0b` | Amber — necessary, warm but not alarming            |
+| Discretionary                   | `#fb923c` | Orange — chosen spending, mild indulgence           |
+| Debt payments                   | `#f87171` | Soft red — financial drag                           |
+| Liquid savings                  | `#2dd4bf` | Teal — security, accessible                         |
+| Post-tax retirement / investing | `#34d399` | Bright emerald — long-term wealth                   |
+
+Rules:
+- All W2 earners in the household (Person 1, Person 2, second job) share `#164e63`
+- Additional/side hustle income uses `#155e75` — same dark teal family, visually distinct
+- Never use green for discretionary or debt categories
+- Never use saturated red for taxes
+- Income and gross income nodes stay in the dark teal-blue family
+- Take-home stays sky blue — it is the bright emergence from the dark income source
+- Retirement and savings use distinct greens (teal vs. emerald) to signal different liquidity
+
+This palette is the single source of truth for all category colors in the app.
+All components must reference these values — never define category colors inline
+or in a one-off way.
+
+**Status/traffic-light colors** (separate from category colors):
+- `#10b981` green — healthy status (DTI/Housing % in range, positive surplus)
+- `#f97316` orange — caution status (DTI/Housing % moderate)
+- `#ef4444` red — danger status (DTI/Housing % high, negative surplus, overshoot)
+- `#3a5a7a` muted — empty/unset values
 
 Traffic light applies **only** to Housing % (28% threshold) and Total DTI (36%/20% thresholds).
 
@@ -331,7 +364,7 @@ Shown on Overview, tracks 7 sections. Dismissed permanently via `compound_profil
 
 ## Debt System
 
-- **Debt colors**: `debtColor(index, total)`. Mortgage always gets neutral `#2a4060`.
+- **Debt colors**: `debtColor(index, total)` interpolates `#f87171` → `#fca5a5` (soft red gradient by priority). Mortgage always gets neutral `#2a4060`.
 - **Sort order**: `sortedDebts` (Overview) sorts live. `stableDebts` (Expenses) sorts on blur/Enter only.
 - **Editing**: All debt card fields are inline-editable.
 - **Mortgage**: Always pinned to bottom. Has extended fields:
@@ -414,7 +447,7 @@ Major redesign of `SankeyChart.tsx` and `sankeyHelpers.ts`. All changes on `main
 
 - **Label system rebuilt**: replaced HTML overlay + `computeLabelPositions` collision avoidance with a single SVG `<text>` pass over all nodes. Labels are centered on each node's midY (no vertical border lines, no % in labels).
 - **Anchor node labels**: Gross Income and Take-Home display name + amount *below* their nodes. All other nodes display to the side, centered on their vertical midpoint.
-- **Take-home node style**: glowing bright blue border (`#60a5fa`, strokeWidth 2, SVG glow filter), subtle tinted fill — visually distinct from the dark structural gross node.
+- **Take-home node style**: glowing sky blue border (`#38bdf8`, strokeWidth 2, SVG glow filter), subtle tinted fill — visually distinct from the dark structural gross node.
 - **401(k) & HSA node**: merged trad401k + roth401k + HSA into a single col-2 node, ordered first (top) in col-2.
 - **Node ordering**: `nodeSort(null)` enforces input array order within each column.
 - **Contextual tooltips**: `pct()` helper adds "X% of gross income" (col 0/2) or "X% of take-home" (col 3) to every node tooltip.
@@ -438,17 +471,7 @@ Major redesign of `SankeyChart.tsx` and `sankeyHelpers.ts`. All changes on `main
 
 ## Future Roadmap
 
-### ⚡ Next session: Color system review (priority)
-The next chat will audit and potentially redesign the color system across the entire project. Before starting, read the **Color System** section above carefully — it is the current spec. Areas to examine:
-
-- The Sankey uses its own hardcoded hex palette (blue `#60a5fa`, purple `#a78bfa`, orange `#f97316`, green `#10b981`, dark `#3a5a7a`, structural `#1a2840`) that is **not** wired to Tailwind tokens
-- Tailwind tokens exist in `tailwind.config.ts` (`blue`, `green`, `orange`, `amber`, `red`, `muted`, `subtle`, `dim`, etc.) and are used in tabs/features — but the Sankey SVG cannot use Tailwind classes
-- The Taxes node uses `#3a5a7a` (same as the neutral/muted gray) — may look too dark/unimportant
-- The "Debt" col-3 node color (`#60a5fa`, same blue as income/take-home) is semantically ambiguous
-- No color token shared between Sankey and the rest of the app — if the palette changes, both must update independently
-- Consider whether a shared color constants file (`src/lib/colors.ts`) would help keep Sankey and UI in sync
-
-### After color pass
+### Next priorities
 - **Age-based retirement benchmarks** (1× salary by 30, 3× by 40, etc.) in Invest & Retire tab
 - **Quick Start dual-income question** — ask upfront if household has two earners, initialize two sources
 - Mobile layout optimization

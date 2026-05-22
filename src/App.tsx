@@ -97,7 +97,7 @@ export default function App() {
             <div className="w-7 h-7 rounded-lg bg-blue flex items-center justify-center text-bg font-display font-extrabold text-sm">C</div>
             <span className="font-display font-bold text-slate-100 text-base tracking-wide">Compound</span>
           </div>
-          {/* Right: Export/Import + income summary */}
+          {/* Right: Export/Import */}
           <div className="flex items-center gap-3">
             <button
               onClick={handleExport}
@@ -111,12 +111,6 @@ export default function App() {
             >
               Import
             </button>
-            {grossMonthly > 0 && (
-              <div className="hidden sm:flex items-center gap-3 ml-1 pl-3 border-l border-border text-xs">
-                <span className="text-dim uppercase tracking-widest">Gross <span className="font-mono font-bold text-blue">{fmt(grossMonthly)}</span></span>
-                <span className="text-dim uppercase tracking-widest">Net <span className="font-mono font-bold text-green">{fmt(netMonthly)}</span></span>
-              </div>
-            )}
           </div>
         </div>
       </div>

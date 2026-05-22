@@ -45,7 +45,7 @@ function pct(value: number, denominator: number): string {
   return (value / denominator * 100).toFixed(1) + '%'
 }
 
-const STRUCTURAL = '#1a2840'
+const STRUCTURAL = '#0e7490'
 
 function link(source: string, target: string, value: number, sourceColor: string, targetColor: string, isFlagged = false): SkLink {
   return { source, target, value: Math.max(0.01, value), sourceColor, targetColor, isFlagged }
@@ -65,7 +65,7 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
 
   // ── Col 0: Income sources ──
   sourceCalcs.forEach(c => {
-    const color = c.src.type === 'w2' ? '#60a5fa' : '#a78bfa'
+    const color = c.src.type === 'w2' ? '#164e63' : '#155e75'
     nodes.push({
       id: `src-${c.src.id}`,
       label: c.src.name,
@@ -85,59 +85,59 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
     nodes.push({
       id: 'ret-hsa',
       label: '401(k) & HSA',
-      color: '#a78bfa',
+      color: '#10b981',
       col: 2,
       tooltip: `Traditional 401(k), Roth 401(k) + HSA contributions. ${pct(retHsa, grossMonthly)} of gross income.`,
       employerMatchAmt: employerMatch,
     })
-    links.push(link('gross', 'ret-hsa', retHsa, STRUCTURAL, '#a78bfa'))
+    links.push(link('gross', 'ret-hsa', retHsa, STRUCTURAL, '#10b981'))
   }
 
   const taxes = grossMonthly - netMonthly - trad401kMonthly - hsaMonthly - roth401kMonthly
   if (taxes > 0) {
-    nodes.push({ id: 'taxes', label: 'Taxes', color: '#3a5a7a', col: 2, tooltip: `Federal, state, and local taxes. ${pct(taxes, grossMonthly)} of gross income.` })
-    links.push(link('gross', 'taxes', taxes, STRUCTURAL, '#3a5a7a'))
+    nodes.push({ id: 'taxes', label: 'Taxes', color: '#94a3b8', col: 2, tooltip: `Federal, state, and local taxes. ${pct(taxes, grossMonthly)} of gross income.` })
+    links.push(link('gross', 'taxes', taxes, STRUCTURAL, '#94a3b8'))
   }
 
-  nodes.push({ id: 'takehome', label: 'Take-home', color: '#60a5fa', col: 2, tooltip: `Money deposited to your bank account each month. ${pct(netMonthly, grossMonthly)} of gross income.` })
-  links.push(link('gross', 'takehome', netMonthly, STRUCTURAL, '#60a5fa'))
+  nodes.push({ id: 'takehome', label: 'Take-home', color: '#38bdf8', col: 2, tooltip: `Money deposited to your bank account each month. ${pct(netMonthly, grossMonthly)} of gross income.` })
+  links.push(link('gross', 'takehome', netMonthly, STRUCTURAL, '#38bdf8'))
 
   // ── Col 3: Spending buckets ──
   const housingFlagged = housingNum > 28
   if (essTotalP > 0) {
     nodes.push({
       id: 'essentials', label: 'Essentials',
-      color: housingFlagged ? '#f97316' : '#60a5fa',
+      color: housingFlagged ? '#f97316' : '#f59e0b',
       col: 3, isFlagged: housingFlagged,
       tooltip: `Fixed monthly costs — housing, utilities, groceries, insurance. ${pct(essTotalP, netMonthly)} of take-home.`,
     })
-    links.push(link('takehome', 'essentials', essTotalP, '#60a5fa', housingFlagged ? '#f97316' : '#60a5fa', housingFlagged))
+    links.push(link('takehome', 'essentials', essTotalP, '#38bdf8', housingFlagged ? '#f97316' : '#f59e0b', housingFlagged))
   }
 
   if (discPlanTotal > 0) {
-    nodes.push({ id: 'discretionary', label: 'Discretionary', color: '#fbbf24', col: 3, tooltip: `Flexible spending — dining, subscriptions, entertainment. ${pct(discPlanTotal, netMonthly)} of take-home.` })
-    links.push(link('takehome', 'discretionary', discPlanTotal, '#60a5fa', '#fbbf24'))
+    nodes.push({ id: 'discretionary', label: 'Discretionary', color: '#fb923c', col: 3, tooltip: `Flexible spending — dining, subscriptions, entertainment. ${pct(discPlanTotal, netMonthly)} of take-home.` })
+    links.push(link('takehome', 'discretionary', discPlanTotal, '#38bdf8', '#fb923c'))
   }
 
   const dtiFlagged = dtiNum >= 36
   if (debtPlanTotal > 0) {
     nodes.push({
       id: 'debt', label: 'Debt',
-      color: dtiFlagged ? '#f97316' : '#60a5fa',
+      color: '#f87171',
       col: 3, isFlagged: dtiFlagged,
       tooltip: `Consumer debt payments. DTI ${dti}% · ${pct(debtPlanTotal, netMonthly)} of take-home.`,
     })
-    links.push(link('takehome', 'debt', debtPlanTotal, '#60a5fa', dtiFlagged ? '#f97316' : '#60a5fa', dtiFlagged))
+    links.push(link('takehome', 'debt', debtPlanTotal, '#38bdf8', '#f87171', dtiFlagged))
   }
 
   if (liquidSavingsMonthly > 0) {
-    nodes.push({ id: 'liquid-savings', label: 'Liquid Savings', color: '#10b981', col: 3, tooltip: `Emergency fund + general savings. ${pct(liquidSavingsMonthly, netMonthly)} of take-home.` })
-    links.push(link('takehome', 'liquid-savings', liquidSavingsMonthly, '#60a5fa', '#10b981'))
+    nodes.push({ id: 'liquid-savings', label: 'Liquid Savings', color: '#2dd4bf', col: 3, tooltip: `Emergency fund + general savings. ${pct(liquidSavingsMonthly, netMonthly)} of take-home.` })
+    links.push(link('takehome', 'liquid-savings', liquidSavingsMonthly, '#38bdf8', '#2dd4bf'))
   }
 
   if (rothIraMonthly > 0) {
-    nodes.push({ id: 'retirement', label: 'Retirement', color: '#a78bfa', col: 3, tooltip: `Roth IRA contribution funded from take-home. ${pct(rothIraMonthly, netMonthly)} of take-home.` })
-    links.push(link('takehome', 'retirement', rothIraMonthly, '#60a5fa', '#a78bfa'))
+    nodes.push({ id: 'retirement', label: 'Retirement', color: '#34d399', col: 3, tooltip: `Roth IRA contribution funded from take-home. ${pct(rothIraMonthly, netMonthly)} of take-home.` })
+    links.push(link('takehome', 'retirement', rothIraMonthly, '#38bdf8', '#34d399'))
   }
 
   const bucketSum = essTotalP + discPlanTotal + debtPlanTotal + liquidSavingsMonthly + rothIraMonthly
@@ -145,10 +145,10 @@ export function buildSankeyData(input: SankeyInput): { nodes: SkNode[]; links: S
 
   if (remaining > 1) {
     nodes.push({ id: 'remaining', label: 'Remaining', color: '#3a5a7a', col: 3, tooltip: 'Unallocated take-home — consider assigning to savings or debt.' })
-    links.push(link('takehome', 'remaining', remaining, '#60a5fa', '#3a5a7a'))
+    links.push(link('takehome', 'remaining', remaining, '#38bdf8', '#3a5a7a'))
   } else if (remaining < -1) {
     nodes.push({ id: 'overshoot', label: 'Overshoot', color: '#ef4444', col: 3, isOvershoot: true, tooltip: `Spending exceeds take-home by $${Math.round(Math.abs(remaining)).toLocaleString()}/mo.` })
-    links.push(link('takehome', 'overshoot', Math.abs(remaining), '#60a5fa', '#ef4444', true))
+    links.push(link('takehome', 'overshoot', Math.abs(remaining), '#38bdf8', '#ef4444', true))
   }
 
   return { nodes, links }

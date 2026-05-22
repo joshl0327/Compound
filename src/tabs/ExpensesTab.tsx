@@ -170,7 +170,7 @@ export default function ExpensesTab() {
           {/* Essentials */}
           <Card>
             <div>
-              <SectionTitle accent="#60a5fa">Essentials</SectionTitle>
+              <SectionTitle accent="#f59e0b">Essentials</SectionTitle>
               {data.debts.some(d => d.isMortgage) && (
                 <div style={{ fontSize: 11, color: '#f59e0b', background: '#0a1520', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #f59e0b33' }}>
                   You have a mortgage flagged in Debts. Include your full PITI (principal, interest, taxes, insurance) in Housing below.
@@ -182,7 +182,7 @@ export default function ExpensesTab() {
                   key={item.id}
                   label={item.name}
                   baseline={item.baseline}
-                  color="#60a5fa"
+                  color="#f59e0b"
                   onBaselineChange={v => {
                     setData(d => ({
                       ...d,
@@ -226,7 +226,7 @@ export default function ExpensesTab() {
                 />
                 <button
                   onClick={addEssential}
-                  style={{ background: '#60a5fa', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  style={{ background: '#f59e0b', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   + Add
                 </button>
@@ -236,7 +236,7 @@ export default function ExpensesTab() {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4 }}>
                 <div style={{ fontSize: 12, color: '#5a7a9a' }}>
                   Total:{' '}
-                  <span style={{ fontFamily: "'DM Mono', monospace", color: '#60a5fa' }}>{fmt(essTotal)}</span>
+                  <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>{fmt(essTotal)}</span>
                 </div>
               </div>
             </div>
@@ -245,14 +245,14 @@ export default function ExpensesTab() {
           {/* Other Expenses (Discretionary) */}
           <Card>
             <div>
-              <SectionTitle accent="#f59e0b">Other Expenses</SectionTitle>
+              <SectionTitle accent="#fb923c">Other Expenses</SectionTitle>
               {data.budget.discretionary.length > 0 && <RowHeader />}
               {data.budget.discretionary.map(item => (
                 <BudgetRow
                   key={item.id}
                   label={item.name}
                   baseline={item.baseline}
-                  color="#f59e0b"
+                  color="#fb923c"
                   onBaselineChange={v => {
                     setData(d => ({
                       ...d,
@@ -280,7 +280,7 @@ export default function ExpensesTab() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4, marginBottom: 12 }}>
                   <div style={{ fontSize: 12, color: '#5a7a9a' }}>
                     Total:{' '}
-                    <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>{fmt(discTotal)}</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: '#fb923c' }}>{fmt(discTotal)}</span>
                   </div>
                 </div>
               )}
@@ -306,7 +306,7 @@ export default function ExpensesTab() {
                 />
                 <button
                   onClick={addDiscretionary}
-                  style={{ background: '#f59e0b', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ background: '#fb923c', border: 'none', borderRadius: 7, padding: '8px 14px', color: '#000', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                 >
                   Add
                 </button>
@@ -374,7 +374,7 @@ export default function ExpensesTab() {
           {/* Debt Obligations */}
           <Card>
             <div>
-              <SectionTitle accent="#f97316">Debt Obligations</SectionTitle>
+              <SectionTitle accent="#f87171">Debt Obligations</SectionTitle>
 
               {/* Debt list */}
               {data.debts.length > 0 && (
@@ -414,7 +414,7 @@ export default function ExpensesTab() {
               )}
 
               {/* Add a Debt */}
-              <SectionTitle accent="#f97316">Add a Debt</SectionTitle>
+              <SectionTitle accent="#f87171">Add a Debt</SectionTitle>
 
               <Input
                 label="Name"
@@ -521,7 +521,7 @@ export default function ExpensesTab() {
 
               {newDebt.isMortgage && (
                 <div style={{ background: '#0a1520', borderRadius: 10, padding: '14px', marginBottom: 12, border: '1px solid #1e3a5f' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#f87171', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
                     Mortgage Details
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 0 }}>

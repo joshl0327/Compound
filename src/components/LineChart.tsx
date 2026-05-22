@@ -48,8 +48,8 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
     <svg width="100%" viewBox={`0 0 ${w} ${h}`}>
       <defs>
         <linearGradient id="retirementGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+          <stop offset="0%" stopColor="#34d399" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -98,18 +98,18 @@ export default function LineChart({ data, height: h = 200, benchmarks }: LineCha
 
       {/* Main line + fill */}
       <polygon points={fillPoints} fill="url(#retirementGrad)" />
-      <polyline points={points} fill="none" stroke="#a78bfa" strokeWidth={2.5} strokeLinejoin="round" />
-      <circle cx={pad.l} cy={pad.t + chartH} r={3} fill="#a78bfa" />
+      <polyline points={points} fill="none" stroke="#34d399" strokeWidth={2.5} strokeLinejoin="round" />
+      <circle cx={pad.l} cy={pad.t + chartH} r={3} fill="#34d399" />
       <circle
         cx={pad.l + chartW}
         cy={pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH}
         r={4}
-        fill="#a78bfa"
+        fill="#34d399"
       />
       <text
         x={pad.l + chartW - 4}
         y={Math.max(pad.t + 12, pad.t + chartH - (data[data.length - 1].balance / maxVal) * chartH - 8)}
-        textAnchor="end" fontSize={9} fill="#a78bfa" fontWeight={700} fontFamily="DM Mono, monospace"
+        textAnchor="end" fontSize={9} fill="#34d399" fontWeight={700} fontFamily="DM Mono, monospace"
       >
         {fmtShort(data[data.length - 1].balance)}
       </text>

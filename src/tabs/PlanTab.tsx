@@ -96,7 +96,7 @@ export default function PlanTab() {
         {/* Take-Home */}
         <div>
           <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-0.5">Take-Home</div>
-          <div className="font-mono text-[20px] font-bold text-[#10b981]">{fmt(netMonthly)}</div>
+          <div className="font-mono text-[20px] font-bold text-[#38bdf8]">{fmt(netMonthly)}</div>
         </div>
         {/* Baseline */}
         <div>
@@ -127,12 +127,12 @@ export default function PlanTab() {
 
       {/* Essentials section */}
       <Card style={{ marginBottom: 14 }}>
-        <SectionTitle accent="#60a5fa">Essentials</SectionTitle>
+        <SectionTitle accent="#f59e0b">Essentials</SectionTitle>
         {/* Column headers */}
         <div className="grid gap-2 px-3 mb-1" style={{ gridTemplateColumns: '1fr 1fr 1fr auto' }}>
           <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Category</div>
           <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Actual</div>
-          <div className="text-[10px] text-[#60a5fa] uppercase tracking-[0.06em]">Plan</div>
+          <div className="text-[10px] text-[#f59e0b] uppercase tracking-[0.06em]">Plan</div>
           <div />
         </div>
         {data.budget.essentials.map(item => {
@@ -144,7 +144,7 @@ export default function PlanTab() {
             <div
               key={item.id}
               className="grid gap-2 items-center px-3 py-2 rounded-[10px] mb-1.5"
-              style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #60a5fa' }}
+              style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #f59e0b' }}
             >
               <div className="text-xs font-semibold text-slate-100">{item.name}</div>
               {/* Actual (read-only) */}
@@ -161,7 +161,7 @@ export default function PlanTab() {
                 value={fmtCurrencyInput(planVal)}
                 onChange={e => setPlanEssential(item.id, stripCommas(e.target.value))}
                 className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-                style={{ background: '#0f1923', border: '1px solid #60a5fa44', boxSizing: 'border-box' }}
+                style={{ background: '#0f1923', border: '1px solid #f59e0b44', boxSizing: 'border-box' }}
               />
               <div className="w-6" />
             </div>
@@ -171,7 +171,7 @@ export default function PlanTab() {
 
       {/* Discretionary section */}
       <Card style={{ marginBottom: 14 }}>
-        <SectionTitle accent="#f59e0b">Discretionary</SectionTitle>
+        <SectionTitle accent="#fb923c">Discretionary</SectionTitle>
         {data.budget.discretionary.length === 0 ? (
           <p className="text-[#5a7a9a] text-[13px]">No discretionary items added yet.</p>
         ) : (
@@ -179,7 +179,7 @@ export default function PlanTab() {
             <div className="grid gap-2 px-3 mb-1" style={{ gridTemplateColumns: '1fr 1fr 1fr auto' }}>
               <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Category</div>
               <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Actual</div>
-              <div className="text-[10px] text-[#f59e0b] uppercase tracking-[0.06em]">Plan</div>
+              <div className="text-[10px] text-[#fb923c] uppercase tracking-[0.06em]">Plan</div>
               <div />
             </div>
             {data.budget.discretionary.map(item => {
@@ -191,7 +191,7 @@ export default function PlanTab() {
                 <div
                   key={item.id}
                   className="grid gap-2 items-center px-3 py-2 rounded-[10px] mb-1.5"
-                  style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #f59e0b' }}
+                  style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #fb923c' }}
                 >
                   <div className="text-xs font-semibold text-slate-100">{item.name}</div>
                   <div
@@ -206,7 +206,7 @@ export default function PlanTab() {
                     value={fmtCurrencyInput(planVal)}
                     onChange={e => setPlanDiscretionary(item.id, stripCommas(e.target.value))}
                     className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-                    style={{ background: '#0f1923', border: '1px solid #f59e0b44', boxSizing: 'border-box' }}
+                    style={{ background: '#0f1923', border: '1px solid #fb923c44', boxSizing: 'border-box' }}
                   />
                   <div className="w-6" />
                 </div>
@@ -218,7 +218,7 @@ export default function PlanTab() {
 
       {/* Savings Goal Planner */}
       <Card style={{ marginBottom: 14 }}>
-        <SectionTitle accent="#14b8a6">Savings Goal Planner</SectionTitle>
+        <SectionTitle accent="#2dd4bf">Savings Goal Planner</SectionTitle>
         {/* Existing goals */}
         {(data.plan?.goals?.length ?? 0) > 0 && (
           <div className="mb-3.5">
@@ -231,7 +231,7 @@ export default function PlanTab() {
                 <div
                   key={goal.id}
                   className="flex justify-between items-start flex-wrap gap-2 px-3 py-3 rounded-[10px] mb-2"
-                  style={{ background: '#0a1520', borderLeft: '3px solid #14b8a6' }}
+                  style={{ background: '#0a1520', borderLeft: '3px solid #2dd4bf' }}
                 >
                   <div>
                     <div className="text-[13px] font-semibold text-slate-100 mb-1">
@@ -241,7 +241,7 @@ export default function PlanTab() {
                       {fmt(monthly)}/mo toward {fmt(target)}
                     </div>
                     {months && (
-                      <div className="text-[11px] text-[#14b8a6] mt-0.5">
+                      <div className="text-[11px] text-[#2dd4bf] mt-0.5">
                         {months} months → {projDate}
                       </div>
                     )}
@@ -297,7 +297,7 @@ export default function PlanTab() {
           <button
             onClick={addGoal}
             className="px-4 py-1.5 text-[13px] font-bold text-black rounded-lg cursor-pointer border-none self-end"
-            style={{ background: '#14b8a6' }}
+            style={{ background: '#2dd4bf' }}
           >
             Add
           </button>
@@ -306,7 +306,7 @@ export default function PlanTab() {
 
       {/* Debt Obligations */}
       <Card>
-        <SectionTitle accent="#f97316">Debt Obligations</SectionTitle>
+        <SectionTitle accent="#f87171">Debt Obligations</SectionTitle>
         {nonMortgageDebts.length === 0 ? (
           <p className="text-[#5a7a9a] text-[13px]">No non-mortgage debts added yet.</p>
         ) : (
@@ -324,7 +324,7 @@ export default function PlanTab() {
                 <div
                   key={debt.id}
                   className="px-[14px] py-[14px] rounded-[10px] mb-2.5"
-                  style={{ background: '#0a1520', borderLeft: '3px solid #f97316' }}
+                  style={{ background: '#0a1520', borderLeft: '3px solid #f87171' }}
                 >
                   {/* Debt header */}
                   <div className="flex justify-between items-center mb-2.5">
@@ -344,7 +344,7 @@ export default function PlanTab() {
                         <>
                           <div className="text-[13px] font-semibold text-slate-100 font-mono">{minResult.months} months</div>
                           <div className="text-[11px] text-[#5a7a9a]">{payoffDate(minResult.months)}</div>
-                          <div className="text-[11px] text-[#f97316] mt-0.5">{fmt(minResult.totalInterest)} in interest</div>
+                          <div className="text-[11px] text-[#f87171] mt-0.5">{fmt(minResult.totalInterest)} in interest</div>
                         </>
                       ) : (
                         <div className="text-[12px] text-[#ef4444]">Payment too low</div>
@@ -353,10 +353,10 @@ export default function PlanTab() {
                     {/* Plan Payment column */}
                     <div
                       className="rounded-lg px-3 py-2.5"
-                      style={{ background: '#060e18', border: '1px solid #f9741633' }}
+                      style={{ background: '#060e18', border: '1px solid #f8717133' }}
                     >
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <div className="text-[10px] text-[#f97316] uppercase tracking-[0.06em] whitespace-nowrap">
+                        <div className="text-[10px] text-[#f87171] uppercase tracking-[0.06em] whitespace-nowrap">
                           Plan —
                         </div>
                         <input
@@ -364,14 +364,14 @@ export default function PlanTab() {
                           inputMode="decimal"
                           value={fmtCurrencyInput(planPayRaw)}
                           onChange={e => setPlanDebt(debt.id, stripCommas(e.target.value))}
-                          className="w-full rounded text-[11px] font-mono text-[#f97316] outline-none px-1.5 py-0.5"
+                          className="w-full rounded text-[11px] font-mono text-[#f87171] outline-none px-1.5 py-0.5"
                           style={{
                             background: '#0f1923',
-                            border: '1px solid #f9741644',
+                            border: '1px solid #f8717144',
                             boxSizing: 'border-box',
                           }}
                         />
-                        <div className="text-[10px] text-[#f97316] whitespace-nowrap">/mo</div>
+                        <div className="text-[10px] text-[#f87171] whitespace-nowrap">/mo</div>
                       </div>
                       {planResult ? (
                         <>

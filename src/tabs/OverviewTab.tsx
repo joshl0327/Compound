@@ -9,7 +9,6 @@ import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
 import { useData } from '../context/DataContext'
 import { buildAggregateProjection } from '../lib/calculations'
-import { computeSituationalRead } from '../lib/sankeyHelpers'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
 
@@ -19,35 +18,25 @@ export default function OverviewTab() {
     grossMonthly, netMonthly,
     housingPct, consumerDti, dti,
     retireRate, savingsRate,
-    planSurplus, essTotalP, debtPlanTotal, discPlanTotal,
+    essTotalP, debtPlanTotal, discPlanTotal,
     liquidSavingsMonthly, rothIraMonthly,
     trad401kMonthly, roth401kMonthly, hsaMonthly, employerMatch,
     sourceCalcs,
   } = useMetrics()
 
-  // ── Situational read ──
   const consumerDebts = data.debts.filter(d => !d.isMortgage)
   const consumerDebtBalance = consumerDebts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)
-  const { headline, isOvershoot } = computeSituationalRead({
-    planSurplus,
-    dti,
-    savingsRate,
-    hasConsumerDebt: consumerDebts.length > 0,
-    consumerDebtBalance,
-    noIncome: grossMonthly === 0,
-  })
 
   // ── Badge colors (unchanged from previous OverviewTab) ──
   const housingColor = parseFloat(housingPct) <= 0 ? '#3a5a7a'
     : parseFloat(housingPct) > 28 ? '#f97316' : '#10b981'
   const dtiColor = parseFloat(dti) <= 0 ? '#3a5a7a'
-    : parseFloat(dti) >= 36 ? '#ef4444'
+    : parseFloat(dti) >= 36 ? '#f87171'
     : parseFloat(dti) > 20 ? '#f97316' : '#10b981'
   const savingsColor = parseFloat(savingsRate) <= 0 ? '#3a5a7a'
-    : parseFloat(savingsRate) >= 15 ? '#10b981' : '#60a5fa'
+    : parseFloat(savingsRate) >= 15 ? '#10b981' : '#f59e0b'
   const retireColor = parseFloat(retireRate) <= 0 ? '#3a5a7a'
-    : parseFloat(retireRate) >= 15 ? '#10b981' : '#60a5fa'
-  const shouldTint = (color: string) => color !== '#60a5fa' && color !== '#3a5a7a'
+    : parseFloat(retireRate) >= 15 ? '#10b981' : '#f59e0b'
 
   // ── Sankey input ──
   const sankeyInput: SankeyInput = useMemo(() => ({
@@ -105,42 +94,22 @@ export default function OverviewTab() {
 
   return (
     <div>
-      {/* ── Situational headline + stat card ── */}
-      {headline && (
-        <div className="flex justify-between items-start mb-4">
-          <p className="m-0 text-[14px] leading-snug max-w-[65%]" style={{ color: '#c9d8e8' }}>
-            {headline}
-          </p>
-          <div className="text-right">
-            <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#3a5a7a' }}>This month</div>
-            <div
-              className="font-mono text-[15px] font-bold"
-              style={{ color: isOvershoot ? '#ef4444' : '#10b981' }}
-            >
-              {isOvershoot ? '−' : '+'}{fmt(Math.abs(planSurplus))}
-            </div>
-            <div className="text-[9px]" style={{ color: '#3a5a7a' }}>
-              {isOvershoot ? 'overshoot' : 'surplus'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── KPI strip (unchanged from previous OverviewTab) ── */}
+      {/* ── KPI strip ── */}
       <div className="grid gap-2.5 mb-[18px]" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-        <Badge label="Gross Income" value={grossMonthly > 0 ? fmt(grossMonthly) : '—'} color="#60a5fa" sub={grossMonthly > 0 ? '/month' : 'Add income'} />
-        <Badge label="Take-Home" value={netMonthly > 0 ? fmt(netMonthly) : '—'} color="#60a5fa" sub={netMonthly > 0 ? '/month' : undefined} />
+        <Badge label="Gross Income" value={grossMonthly > 0 ? fmt(grossMonthly) : '—'} color="#0e7490" tint={false} sub={grossMonthly > 0 ? '/month' : 'Add income'} />
+        <Badge label="Take-Home" value={netMonthly > 0 ? fmt(netMonthly) : '—'} color="#38bdf8" tint={false} sub={netMonthly > 0 ? '/month' : undefined} />
         <Badge
           label="Consumer Debt"
           value={consumerDebts.length > 0 ? fmtShort(consumerDebtBalance) : '—'}
-          color={consumerDebts.length > 0 ? '#60a5fa' : '#3a5a7a'}
+          color={consumerDebts.length > 0 ? '#4a7fa5' : '#3a5a7a'}
+          tint={false}
           sub={consumerDebts.length > 0 ? (data.debts.some(d => d.isMortgage) ? 'excl. mortgage' : undefined) : 'Add debts in Expenses'}
           tooltip="Your non-mortgage debt total. Paying this down frees up monthly cash flow and improves your DTI."
         />
-        <Badge label="Housing %" value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'} color={housingColor} tint={shouldTint(housingColor)} sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'} tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt." />
-        <Badge label="Total DTI" value={parseFloat(dti) > 0 ? dti + '%' : '—'} color={dtiColor} tint={shouldTint(dtiColor)} sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'} tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk." />
-        <Badge label="Retirement Rate" value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'} color={retireColor} tint={shouldTint(retireColor)} sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'} tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first." />
-        <Badge label="Total Savings Rate" value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'} color={savingsColor} tint={shouldTint(savingsColor)} sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'} tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively." />
+        <Badge label="Housing %" value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'} color={housingColor} tint={housingColor !== '#3a5a7a'} sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'} tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt." />
+        <Badge label="Total DTI" value={parseFloat(dti) > 0 ? dti + '%' : '—'} color={dtiColor} tint={dtiColor !== '#3a5a7a'} sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'} tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk." />
+        <Badge label="Retirement Rate" value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'} color={retireColor} tint={retireColor !== '#3a5a7a'} sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'} tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first." />
+        <Badge label="Total Savings Rate" value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'} color={savingsColor} tint={savingsColor !== '#3a5a7a'} sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'} tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively." />
       </div>
 
       {/* ── Sankey card ── */}
@@ -152,7 +121,7 @@ export default function OverviewTab() {
       <div className="grid gap-3.5 mt-3.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Debt-free timeline */}
         <Card>
-          <SectionTitle accent="#10b981">Debt-Free Timeline</SectionTitle>
+          <SectionTitle bar={false}>Debt-Free Timeline</SectionTitle>
           <DebtTimeline
             data={data}
             liquidSavingsBalance={liquidBalance}
@@ -164,12 +133,12 @@ export default function OverviewTab() {
 
         {/* Retirement projection */}
         <Card>
-          <SectionTitle accent="#a78bfa">Retirement Projection</SectionTitle>
+          <SectionTitle bar={false}>Retirement Projection</SectionTitle>
           {projBal > 0 && (
             <div className="flex gap-4 mb-3">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>Projected at {retTargetAge}</div>
-                <div className="font-mono text-[15px] font-bold" style={{ color: '#60a5fa' }}>{fmtShort(projBal)}</div>
+                <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>{fmtShort(projBal)}</div>
               </div>
               <div>
                 <div className="text-[10px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#5a7a9a' }}>Monthly at 4% rule</div>

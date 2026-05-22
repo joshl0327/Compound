@@ -68,7 +68,7 @@ export default function SavingsTab() {
             <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
               Emergency Fund
             </div>
-            <div className="font-mono text-[15px] font-bold" style={{ color: '#60a5fa' }}>
+            <div className="font-mono text-[15px] font-bold" style={{ color: '#2dd4bf' }}>
               {fmt(planEfMonthly)}
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function SavingsTab() {
             <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
               General
             </div>
-            <div className="font-mono text-[15px] font-bold" style={{ color: '#60a5fa' }}>
+            <div className="font-mono text-[15px] font-bold" style={{ color: '#2dd4bf' }}>
               {fmt(planGenMonthly)}
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function SavingsTab() {
             <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
               Roth IRA
             </div>
-            <div className="font-mono text-[15px] font-bold" style={{ color: '#a78bfa' }}>
+            <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>
               {fmt(rothIraMonthly)}
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function SavingsTab() {
             <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
               Brokerage
             </div>
-            <div className="font-mono text-[15px] font-bold" style={{ color: '#a78bfa' }}>
+            <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>
               {fmt(investMonthly)}
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function SavingsTab() {
         {/* Emergency Fund */}
         <SavingsCard
           title="Emergency Fund"
-          accent="#60a5fa"
+          accent="#2dd4bf"
           current={data.savings.emergencyFund.current}
           goal={data.savings.emergencyFund.goal}
           monthly={data.savings.emergencyFund.monthly}
@@ -169,7 +169,7 @@ export default function SavingsTab() {
         {/* General Savings */}
         <SavingsCard
           title="General Savings"
-          accent="#f59e0b"
+          accent="#2dd4bf"
           goal={data.savings.generalSavings.goal}
           monthly={data.savings.generalSavings.monthly}
           planMonthly={
@@ -211,7 +211,7 @@ export default function SavingsTab() {
             <div className="mt-2 rounded-lg p-3" style={{ background: '#0a1520' }}>
               <div className="flex justify-between text-[12px]">
                 <span style={{ color: '#5a7a9a' }}>Annual savings</span>
-                <span className="font-mono" style={{ color: '#f59e0b' }}>
+                <span className="font-mono" style={{ color: '#2dd4bf' }}>
                   {fmt(genMonthlyActual * 12)}/yr
                 </span>
               </div>
@@ -227,12 +227,12 @@ export default function SavingsTab() {
               Recommended Priority Order
             </div>
             {[
-              { step: '1', label: 'Emergency Fund (1 month min)', color: '#60a5fa' },
+              { step: '1', label: 'Emergency Fund (1 month min)', color: '#2dd4bf' },
               { step: '2', label: '401k up to employer match', color: '#10b981' },
-              { step: '3', label: 'Full Emergency Fund (3-6 mo)', color: '#60a5fa' },
-              { step: '4', label: 'Max Roth IRA ($583/mo)', color: '#a78bfa' },
+              { step: '3', label: 'Full Emergency Fund (3-6 mo)', color: '#2dd4bf' },
+              { step: '4', label: 'Max Roth IRA ($583/mo)', color: '#34d399' },
               { step: '5', label: 'Max 401k ($1,916/mo)', color: '#10b981' },
-              { step: '6', label: 'Taxable brokerage investing', color: '#a78bfa' },
+              { step: '6', label: 'Taxable brokerage investing', color: '#34d399' },
             ].map(item => (
               <div key={item.step} className="flex items-center gap-2.5 mb-1.5">
                 <div

@@ -43,7 +43,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
     <Card style={{ marginBottom: 14 }}>
       {/* Header row */}
       <div className="flex justify-between items-center flex-wrap gap-2.5 mb-4">
-        <SectionTitle accent="#60a5fa">{src.name} — 401k</SectionTitle>
+        <SectionTitle accent="#10b981">{src.name} — 401k</SectionTitle>
 
         {/* PERCENT / DOLLARS toggle */}
         <div
@@ -130,7 +130,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
 
         {/* Roth 401k */}
         <div style={{ background: '#0a1520', borderRadius: 10, padding: 14, border: '1px solid #1a2840' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#10b981', marginBottom: 8 }}>
             Roth 401k (post-tax)
           </div>
           {usePercent ? (
@@ -241,7 +241,7 @@ function SourceRothIraCard({ src, sc }: SourceRothIraCardProps) {
 
   return (
     <Card style={{ marginBottom: 14 }}>
-      <SectionTitle accent="#60a5fa">{src.name} — Roth IRA</SectionTitle>
+      <SectionTitle accent="#34d399">{src.name} — Roth IRA</SectionTitle>
       <div
         style={{
           display: 'inline-flex',
@@ -249,10 +249,10 @@ function SourceRothIraCard({ src, sc }: SourceRothIraCardProps) {
           gap: 6,
           padding: '4px 10px',
           background: '#0a1520',
-          border: '1px solid #60a5fa33',
+          border: '1px solid #34d39933',
           borderRadius: 20,
           fontSize: 11,
-          color: '#60a5fa',
+          color: '#34d399',
           marginBottom: 12,
         }}
       >
@@ -408,7 +408,7 @@ export default function InvestRetireTab() {
 
       {/* HSA */}
       <Card style={{ marginBottom: 14 }}>
-        <SectionTitle accent="#f59e0b">HSA</SectionTitle>
+        <SectionTitle accent="#10b981">HSA</SectionTitle>
         <div
           style={{
             display: 'inline-flex',
@@ -416,10 +416,10 @@ export default function InvestRetireTab() {
             gap: 6,
             padding: '4px 10px',
             background: '#0a1520',
-            border: '1px solid #f59e0b33',
+            border: '1px solid #10b98133',
             borderRadius: 20,
             fontSize: 11,
-            color: '#f59e0b',
+            color: '#10b981',
             marginBottom: 12,
           }}
         >
@@ -427,13 +427,13 @@ export default function InvestRetireTab() {
         </div>
         <div
           style={{
-            background: 'linear-gradient(135deg, #1a1400, #120f00)',
-            border: '1px solid #f59e0b33',
+            background: 'linear-gradient(135deg, #001a0f, #001208)',
+            border: '1px solid #10b98133',
             borderRadius: 8,
             padding: '10px 12px',
             marginBottom: 12,
             fontSize: 12,
-            color: '#f59e0b',
+            color: '#10b981',
             lineHeight: 1.6,
           }}
         >
@@ -454,7 +454,7 @@ export default function InvestRetireTab() {
               lineHeight: 1.5,
             }}
           >
-            <span style={{ color: '#f59e0b' }}>Synced from Income tab. </span>
+            <span style={{ color: '#10b981' }}>Synced from Income tab. </span>
             Edit in the Income &rarr; Detailed view.
           </div>
         )}
@@ -513,7 +513,7 @@ export default function InvestRetireTab() {
         <div className="grid gap-3.5 mb-4" style={{ gridTemplateColumns: '280px 1fr' }}>
           {/* Settings + summary */}
           <Card>
-            <SectionTitle accent="#a78bfa">Projection Settings</SectionTitle>
+            <SectionTitle accent="#34d399">Projection Settings</SectionTitle>
             <Input
               label="Current Age"
               value={primaryRet.currentAge || ''}
@@ -531,8 +531,8 @@ export default function InvestRetireTab() {
             <div style={{ background: '#0a1520', borderRadius: 10, padding: 12, marginTop: 4 }}>
               {[
                 { label: 'Trad 401k + Match', value: trad401kMonthly + employerMatch, color: '#10b981' },
-                { label: 'Roth 401k', value: roth401kMonthly, color: '#a78bfa' },
-                { label: 'Roth IRA', value: rothIraMonthly, color: '#60a5fa' },
+                { label: 'Roth 401k', value: roth401kMonthly, color: '#10b981' },
+                { label: 'Roth IRA', value: rothIraMonthly, color: '#34d399' },
               ].map(row => (
                 <div key={row.label} className="flex justify-between mb-1.5" style={{ fontSize: 12 }}>
                   <span style={{ color: '#5a7a9a' }}>{row.label}</span>
@@ -546,7 +546,7 @@ export default function InvestRetireTab() {
                 style={{ fontSize: 12, paddingBottom: 6, borderBottom: '1px solid #1e2d3d' }}
               >
                 <span style={{ color: '#5a7a9a' }}>HSA (not projected)</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>
+                <span style={{ fontFamily: "'DM Mono', monospace", color: '#10b981' }}>
                   {fmt(hsaMonthly)}/mo
                 </span>
               </div>
@@ -565,30 +565,30 @@ export default function InvestRetireTab() {
               <Badge
                 label="Projected Balance"
                 value={projBal > 0 ? fmtShort(projBal) : '—'}
-                color={projBal > 0 ? '#60a5fa' : '#3a5a7a'}
+                color={projBal > 0 ? '#34d399' : '#3a5a7a'}
                 sub={projBal > 0 ? undefined : 'Add contributions or a current balance'}
               />
               <Badge
                 label="Years to Retirement"
                 value={retYears > 0 ? `${retYears} yrs` : '—'}
-                color="#60a5fa"
+                color="#34d399"
               />
               <Badge
                 label="Monthly Income (4% rule)"
                 value={projBal > 0 ? fmt(projBal * 0.04 / 12) : '—'}
-                color={projBal > 0 ? '#60a5fa' : '#3a5a7a'}
+                color={projBal > 0 ? '#34d399' : '#3a5a7a'}
                 sub={projBal > 0 ? '/month in retirement' : 'Set retirement target first'}
               />
               <Badge
                 label="Annual Income (4% rule)"
                 value={projBal > 0 ? fmtShort(projBal * 0.04) : '—'}
-                color={projBal > 0 ? '#60a5fa' : '#3a5a7a'}
+                color={projBal > 0 ? '#34d399' : '#3a5a7a'}
                 sub={projBal > 0 ? '/year in retirement' : 'Set retirement target first'}
               />
             </div>
 
             <Card>
-              <SectionTitle accent="#a78bfa">Projected Balance Growth</SectionTitle>
+              <SectionTitle accent="#34d399">Projected Balance Growth</SectionTitle>
               <div style={{ fontSize: 11, color: '#4a7fa5', marginBottom: 12, marginTop: -8 }}>
                 7% avg annual return. Excludes HSA.
               </div>
@@ -599,7 +599,7 @@ export default function InvestRetireTab() {
       )}
 
       {/* ===== BROKERAGE & INVESTING ===== */}
-      <SectionTitle accent="#a78bfa">Brokerage &amp; Investing</SectionTitle>
+      <SectionTitle accent="#34d399">Brokerage &amp; Investing</SectionTitle>
 
       {/* Prerequisites checklist */}
       <div
@@ -642,7 +642,7 @@ export default function InvestRetireTab() {
       <div className="grid gap-3.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Inputs */}
         <Card>
-          <SectionTitle accent="#a78bfa">Brokerage Account</SectionTitle>
+          <SectionTitle accent="#34d399">Brokerage Account</SectionTitle>
           <div
             style={{
               fontSize: 12,
@@ -706,7 +706,7 @@ export default function InvestRetireTab() {
 
         {/* Simple projection */}
         <Card>
-          <SectionTitle accent="#a78bfa">Simple Projection</SectionTitle>
+          <SectionTitle accent="#34d399">Simple Projection</SectionTitle>
           <p style={{ fontSize: 12, color: '#5a7a9a', margin: '0 0 14px', lineHeight: 1.6 }}>
             Estimated growth at 7% average annual return. Subject to capital gains tax on withdrawal,
             unlike retirement accounts.
@@ -727,7 +727,7 @@ export default function InvestRetireTab() {
                 style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: 16,
-                  color: '#60a5fa',
+                  color: '#34d399',
                   fontWeight: 700,
                 }}
               >

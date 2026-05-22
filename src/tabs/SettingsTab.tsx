@@ -21,6 +21,20 @@ export default function SettingsTab() {
     setData(d => ({ ...d, settings: { ...d.settings, [key]: value } }))
   }
 
+  function restartTour() {
+    localStorage.removeItem('compound_onboarding_done')
+    localStorage.removeItem('compound_profile_done')
+    window.location.reload()
+  }
+
+  function resetAllData() {
+    if (!window.confirm('This will permanently delete all your data. Are you sure?')) return
+    localStorage.removeItem('compound_v4')
+    localStorage.removeItem('compound_onboarding_done')
+    localStorage.removeItem('compound_profile_done')
+    window.location.reload()
+  }
+
   return (
     <div>
       <h1 className="m-0 mb-1 font-display font-extrabold text-2xl text-slate-100">Settings</h1>
@@ -57,7 +71,7 @@ export default function SettingsTab() {
         </Card>
 
         <Card>
-          <SectionTitle accent="#60a5fa">Income Basis</SectionTitle>
+          <SectionTitle accent="#0e7490">Income Basis</SectionTitle>
           {INCOME_BASES.map(opt => {
             const sel = data.settings.incomeBasis === opt.id
             return (
@@ -66,15 +80,15 @@ export default function SettingsTab() {
                 onClick={() => updateSetting('incomeBasis', opt.id)}
                 className="flex gap-3 p-3.5 rounded-[10px] mb-2 cursor-pointer"
                 style={{
-                  background: sel ? '#071520' : '#0a1520',
-                  border: `1px solid ${sel ? '#1a3a5a' : '#1a2840'}`,
+                  background: sel ? '#050f14' : '#0a1520',
+                  border: `1px solid ${sel ? '#0e374a' : '#1a2840'}`,
                 }}
               >
                 <div
                   className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-                  style={{ border: `2px solid ${sel ? '#60a5fa' : '#2a4060'}` }}
+                  style={{ border: `2px solid ${sel ? '#0e7490' : '#2a4060'}` }}
                 >
-                  {sel && <div className="w-2 h-2 rounded-full bg-blue" />}
+                  {sel && <div className="w-2 h-2 rounded-full" style={{ background: '#0e7490' }} />}
                 </div>
                 <div>
                   <div className="text-[13px] font-semibold text-slate-100 mb-0.5">{opt.label}</div>
@@ -83,6 +97,48 @@ export default function SettingsTab() {
               </div>
             )
           })}
+        </Card>
+
+        <Card>
+          <SectionTitle accent="#0e7490">Privacy</SectionTitle>
+          <p className="m-0 mb-2 text-[13px] font-semibold" style={{ color: '#0e7490' }}>
+            Your data never leaves your device.
+          </p>
+          <p className="m-0 mb-3 text-[13px] text-dim leading-relaxed">
+            Everything you enter in Compound is stored locally in your browser using localStorage — a built-in browser feature that keeps data on your device. Nothing is transmitted to any server, database, or third party. There are no accounts, no tracking, and no ads.
+          </p>
+          <div className="rounded-lg p-3 text-[12px] leading-relaxed" style={{ background: '#0a1520', border: '1px solid #1a2840', color: '#8b9cb5' }}>
+            <span className="font-bold text-slate-300">Important: </span>
+            Because your data lives only in this browser, it will be lost if you clear your browser data or switch to a different browser or device. Use the <span className="font-bold text-slate-100">Export</span> button in the header to save a backup file and <span className="font-bold text-slate-100">Import</span> to restore it on any device.
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle accent="#4a7fa5">Guided Tour</SectionTitle>
+          <p className="m-0 mb-4 text-[13px] text-dim leading-relaxed">
+            Restart the onboarding tour to walk through Income, Debts, Budget, and Overview again.
+          </p>
+          <button
+            onClick={restartTour}
+            className="px-4 py-2 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+            style={{ background: 'none', border: '1px solid #4a7fa5', color: '#4a7fa5' }}
+          >
+            Restart Tour
+          </button>
+        </Card>
+
+        <Card>
+          <SectionTitle accent="#f87171">Reset Data</SectionTitle>
+          <p className="m-0 mb-4 text-[13px] text-dim leading-relaxed">
+            Wipes all data from this browser. Export first if you want a backup.
+          </p>
+          <button
+            onClick={resetAllData}
+            className="px-4 py-2 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+            style={{ background: '#2a0a0a', border: '1px solid #f87171', color: '#f87171' }}
+          >
+            Reset All Data
+          </button>
         </Card>
       </div>
     </div>

@@ -76,9 +76,9 @@ export function calcPayoff(
 
 export function debtColor(index: number, total: number): string {
   const t = total <= 1 ? 0 : index / (total - 1)
-  const r = Math.round(0xf9 + (0xfb - 0xf9) * t)
-  const g = Math.round(0x73 + (0xbf - 0x73) * t)
-  const b = Math.round(0x16 + (0x24 - 0x16) * t)
+  const r = Math.round(0xf8 + (0xfc - 0xf8) * t)
+  const g = Math.round(0x71 + (0xa5 - 0x71) * t)
+  const b = Math.round(0x71 + (0xa5 - 0x71) * t)
   const hex = (n: number) => n.toString(16).padStart(2, '0')
   return '#' + hex(r) + hex(g) + hex(b)
 }

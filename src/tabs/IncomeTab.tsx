@@ -113,13 +113,15 @@ export default function IncomeTab() {
         <Badge
           label="Gross Monthly"
           value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(grossMonthly)}
-          color="#60a5fa"
+          color="#0e7490"
+          tint={false}
           tooltip="Total gross income across all sources before any deductions."
         />
         <Badge
           label="Net Monthly"
           value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(netMonthly)}
-          color="#10b981"
+          color="#38bdf8"
+          tint={false}
           tooltip="Estimated take-home after taxes and deductions."
         />
       </div>

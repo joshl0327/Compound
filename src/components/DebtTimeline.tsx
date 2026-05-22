@@ -72,7 +72,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
       ms.push({ label: 'Debt-free', age: debtFreeAge, above: true, color: '#10b981', sub: fmt(totalDebtBalance) + ' paid' })
     }
 
-    ms.push({ label: 'Retire', age: targetAge, above: false, color: '#a78bfa', sub: `Age ${targetAge}` })
+    ms.push({ label: 'Retire', age: targetAge, above: false, color: '#34d399', sub: `Age ${targetAge}` })
 
     // Alternate above/below when within 2 years of each other
     const sorted = ms.sort((a, b) => a.age - b.age)

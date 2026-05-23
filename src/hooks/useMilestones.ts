@@ -27,15 +27,20 @@ export function computeFidelityEarned(
   projectionPoints: DataPoint[],
   stored: Set<string>
 ): Set<string> {
-  const earned = new Set<string>(stored)
+  // Filter stored to past-age only — prevents old projection data from persisting as confirmed
+  const storedConfirmed = new Set<string>(
+    [...stored].filter(label => {
+      const b = FIDELITY_BENCHMARKS.find(b => b.label === label)
+      return b ? currentAge >= b.age : false
+    })
+  )
+  const earned = new Set<string>(storedConfirmed)
   if (projectionPoints.length === 0) return earned
   for (const b of FIDELITY_BENCHMARKS) {
+    if (currentAge < b.age) continue  // future benchmarks belong in fidelityOnTrack
     const threshold = annualGross * b.multiplier
     if (threshold <= 0) continue
-    const qualifies = currentAge > b.age
-      ? (projectionPoints[0]?.balance ?? 0) >= threshold
-      : (projectionPoints.find(p => p.age === b.age)?.balance ?? 0) >= threshold
-    if (qualifies) earned.add(b.label)
+    if ((projectionPoints[0]?.balance ?? 0) >= threshold) earned.add(b.label)
   }
   return earned
 }
@@ -48,12 +53,11 @@ export function computeFidelityOnTrack(
   const onTrack = new Set<string>()
   if (projectionPoints.length === 0) return onTrack
   for (const b of FIDELITY_BENCHMARKS) {
+    if (currentAge >= b.age) continue  // past benchmarks handled by computeFidelityEarned
     const threshold = annualGross * b.multiplier
     if (threshold <= 0) continue
-    const qualifies = currentAge > b.age
-      ? (projectionPoints[0]?.balance ?? 0) >= threshold
-      : (projectionPoints.find(p => p.age === b.age)?.balance ?? 0) >= threshold
-    if (qualifies) onTrack.add(b.label)
+    const pt = projectionPoints.find(p => p.age === b.age)
+    if ((pt?.balance ?? 0) >= threshold) onTrack.add(b.label)
   }
   return onTrack
 }

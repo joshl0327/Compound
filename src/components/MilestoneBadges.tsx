@@ -12,11 +12,7 @@ interface Props {
   currentAge: number
 }
 
-function getDollarWindow(earned: Set<number>): {
-  pills: Array<{ threshold: number; role: DollarRole }>
-  hasMoreEarned: boolean
-  hasMoreUpcoming: boolean
-} {
+function getDollarWindow(earned: Set<number>): Array<{ threshold: number; role: DollarRole }> {
   const earnedList = DOLLAR_THRESHOLDS.filter(t => earned.has(t))
   const unearnedList = DOLLAR_THRESHOLDS.filter(t => !earned.has(t))
   const pills: Array<{ threshold: number; role: DollarRole }> = []
@@ -36,12 +32,7 @@ function getDollarWindow(earned: Set<number>): {
     })
   }
 
-  const shownUnearned = pills.filter(p => p.role === 'next-up' || p.role === 'faded-next').length
-  return {
-    pills,
-    hasMoreEarned: earnedList.length > 2,
-    hasMoreUpcoming: unearnedList.length > shownUnearned,
-  }
+  return pills
 }
 
 function getFidelityPills(
@@ -71,8 +62,8 @@ const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
 }
 
 const BASE: CSSProperties = {
-  borderRadius: 2, padding: '2px 5px', fontSize: 8, fontFamily: 'DM Mono, monospace',
-  whiteSpace: 'nowrap', lineHeight: 1.4, minWidth: 58, display: 'inline-block', textAlign: 'center',
+  borderRadius: 2, padding: '3px 8px', fontSize: 9, fontFamily: 'DM Mono, monospace',
+  whiteSpace: 'nowrap', lineHeight: 1.4, minWidth: 68, display: 'inline-block', textAlign: 'center',
 }
 
 function Pill({ label, role }: { label: string; role: PillRole }) {
@@ -83,23 +74,17 @@ function Pill({ label, role }: { label: string; role: PillRole }) {
   return <span style={{ ...BASE, ...ROLE_STYLES[role] }}>{prefix}{label}</span>
 }
 
-function Dots() {
-  return <span style={{ color: '#2a5a5a', fontSize: 8, fontFamily: 'DM Mono, monospace', letterSpacing: 1, lineHeight: 1.4 }}>···</span>
-}
-
 export default function MilestoneBadges({ earnedDollar, earnedFidelity, fidelityOnTrack, currentAge }: Props) {
-  const { pills: dollarPills, hasMoreEarned, hasMoreUpcoming } = getDollarWindow(earnedDollar)
+  const dollarPills = getDollarWindow(earnedDollar)
   const fidelityPills = getFidelityPills(earnedFidelity, fidelityOnTrack, currentAge)
   const visibleFidelity = fidelityPills.filter(p => p.role !== 'hidden')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-        {hasMoreEarned && <Dots />}
         {dollarPills.map(({ threshold, role }) => (
           <Pill key={threshold} label={DOLLAR_LABELS[threshold]} role={role} />
         ))}
-        {hasMoreUpcoming && <Dots />}
       </div>
       {visibleFidelity.length > 0 && (
         <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>

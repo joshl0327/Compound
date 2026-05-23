@@ -39,24 +39,16 @@ describe('computeFidelityEarned', () => {
   const makePoints = (pairs: [number, number][]): DataPoint[] =>
     pairs.map(([age, balance]) => ({ age, balance }))
 
-  it('earns 1× by 30 when projection at age 30 meets threshold', () => {
-    const points = makePoints([[25, 20_000], [30, 120_000], [35, 200_000]])
-    const result = computeFidelityEarned(25, 100_000, points, new Set())
-    expect(result.has('1× by 30')).toBe(true)
-    expect(result.has('3× by 40')).toBe(false)
-  })
-
-  it('does not earn when projection at benchmark age misses threshold', () => {
-    const points = makePoints([[25, 10_000], [30, 50_000]])
-    const result = computeFidelityEarned(25, 100_000, points, new Set())
-    expect(result.has('1× by 30')).toBe(false)
-  })
-
-  it('earns a past-age benchmark from current balance when currentAge > benchmarkAge', () => {
-    // currentAge 35 > benchmark age 30; annualGross 100K * 1 = 100K; balance 350K qualifies
-    const points = makePoints([[35, 350_000]])
+  it('earns 1× by 30 when currentAge >= 30 and balance qualifies', () => {
+    const points = makePoints([[35, 200_000]])
     const result = computeFidelityEarned(35, 100_000, points, new Set())
-    expect(result.has('1× by 30')).toBe(true)
+    expect(result.has('1× by 30')).toBe(true)  // age 35 >= 30, balance 200K >= 100K
+  })
+
+  it('does not earn 1× by 30 when currentAge < 30 even if projection hits it', () => {
+    const points = makePoints([[25, 20_000], [30, 120_000]])
+    const result = computeFidelityEarned(25, 100_000, points, new Set())
+    expect(result.has('1× by 30')).toBe(false)  // future — belongs in fidelityOnTrack
   })
 
   it('does not earn past-age benchmark when current balance is below threshold', () => {
@@ -65,30 +57,36 @@ describe('computeFidelityEarned', () => {
     expect(result.has('1× by 30')).toBe(false)
   })
 
-  it('earns 3× by 40 and 6× by 50 when projection meets both', () => {
-    const points = makePoints([
-      [28, 50_000], [40, 320_000], [50, 650_000], [65, 2_000_000],
-    ])
-    const result = computeFidelityEarned(28, 100_000, points, new Set())
-    expect(result.has('3× by 40')).toBe(true)  // 320K >= 100K * 3
-    expect(result.has('6× by 50')).toBe(true)  // 650K >= 100K * 6
-    expect(result.has('8× by 60')).toBe(false)
+  it('earns multiple past-age benchmarks when balance qualifies for all', () => {
+    const points = makePoints([[55, 800_000]])
+    const result = computeFidelityEarned(55, 100_000, points, new Set())
+    expect(result.has('1× by 30')).toBe(true)   // 800K >= 100K
+    expect(result.has('3× by 40')).toBe(true)   // 800K >= 300K
+    expect(result.has('6× by 50')).toBe(true)   // 800K >= 600K
+    expect(result.has('8× by 60')).toBe(false)  // age 55 < 60
   })
 
-  it('preserves stored fidelity milestones', () => {
-    const stored = new Set(['3× by 40'])
-    const points = makePoints([[28, 10_000]])
-    const result = computeFidelityEarned(28, 200_000, points, stored)
-    expect(result.has('3× by 40')).toBe(true)
+  it('preserves stored past-age fidelity milestones', () => {
+    const stored = new Set(['1× by 30'])
+    const points = makePoints([[35, 5_000]])  // balance dropped below threshold
+    const result = computeFidelityEarned(35, 100_000, points, stored)
+    expect(result.has('1× by 30')).toBe(true)  // preserved from stored
+  })
+
+  it('filters out stored future benchmarks (migration from old projection-based logic)', () => {
+    const stored = new Set(['3× by 40'])  // was stored when it was a future projection
+    const points = makePoints([[28, 400_000]])
+    const result = computeFidelityEarned(28, 100_000, points, stored)
+    expect(result.has('3× by 40')).toBe(false)  // age 28 < 40, filtered out
   })
 
   it('skips all benchmarks when annualGross is 0', () => {
-    const points = makePoints([[28, 500_000]])
-    expect(computeFidelityEarned(28, 0, points, new Set()).size).toBe(0)
+    const points = makePoints([[45, 500_000]])
+    expect(computeFidelityEarned(45, 0, points, new Set()).size).toBe(0)
   })
 
   it('returns empty set when projectionPoints is empty', () => {
-    expect(computeFidelityEarned(28, 100_000, [], new Set()).size).toBe(0)
+    expect(computeFidelityEarned(35, 100_000, [], new Set()).size).toBe(0)
   })
 })
 

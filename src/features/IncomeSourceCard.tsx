@@ -471,7 +471,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
               <div
                 className="mt-2.5 p-3"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-surface), var(--color-surface))',
+                  background: 'var(--color-surface-2)',
                   border: '1px solid #10b98133',
                   borderRadius: 10,
                 }}

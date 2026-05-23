@@ -104,7 +104,7 @@ export default function SavingsCard({
         <div className="mt-2">
           <div
             className="overflow-hidden mb-1.5"
-            style={{ height: 6, background: 'var(--color-border)', borderRadius: 3 }}
+            style={{ height: 6, background: 'var(--color-surface-2)', borderRadius: 3 }}
           >
             <div
               style={{

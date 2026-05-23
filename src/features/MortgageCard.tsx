@@ -98,7 +98,7 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
             value={fmtCurrencyInput(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment)}
             onChange={e => onChange({ ...debt, planPayment: stripCommas(e.target.value) })}
             className={inputBase}
-            style={{ background: 'var(--color-surface)', borderColor: `${MORTGAGE_COLOR}44`, color: 'var(--color-text)' }}
+            style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
           />
         </div>
       </div>

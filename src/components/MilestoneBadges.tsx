@@ -83,9 +83,9 @@ const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
 }
 
 const BASE: CSSProperties = {
-  borderRadius: 2, padding: '4px 0', fontSize: 9, fontFamily: 'DM Mono, monospace',
-  whiteSpace: 'nowrap', lineHeight: 1.4, display: 'inline-block', textAlign: 'center',
-  width: 82, boxSizing: 'border-box' as const,
+  borderRadius: 2, padding: 0, fontSize: 11, fontFamily: 'DM Mono, monospace',
+  whiteSpace: 'nowrap', lineHeight: 1, display: 'inline-flex', alignItems: 'center',
+  justifyContent: 'center', width: 82, height: 42, boxSizing: 'border-box' as const,
 }
 
 function Pill({ label, role }: { label: string; role: PillRole }) {

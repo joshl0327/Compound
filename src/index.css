@@ -3,21 +3,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens ─────────────────────────────────── */
+[data-theme="dark"] {
+  --color-bg:           #1d1b18;
+  --color-surface:      #252220;
+  --color-surface-2:    #2a2724;
+  --color-border:       #342f2a;
+  --color-text:         #e8e4e0;
+  --color-text-muted:   #8a8078;
+  --color-text-dim:     #5a5450;
+  --color-accent:       #0d9488;
+  --color-accent-dim:   rgba(13, 148, 136, 0.12);
+  --color-nav:          rgba(24, 22, 20, 0.94);
+}
+
+[data-theme="light"] {
+  --color-bg:           #f2f0ec;
+  --color-surface:      #faf9f7;
+  --color-surface-2:    #ffffff;
+  --color-border:       #ddd9d4;
+  --color-text:         #18140f;
+  --color-text-muted:   #6b6560;
+  --color-text-dim:     #9a9590;
+  --color-accent:       #0a7a70;
+  --color-accent-dim:   rgba(10, 122, 112, 0.10);
+  --color-nav:          rgba(238, 236, 232, 0.94);
+}
+
 @layer base {
-  html, body, #root { @apply min-h-screen text-slate-100; background: #022e2e; margin: 0; padding: 0; }
+  html, body, #root {
+    @apply min-h-screen;
+    background: var(--color-bg);
+    color: var(--color-text);
+    margin: 0;
+    padding: 0;
+  }
   * { box-sizing: border-box; }
-  input::placeholder { @apply text-muted; }
+  input::placeholder { color: var(--color-text-muted); }
   button { cursor: pointer; }
   ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-thumb { @apply bg-[#0d3028] rounded; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 9999px; }
   input[type=number]::-webkit-inner-spin-button { opacity: 0.3; }
 }
 
 @layer components {
   .card {
     @apply p-5;
-    background: rgba(2, 35, 35, 0.55);
-    border: 1px solid rgba(13, 148, 136, 0.14);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 5px;
   }
 }

@@ -5,19 +5,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg:       '#022e2e',
-        surface:  '#043a3a',
-        surface2: '#032e2e',
-        border:   '#0a5252',
-        accent:   '#0d9488',
+        bg:       'var(--color-bg)',
+        surface:  'var(--color-surface)',
+        surface2: 'var(--color-surface-2)',
+        border:   'var(--color-border)',
+        accent:   'var(--color-accent)',
         blue:     '#60a5fa',
         green:    '#10b981',
         orange:   '#f97316',
         amber:    '#fbbf24',
         red:      '#ef4444',
-        muted:    '#1a5555',
-        subtle:   '#2e7a7a',
-        dim:      '#5aabab',
+        muted:    'var(--color-text-muted)',
+        subtle:   'var(--color-text-muted)',
+        dim:      'var(--color-text-dim)',
       },
       fontFamily: {
         display: ['IBM Plex Sans', 'sans-serif'],

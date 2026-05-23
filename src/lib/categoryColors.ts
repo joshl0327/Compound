@@ -1,0 +1,16 @@
+export const CATEGORY_COLORS = {
+  structural:        '#0e7490',
+  incomeW2:          '#164e63',
+  incomeOther:       '#155e75',
+  retHsa:            '#10b981',
+  taxes:             '#94a3b8',
+  takehome:          '#38bdf8',
+  essentials:        '#f59e0b',
+  essentialsFlagged: '#f97316',
+  discretionary:     '#fb923c',
+  debt:              '#f87171',
+  liquidSavings:     '#2dd4bf',
+  retirement:        '#34d399',
+  remaining:         '#3a5a7a',
+  overshoot:         '#ef4444',
+} as const

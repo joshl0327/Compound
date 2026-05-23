@@ -152,7 +152,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const nwpMonths = computeNetWorthPositiveMonths({ savingsBalance: liquidSavingsBalance, retirementBalance, monthlyContrib, totalDebtBalance, monthlyDebtPayment: debtPlanTotal })
 
   if (consumerDebts.length === 0) return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#10b981' }}>✓ No consumer debt</div>
-  if (planMaxMonths === 0) return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: '#3a5a7a' }}>Add payment amounts to see the payoff chart.</div>
+  if (planMaxMonths === 0) return <div className="flex items-center justify-center h-32 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>Add payment amounts to see the payoff chart.</div>
 
   // ── Chart geometry ──
   const w = 380, padL = 40, padR = 12, padT = 10, padB = 20, cW = w - padL - padR, cH = 150
@@ -232,9 +232,9 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
     return {
       fontSize: 9, fontWeight: 600 as const, letterSpacing: '0.06em', textTransform: 'uppercase' as const,
       padding: '2px 8px', borderRadius: 3, cursor: disabled ? 'default' : 'pointer' as const,
-      background: isActive ? 'rgba(13,148,136,0.18)' : 'none',
-      border: `1px solid ${isActive ? '#0d9488' : 'rgba(13,148,136,0.2)'}`,
-      color: isActive ? '#5aabab' : disabled ? '#1a3a3a' : '#2e7a7a',
+      background: isActive ? 'var(--color-accent-dim)' : 'none',
+      border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+      color: isActive ? 'var(--color-text-muted)' : disabled ? 'var(--color-border)' : 'var(--color-text-dim)',
       opacity: disabled ? 0.4 : 1,
     }
   }
@@ -249,20 +249,20 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           return (
             <div className="flex gap-4">
               <div>
-                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Debt-free</div>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Debt-free</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
               </div>
               <div>
-                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Interest paid</div>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Interest paid</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
               </div>
-              <div style={{ borderRight: mode !== 'minimum' ? '1px solid rgba(13,148,136,0.15)' : 'none', paddingRight: 16, marginRight: 0 }}>
-                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
+              <div style={{ borderRight: mode !== 'minimum' ? '1px solid var(--color-accent-dim)' : 'none', paddingRight: 16, marginRight: 0 }}>
+                <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Freed/mo</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
               </div>
               {(mode === 'snowball' || mode === 'avalanche') && monthsDiff !== 0 && (
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Plan</div>
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>vs Plan</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
                     {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
                   </div>
@@ -270,7 +270,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
               )}
               {(mode === 'snowball' || mode === 'avalanche') && interestDiff !== 0 && (
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Interest saved</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
                     {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
                   </div>
@@ -296,8 +296,8 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {/* Y-axis grid + labels */}
         {yTicks.map(({ value, y }) => (
           <g key={value}>
-            <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="#1a2840" strokeWidth={1} strokeDasharray="4 4" />
-            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={8} fill="#5a7a9a">{fmtShort(value)}</text>
+            <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="var(--color-surface)" strokeWidth={1} strokeDasharray="4 4" />
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={8} fill="var(--color-text-muted)">{fmtShort(value)}</text>
           </g>
         ))}
 
@@ -315,7 +315,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         )}
 
         {/* X-axis baseline */}
-        <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="#1a2840" strokeWidth={1.5} />
+        <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="var(--color-surface)" strokeWidth={1.5} />
 
 
         {/* Payoff summary legend — top-right empty space */}
@@ -331,7 +331,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 return (
                   <g key={`leg${i}`}>
                     <rect x={legX - 3} y={ty - 5} width={5} height={5} rx={1} fill={evt.color} fillOpacity={0.85} />
-                    <text x={legX - 7} y={ty} textAnchor="end" fontSize={7} fill="#7a9a9a">
+                    <text x={legX - 7} y={ty} textAnchor="end" fontSize={7} fill="var(--color-text-dim)">
                       {name} — {evt.label}
                     </text>
                   </g>
@@ -342,14 +342,14 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         })()}
 
         {/* X-axis date labels */}
-        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={7.5} fill="#5a7a9a">Now</text>
+        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={7.5} fill="var(--color-text-muted)">Now</text>
         {ticks.map(m => (
           <g key={m}>
-            <line x1={toX(m)} y1={padT + cH} x2={toX(m)} y2={padT + cH + 4} stroke="#2a3d55" strokeWidth={1} />
-            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="#5a7a9a">{monthLabel(m)}</text>
+            <line x1={toX(m)} y1={padT + cH} x2={toX(m)} y2={padT + cH + 4} stroke="var(--color-border)" strokeWidth={1} />
+            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="var(--color-text-muted)">{monthLabel(m)}</text>
           </g>
         ))}
-        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="#5a7a9a">{monthLabel(nMonths)}</text>
+        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="var(--color-text-muted)">{monthLabel(nMonths)}</text>
 
         {/* Hover crosshair + tooltip */}
         {hoverData && (() => {
@@ -361,10 +361,10 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           const ttY = Math.max(padT + 2, Math.min(padT + cH - ttH - 2, padT + cH / 2 - ttH / 2))
           return (
             <g>
-              <line x1={x} y1={padT} x2={x} y2={padT + cH} stroke="#5aabab" strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
-              <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={3} fill="#021e1e" stroke="rgba(13,148,136,0.3)" strokeWidth={1} />
-              <text x={ttX + 8} y={ttY + 11} fontSize={8} fill="#2e7a7a">{label}</text>
-              <text x={ttX + 8} y={ttY + 22} fontSize={9} fill="#e8f5f2" fontWeight={700} fontFamily="DM Mono, monospace">{fmtShort(total)}</text>
+              <line x1={x} y1={padT} x2={x} y2={padT + cH} stroke="var(--color-text-dim)" strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
+              <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={3} fill="var(--color-bg)" stroke="var(--color-accent-dim)" strokeWidth={1} />
+              <text x={ttX + 8} y={ttY + 11} fontSize={8} fill="var(--color-text-dim)">{label}</text>
+              <text x={ttX + 8} y={ttY + 22} fontSize={9} fill="var(--color-text)" fontWeight={700} fontFamily="DM Mono, monospace">{fmtShort(total)}</text>
               {debts.map((d, i) => (
                 <g key={i}>
                   <rect x={ttX + 8} y={ttY + 30 + i * ttLineH} width={5} height={5} rx={1} fill={d.color} fillOpacity={0.8} />

@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef } from 'react'
 import { computeNetWorthPositiveMonths } from '../lib/sankeyHelpers'
-import { calcPayoff } from '../lib/calculations'
+import { calcPayoff, calcPayoffPromo, promoMonthsRemaining } from '../lib/calculations'
 import type { AppData } from '../types'
 import { fmt, fmtShort } from '../lib/format'
 
@@ -14,7 +14,13 @@ interface DebtTimelineProps {
 }
 
 type Mode = 'minimum' | 'plan' | 'snowball' | 'avalanche'
-interface SimDebt { name: string; balance: number; annualRate: number; planPayment: number }
+interface SimDebt {
+  name: string; balance: number
+  annualRate: number       // effective rate for sorting (post-promo rate for promo debts)
+  planPayment: number
+  promoMonthsLeft: number  // 0 for non-promo debts
+  promoAnnualRate: number  // rate during promo period (0 for non-promo)
+}
 
 // 10 hues evenly distributed ~36° apart around the wheel, all at 400-level brightness for dark bg
 const BAND_PALETTE = ['#fb923c', '#facc15', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#7dd3fc']
@@ -26,7 +32,10 @@ function bandColor(idx: number, total: number): string {
 
 function simulateDebtPayoff(debts: SimDebt[], extra: number, strategy: 'snowball' | 'avalanche'): { months: number; totalInterest: number }[] {
   const sorted = strategy === 'snowball' ? [...debts].sort((a, b) => a.balance - b.balance) : [...debts].sort((a, b) => b.annualRate - a.annualRate)
-  const n = sorted.length, bal = sorted.map(d => d.balance), rates = sorted.map(d => d.annualRate / 100 / 12)
+  const n = sorted.length, bal = sorted.map(d => d.balance)
+  const rates = sorted.map(d => d.annualRate / 100 / 12)
+  const promoRates = sorted.map(d => d.promoAnnualRate / 100 / 12)
+  const promoLeft = sorted.map(d => d.promoMonthsLeft)
   const interests = new Array<number>(n).fill(0), payoffM = new Array<number>(n).fill(0)
   let rolling = extra, month = 0
   while (bal.some(b => b > 0.01) && month < 600) {
@@ -34,7 +43,8 @@ function simulateDebtPayoff(debts: SimDebt[], extra: number, strategy: 'snowball
     const target = bal.findIndex(b => b > 0.01)
     for (let i = 0; i < n; i++) {
       if (bal[i] <= 0.01) continue
-      const int = bal[i] * rates[i]; interests[i] += int; bal[i] += int
+      const rate = month <= promoLeft[i] ? promoRates[i] : rates[i]
+      const int = bal[i] * rate; interests[i] += int; bal[i] += int
       const pay = Math.min(sorted[i].planPayment + (i === target ? rolling : 0), bal[i])
       bal[i] = Math.max(0, bal[i] - pay)
       if (bal[i] < 0.01) { bal[i] = 0; if (!payoffM[i]) payoffM[i] = month; rolling += sorted[i].planPayment }
@@ -47,19 +57,29 @@ function buildMonthlyBalances(debts: SimDebt[], mode: Mode, extra: number, nMont
   const isSimulation = (mode === 'snowball' || mode === 'avalanche') && extra > 0
   if (!isSimulation) {
     return debts.map(d => {
-      const rate = d.annualRate / 100 / 12; let b = d.balance; const arr = [b]
-      for (let m = 1; m <= nMonths; m++) { b = b > 0 ? Math.max(0, b + b * rate - d.planPayment) : 0; arr.push(b) }
+      const rate = d.annualRate / 100 / 12
+      const promoRate = d.promoAnnualRate / 100 / 12
+      let b = d.balance; const arr = [b]
+      for (let m = 1; m <= nMonths; m++) {
+        const r = m <= d.promoMonthsLeft ? promoRate : rate
+        b = b > 0 ? Math.max(0, b + b * r - d.planPayment) : 0
+        arr.push(b)
+      }
       return { name: d.name, monthlyBalances: arr }
     })
   }
   const sorted = mode === 'snowball' ? [...debts].sort((a, b) => a.balance - b.balance) : [...debts].sort((a, b) => b.annualRate - a.annualRate)
   const n = sorted.length, bal = sorted.map(d => d.balance), history = sorted.map(d => [d.balance] as number[])
-  const rates = sorted.map(d => d.annualRate / 100 / 12); let rolling = extra
+  const rates = sorted.map(d => d.annualRate / 100 / 12)
+  const promoRates = sorted.map(d => d.promoAnnualRate / 100 / 12)
+  const promoLeft = sorted.map(d => d.promoMonthsLeft)
+  let rolling = extra
   for (let m = 1; m <= nMonths; m++) {
     const target = bal.findIndex(b => b > 0.01)
     for (let i = 0; i < n; i++) {
       if (bal[i] <= 0.01) { history[i].push(0); continue }
-      const int = bal[i] * rates[i]; bal[i] += int
+      const rate = m <= promoLeft[i] ? promoRates[i] : rates[i]
+      const int = bal[i] * rate; bal[i] += int
       const pay = Math.min(sorted[i].planPayment + (i === target ? rolling : 0), bal[i])
       bal[i] = Math.max(0, bal[i] - pay)
       if (bal[i] < 0.01) { bal[i] = 0; rolling += sorted[i].planPayment }
@@ -77,16 +97,37 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const consumerDebts = data.debts.filter(d => !d.isMortgage)
   const totalDebtBalance = consumerDebts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)
 
+  const toSimDebt = (d: typeof consumerDebts[number], payment: number): SimDebt => ({
+    name: d.name,
+    balance: parseFloat(d.balance) || 0,
+    annualRate: d.isPromo ? parseFloat(d.postPromoRate || '0') || 0 : parseFloat(d.rate) || 0,
+    planPayment: payment,
+    promoMonthsLeft: d.isPromo && d.promoEndDate ? promoMonthsRemaining(d.promoEndDate) : 0,
+    promoAnnualRate: d.isPromo ? parseFloat(d.promoRate || '0') || 0 : parseFloat(d.rate) || 0,
+  })
+
   const simInputs = useMemo((): SimDebt[] =>
-    consumerDebts.map(d => ({ name: d.name, balance: parseFloat(d.balance) || 0, annualRate: parseFloat(d.rate) || 0, planPayment: parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0 }))
+    consumerDebts
+      .map(d => toSimDebt(d, parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0))
       .filter(d => d.balance > 0 && d.planPayment > 0), [consumerDebts])
 
   const simMinInputs = useMemo((): SimDebt[] =>
-    consumerDebts.map(d => ({ name: d.name, balance: parseFloat(d.balance) || 0, annualRate: parseFloat(d.rate) || 0, planPayment: parseFloat(d.minPayment) || 0 }))
+    consumerDebts
+      .map(d => toSimDebt(d, parseFloat(d.minPayment) || 0))
       .filter(d => d.balance > 0 && d.planPayment > 0), [consumerDebts])
 
-  const planItems = useMemo(() => consumerDebts.map(d => calcPayoff(d.balance, d.rate, parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[], [consumerDebts])
-  const minItems = useMemo(() => consumerDebts.map(d => calcPayoff(d.balance, d.rate, parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[], [consumerDebts])
+  const calcForDebt = (d: typeof consumerDebts[number], payment: number) =>
+    d.isPromo && d.promoEndDate && d.postPromoRate
+      ? calcPayoffPromo(d.balance, parseFloat(d.promoRate || '0') || 0, payment, promoMonthsRemaining(d.promoEndDate), parseFloat(d.postPromoRate) || 0)
+      : calcPayoff(d.balance, d.rate, payment)
+
+  const planItems = useMemo(() =>
+    consumerDebts.map(d => calcForDebt(d, parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[],
+    [consumerDebts])
+
+  const minItems = useMemo(() =>
+    consumerDebts.map(d => calcForDebt(d, parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[],
+    [consumerDebts])
 
   const planMaxMonths = planItems.length > 0 ? Math.max(...planItems.map(r => r.months)) : 0
   const planTotalInterest = planItems.reduce((s, r) => s + r.totalInterest, 0)

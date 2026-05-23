@@ -58,6 +58,43 @@ export function buildAggregateProjection(
   return points
 }
 
+export function promoMonthsRemaining(promoEndDate: string): number {
+  if (!promoEndDate) return 0
+  const end = new Date(promoEndDate)
+  const now = new Date()
+  const months = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth())
+  return Math.max(0, months)
+}
+
+export function calcPayoffPromo(
+  balance: string | number,
+  promoAnnualRate: number,
+  monthlyPayment: string | number,
+  promoMonthsLeft: number,
+  postPromoAnnualRate: number,
+): PayoffResult | null {
+  let b = parseFloat(balance as string) || 0
+  const p = parseFloat(monthlyPayment as string) || 0
+  if (b <= 0) return { months: 0, totalInterest: 0 }
+  if (p <= 0) return null
+
+  const r1 = promoAnnualRate / 100 / 12
+  let totalInterest = 0, months = 0
+
+  for (let m = 0; m < promoMonthsLeft && b > 0.01; m++) {
+    const interest = b * r1
+    totalInterest += interest
+    b = Math.max(0, b + interest - p)
+    months++
+  }
+
+  if (b <= 0.01) return { months, totalInterest: Math.max(0, totalInterest) }
+
+  const phase2 = calcPayoff(b, postPromoAnnualRate, p)
+  if (!phase2) return null
+  return { months: months + phase2.months, totalInterest: totalInterest + phase2.totalInterest }
+}
+
 export function calcPayoff(
   balance: string | number,
   annualRate: string | number,

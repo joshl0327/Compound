@@ -101,11 +101,11 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: '#0a1520',
-    border: '1px solid #1e3a5f',
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
     borderRadius: 8,
     padding: '10px 12px',
-    color: '#e8f0f8',
+    color: 'var(--color-text)',
     fontSize: 14,
     fontFamily: "'DM Mono', monospace",
     outline: 'none',
@@ -124,8 +124,8 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
       <div
         className="max-w-sm w-full rounded-2xl p-8"
         style={{
-          background: 'linear-gradient(145deg, #111c28, #0d1620)',
-          border: '1px solid #1a2840',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
         }}
       >
         {/* Header */}
@@ -144,7 +144,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
         {/* Progress bar */}
         <div
           className="h-[3px] rounded-sm mb-7 overflow-hidden"
-          style={{ background: '#0a1520' }}
+          style={{ background: 'var(--color-surface)' }}
         >
           <div
             className="h-full rounded-sm transition-all duration-300"
@@ -164,7 +164,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
             >
               What do you earn?
             </div>
-            <div className="text-[13px] text-[#5a7a9a] mb-5 leading-relaxed">
+            <div className="text-[13px] text-[var(--color-text-muted)] mb-5 leading-relaxed">
               We'll use this to calculate your savings rate, housing percentage, and financial
               benchmarks.
             </div>
@@ -207,8 +207,8 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                     style={{
                       flex: 1,
                       padding: '8px 4px',
-                      background: freq === f.id ? '#1e3a5f' : '#0a1520',
-                      border: `1px solid ${freq === f.id ? '#3b82f6' : '#1e3a5f'}`,
+                      background: freq === f.id ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                      border: `1px solid ${freq === f.id ? '#3b82f6' : 'var(--color-border)'}`,
                       borderRadius: 6,
                       color: freq === f.id ? '#60a5fa' : '#4a7fa5',
                       fontSize: 11,
@@ -238,7 +238,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
             >
               What's your monthly housing cost?
             </div>
-            <div className="text-[13px] text-[#5a7a9a] mb-5 leading-relaxed">
+            <div className="text-[13px] text-[var(--color-text-muted)] mb-5 leading-relaxed">
               Rent, mortgage, or HOA dues. The 28% guideline is a common benchmark — though in
               high cost-of-living areas, it's often not realistic.
             </div>
@@ -268,7 +268,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
             >
               Do you carry consumer debt?
             </div>
-            <div className="text-[13px] text-[#5a7a9a] mb-5 leading-relaxed">
+            <div className="text-[13px] text-[var(--color-text-muted)] mb-5 leading-relaxed">
               Credit cards, student loans, car loans — not your mortgage. You can add more later.
             </div>
 
@@ -279,8 +279,8 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                   onClick={() => setHasDebt(true)}
                   style={{
                     padding: 14,
-                    background: '#0a1520',
-                    border: '1px solid #1e3a5f',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: 10,
                     color: '#60a5fa',
                     fontSize: 14,
@@ -295,8 +295,8 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                   onClick={() => setHasDebt(false)}
                   style={{
                     padding: 14,
-                    background: '#0a1520',
-                    border: '1px solid #1e3a5f',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: 10,
                     color: '#60a5fa',
                     fontSize: 14,
@@ -320,9 +320,9 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                     onClick={() => setCurrentDebt(c => c - 1)}
                     style={{
                       background: 'none',
-                      border: '1px solid #1e3a5f',
+                      border: '1px solid var(--color-border)',
                       borderRadius: 6,
-                      color: currentDebt === 0 ? '#2a4060' : '#60a5fa',
+                      color: currentDebt === 0 ? 'var(--color-border)' : '#60a5fa',
                       width: 28,
                       height: 28,
                       cursor: currentDebt === 0 ? 'default' : 'pointer',
@@ -345,9 +345,9 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                       onClick={() => removeDebt(currentDebt)}
                       style={{
                         background: 'none',
-                        border: '1px solid #2a4060',
+                        border: '1px solid var(--color-border)',
                         borderRadius: 6,
-                        color: '#5a7a9a',
+                        color: 'var(--color-text-muted)',
                         width: 28,
                         height: 28,
                         cursor: 'pointer',
@@ -367,9 +367,9 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                     onClick={() => setCurrentDebt(c => c + 1)}
                     style={{
                       background: 'none',
-                      border: '1px solid #1e3a5f',
+                      border: '1px solid var(--color-border)',
                       borderRadius: 6,
-                      color: currentDebt === debts.length - 1 ? '#2a4060' : '#60a5fa',
+                      color: currentDebt === debts.length - 1 ? 'var(--color-border)' : '#60a5fa',
                       width: 28,
                       height: 28,
                       cursor: currentDebt === debts.length - 1 ? 'default' : 'pointer',
@@ -444,7 +444,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                     onClick={addDebt}
                     style={{
                       background: 'none',
-                      border: '1px solid #1e3a5f',
+                      border: '1px solid var(--color-border)',
                       borderRadius: 6,
                       color: '#60a5fa',
                       fontSize: 12,
@@ -481,7 +481,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
             {hasDebt === false && (
               <div
                 className="rounded-xl p-3.5 text-center"
-                style={{ background: '#0a1520', border: '1px solid #10b981' }}
+                style={{ background: 'var(--color-surface)', border: '1px solid #10b981' }}
               >
                 <div className="text-[14px] font-bold text-[#10b981] mb-1.5">
                   ✓ No consumer debt
@@ -519,9 +519,9 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
               flex: 1,
               padding: 12,
               background: 'none',
-              border: '1px solid #1a2840',
+              border: '1px solid var(--color-border)',
               borderRadius: 10,
-              color: '#5a7a9a',
+              color: 'var(--color-text-muted)',
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',
@@ -543,11 +543,11 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
               flex: 2,
               padding: '12px 20px',
               background: isNextDisabled()
-                ? '#0a1520'
+                ? 'var(--color-surface)'
                 : 'linear-gradient(135deg, #1d4ed8, #0ea5e9)',
               border: 'none',
               borderRadius: 10,
-              color: isNextDisabled() ? '#2a4060' : '#fff',
+              color: isNextDisabled() ? 'var(--color-border)' : '#fff',
               fontSize: 14,
               fontWeight: 700,
               cursor: isNextDisabled() ? 'default' : 'pointer',

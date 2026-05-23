@@ -35,8 +35,8 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
       <div
         className="max-w-sm w-full rounded-2xl p-8"
         style={{
-          background: 'linear-gradient(145deg, #111c28, #0d1620)',
-          border: '1px solid #1a2840',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
         }}
       >
         {/* Logo */}
@@ -70,7 +70,7 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
         </h2>
 
         {/* Description */}
-        <p className="text-[13px] text-[#8b9cb5] leading-relaxed mb-6">
+        <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed mb-6">
           Compound helps you understand your complete financial picture — income, debt, budget,
           savings, and retirement — in one place. No accounts, no subscriptions, no ads.
         </p>
@@ -78,7 +78,7 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
         {/* Privacy note */}
         <div
           className="flex gap-3 items-start rounded-xl p-3 mb-6"
-          style={{ background: '#0a1520', border: '1px solid #1e3a5f' }}
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
         >
           <svg
             width="20"
@@ -99,7 +99,7 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
             <div className="text-[13px] font-bold text-[#60a5fa] mb-1">
               Your data never leaves your device
             </div>
-            <div className="text-[12px] text-[#5a7a9a] leading-relaxed">
+            <div className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
               Everything is stored locally in your browser. Nothing is sent to any server. Use the
               Export button to back up your data or move it to another device.
             </div>
@@ -123,8 +123,8 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
           onClick={handleImport}
           className="w-full py-3 px-5 mb-3 rounded-xl text-[#60a5fa] text-[13px] font-semibold cursor-pointer text-center"
           style={{
-            background: '#0f1923',
-            border: '1px solid #1e3a5f',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
             fontFamily: "'DM Sans', sans-serif",
           }}
         >
@@ -134,10 +134,10 @@ export default function WelcomeModal({ onQuickStart, onSkip }: WelcomeModalProps
         {/* Skip */}
         <button
           onClick={onSkip}
-          className="w-full py-3 px-5 rounded-xl text-[#5a7a9a] text-[13px] font-semibold cursor-pointer"
+          className="w-full py-3 px-5 rounded-xl text-[var(--color-text-muted)] text-[13px] font-semibold cursor-pointer"
           style={{
             background: 'none',
-            border: '1px solid #1a2840',
+            border: '1px solid var(--color-border)',
             fontFamily: "'DM Sans', sans-serif",
           }}
         >

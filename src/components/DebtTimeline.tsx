@@ -234,7 +234,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
       padding: '2px 8px', borderRadius: 3, cursor: disabled ? 'default' : 'pointer' as const,
       background: isActive ? 'var(--color-accent-dim)' : 'none',
       border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
-      color: isActive ? 'var(--color-text-muted)' : disabled ? 'var(--color-border)' : 'var(--color-text-dim)',
+      color: isActive ? 'var(--color-accent)' : disabled ? 'var(--color-border)' : 'var(--color-text-dim)',
       opacity: disabled ? 0.4 : 1,
     }
   }
@@ -296,7 +296,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {/* Y-axis grid + labels */}
         {yTicks.map(({ value, y }) => (
           <g key={value}>
-            <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="var(--color-surface)" strokeWidth={1} strokeDasharray="4 4" />
+            <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
             <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={8} fill="var(--color-text-muted)">{fmtShort(value)}</text>
           </g>
         ))}
@@ -315,7 +315,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         )}
 
         {/* X-axis baseline */}
-        <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="var(--color-surface)" strokeWidth={1.5} />
+        <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="var(--color-border)" strokeWidth={1.5} />
 
 
         {/* Payoff summary legend — top-right empty space */}
@@ -361,9 +361,9 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           const ttY = Math.max(padT + 2, Math.min(padT + cH - ttH - 2, padT + cH / 2 - ttH / 2))
           return (
             <g>
-              <line x1={x} y1={padT} x2={x} y2={padT + cH} stroke="var(--color-text-dim)" strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
+              <line x1={x} y1={padT} x2={x} y2={padT + cH} stroke="var(--color-accent)" strokeWidth={1} strokeOpacity={0.35} strokeDasharray="3 3" />
               <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={3} fill="var(--color-bg)" stroke="var(--color-accent-dim)" strokeWidth={1} />
-              <text x={ttX + 8} y={ttY + 11} fontSize={8} fill="var(--color-text-dim)">{label}</text>
+              <text x={ttX + 8} y={ttY + 11} fontSize={8} fill="var(--color-text-muted)">{label}</text>
               <text x={ttX + 8} y={ttY + 22} fontSize={9} fill="var(--color-text)" fontWeight={700} fontFamily="DM Mono, monospace">{fmtShort(total)}</text>
               {debts.map((d, i) => (
                 <g key={i}>

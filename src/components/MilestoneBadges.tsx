@@ -62,7 +62,7 @@ const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
 }
 
 const BASE: CSSProperties = {
-  borderRadius: 2, padding: '3px 8px', fontSize: 9, fontFamily: 'DM Mono, monospace',
+  borderRadius: 2, padding: '4px 14px', fontSize: 9, fontFamily: 'DM Mono, monospace',
   whiteSpace: 'nowrap', lineHeight: 1.4, minWidth: 68, display: 'inline-block', textAlign: 'center',
 }
 

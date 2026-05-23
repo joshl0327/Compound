@@ -197,7 +197,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   return (
     <div>
       {/* KPI row (left) + scenario toggle (right) — single header row */}
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start gap-6 mb-2">
         {activeMaxMonths > 0 && (() => {
           const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
           const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus

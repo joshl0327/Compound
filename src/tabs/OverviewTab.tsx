@@ -224,7 +224,7 @@ export default function OverviewTab() {
                   {[
                     { label: `Projected at ${retTargetAge}`, value: fmtShort(projBal), color: '#34d399' },
                     { label: '4% Monthly', value: fmt(projBal * 0.04 / 12), color: '#10b981' },
-                    { label: 'Income Replaced', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
+                    { label: 'Replaces', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
                   ].map((s, i) => (
                     <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: i === 2 ? '1px solid rgba(13,148,136,0.2)' : 'none' }}>
                       <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>{s.label}</div>

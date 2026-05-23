@@ -3,6 +3,7 @@ import { sankey, sankeyLeft } from 'd3-sankey'
 import type { SankeyNode, SankeyLink } from 'd3-sankey'
 import { buildSankeyData } from '../lib/sankeyHelpers'
 import type { SkNode, SkLink } from '../lib/sankeyHelpers'
+import { CATEGORY_COLORS } from '../lib/categoryColors'
 import { fmt, fmtShort } from '../lib/format'
 import type { AppData } from '../types'
 import type { SankeyInput } from '../lib/sankeyHelpers'
@@ -120,7 +121,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
   const handleMouseLeave = useCallback(() => setTooltip(null), [])
 
   if (!graph) return (
-    <div className="flex items-center justify-center h-64 text-sm" style={{ color: '#2e7a7a' }}>
+    <div className="flex items-center justify-center h-64 text-sm" style={{ color: 'var(--color-text-muted)' }}>
       Add your income to see the flow.
     </div>
   )
@@ -254,12 +255,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               return (
                 <g key={`lbl-${sn.id}`}>
                   <text x={midX} y={nodeBottom + 16} textAnchor="middle"
-                        fontSize={9} fontWeight={700} fill="#2e7a7a"
+                        fontSize={9} fontWeight={700} fill="var(--color-text-muted)"
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     GROSS INCOME
                   </text>
                   <text x={midX} y={nodeBottom + 32} textAnchor="middle"
-                        fontSize={15} fontWeight={700} fill="#e8f0f8"
+                        fontSize={15} fontWeight={700} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -271,12 +272,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               return (
                 <g key={`lbl-${sn.id}`}>
                   <text x={midX} y={nodeBottom + 16} textAnchor="middle"
-                        fontSize={9} fontWeight={700} fill="#38bdf8"
+                        fontSize={9} fontWeight={700} fill={CATEGORY_COLORS.takehome}
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     TAKE-HOME
                   </text>
                   <text x={midX} y={nodeBottom + 32} textAnchor="middle"
-                        fontSize={15} fontWeight={700} fill="#e8f0f8"
+                        fontSize={15} fontWeight={700} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -293,7 +294,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                     {sn.label}
                   </text>
                   <text x={nodeLeft - 8} y={midY + 8} textAnchor="end"
-                        fontSize={12} fontWeight={600} fill="#e8f0f8"
+                        fontSize={12} fontWeight={600} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -310,7 +311,7 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
                     {sn.label}
                   </text>
                   <text x={nodeRight + 8} y={midY + 8}
-                        fontSize={12} fontWeight={600} fill="#e8f0f8"
+                        fontSize={12} fontWeight={600} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -332,12 +333,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               position: 'fixed',
               left: tooltip.x + 12,
               top: tooltip.y - 8,
-              background: 'rgba(3,42,42,0.96)',
-              border: '1px solid #0a5252',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
               borderRadius: 6,
               padding: '6px 10px',
               fontSize: 11,
-              color: '#e8f5f2',
+              color: 'var(--color-text)',
               pointerEvents: 'none',
               zIndex: 50,
               maxWidth: 220,
@@ -449,33 +450,33 @@ function DrillDownPanel({ nodeId, data, input, onClose }: {
   }
 
   return (
-    <div className="p-4" style={{ background: '#032e2e', border: '1px solid #0a5252', borderRadius: 5 }}>
+    <div className="p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 5 }}>
       <div className="flex justify-between items-center mb-3">
-        <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#0d9488' }}>
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--color-accent)' }}>
           {nodeLabels[nodeId] ?? nodeId} — Line Items
         </div>
-        <button onClick={onClose} style={{ color: '#2e7a7a', fontSize: 18, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+        <button onClick={onClose} style={{ color: 'var(--color-text-muted)', fontSize: 18, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
       </div>
       {items.length === 0 ? (
-        <div className="text-[12px]" style={{ color: '#2e7a7a' }}>No items to show.</div>
+        <div className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>No items to show.</div>
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((item, i) => (
             <div key={i}>
               <div className="flex justify-between items-baseline mb-0.5">
-                <span className="text-[12px]" style={{ color: '#5aabab' }}>{item.name}</span>
-                <span className="font-mono text-[12px]" style={{ color: '#e8f5f2' }}>{fmt(item.amount)}</span>
+                <span className="text-[12px]" style={{ color: 'var(--color-text-dim)' }}>{item.name}</span>
+                <span className="font-mono text-[12px]" style={{ color: 'var(--color-text)' }}>{fmt(item.amount)}</span>
               </div>
               {item.balance !== undefined && (
-                <div className="text-[10px] mb-0.5" style={{ color: '#2e7a7a' }}>
+                <div className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
                   Balance: {fmt(item.balance)}
                 </div>
               )}
-              <div style={{ height: 3, background: '#0a3838', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: 3, background: 'var(--color-border)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   width: `${item.total > 0 ? Math.min(100, (item.amount / item.total) * 100) : 0}%`,
-                  background: '#0d9488',
+                  background: 'var(--color-accent)',
                   borderRadius: 2,
                 }} />
               </div>

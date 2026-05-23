@@ -187,12 +187,16 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
     }
   })
 
-  // Payoff events — sorted by payoff month
+  // Payoff events — sorted by payoff month; debts that never reach zero shown as ongoing
   const payoffEvents = stackOrder.map((series, layerIdx) => {
     const idx = series.monthlyBalances.findIndex(b => b < 0.01)
-    if (idx <= 0) return null
-    return { month: idx, name: series.name.length > 11 ? series.name.slice(0, 10) + '…' : series.name, color: bandColor(layerIdx, totalLayers) }
-  }).filter(Boolean).sort((a, b) => a!.month - b!.month) as { month: number; name: string; color: string }[]
+    const name = series.name.length > 11 ? series.name.slice(0, 10) + '…' : series.name
+    const color = bandColor(layerIdx, totalLayers)
+    if (idx > 0) return { month: idx, label: monthLabel(idx), name, color }
+    const finalBal = series.monthlyBalances[series.monthlyBalances.length - 1] ?? 0
+    if (finalBal > 0.01) return { month: nMonths + 1, label: '↑ growing', name, color }
+    return null
+  }).filter(Boolean).sort((a, b) => a!.month - b!.month) as { month: number; label: string; name: string; color: string }[]
 
   // Always tick every 12 months (one per year)
   const ticks: number[] = []
@@ -328,7 +332,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                   <g key={`leg${i}`}>
                     <rect x={legX - 3} y={ty - 5} width={5} height={5} rx={1} fill={evt.color} fillOpacity={0.85} />
                     <text x={legX - 7} y={ty} textAnchor="end" fontSize={7} fill="#7a9a9a">
-                      {name} — {monthLabel(evt.month)}
+                      {name} — {evt.label}
                     </text>
                   </g>
                 )

@@ -91,8 +91,18 @@ export function calcPayoffPromo(
   if (b <= 0.01) return { months, totalInterest: Math.max(0, totalInterest) }
 
   const phase2 = calcPayoff(b, postPromoAnnualRate, p)
-  if (!phase2) return null
-  return { months: months + phase2.months, totalInterest: totalInterest + phase2.totalInterest }
+  if (phase2) return { months: months + phase2.months, totalInterest: totalInterest + phase2.totalInterest }
+
+  // Payment can't cover post-promo interest — simulate 120 months to show realistic accumulation
+  const r2 = postPromoAnnualRate / 100 / 12
+  for (let m = 0; m < 120; m++) {
+    if (b <= 0.01) break
+    totalInterest += b * r2
+    b = b + b * r2 - p
+    months++
+    if (b <= 0.01) return { months, totalInterest: Math.max(0, totalInterest) }
+  }
+  return { months, totalInterest: Math.max(0, totalInterest) }
 }
 
 export function calcPayoff(

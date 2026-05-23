@@ -51,8 +51,9 @@ function getFidelityWindow(
   fidelityOnTrack: Set<string>,
   currentAge: number
 ): Array<{ label: string; role: FidelityRole }> {
-  // Only consider non-hidden benchmarks for the window
+  // Always show 1× by 30; hide other past-age missed benchmarks
   const visible = FIDELITY_LABELS.filter(label => {
+    if (label === '1× by 30') return true
     if (earnedFidelity.has(label)) return true
     return currentAge <= FIDELITY_BENCHMARK_AGES[label]
   })

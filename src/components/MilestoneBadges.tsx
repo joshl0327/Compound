@@ -12,33 +12,66 @@ interface Props {
   currentAge: number
 }
 
-function getDollarPills(earned: Set<number>): Array<{ threshold: number; role: DollarRole }> {
-  const latestEarned = [...DOLLAR_THRESHOLDS].reverse().find(t => earned.has(t))
-  const firstUnearned = DOLLAR_THRESHOLDS.find(t => !earned.has(t))
-  return DOLLAR_THRESHOLDS.map(t => {
-    if (earned.has(t)) {
-      return { threshold: t, role: t === latestEarned ? 'latest-earned' : 'dim-earned' }
-    }
-    return { threshold: t, role: t === firstUnearned ? 'next-up' : 'faded-next' }
-  })
+function rollingWindow4<T>(
+  items: T[],
+  isEarned: (item: T) => boolean,
+  earnedRole: (isLatest: boolean) => string,
+  unearnedRole: (isNext: boolean) => string
+): Array<{ item: T; role: string }> {
+  const earned = items.filter(isEarned)
+  const unearned = items.filter(i => !isEarned(i))
+  const result: Array<{ item: T; role: string }> = []
+
+  if (unearned.length === 0) {
+    earned.slice(-4).forEach((item, i, arr) =>
+      result.push({ item, role: earnedRole(i === arr.length - 1) })
+    )
+  } else {
+    earned.slice(-2).forEach((item, i, arr) =>
+      result.push({ item, role: earnedRole(i === arr.length - 1) })
+    )
+    unearned.slice(0, 4 - result.length).forEach((item, i) =>
+      result.push({ item, role: unearnedRole(i === 0) })
+    )
+  }
+  return result
 }
 
-function getFidelityPills(
+function getDollarPills(earned: Set<number>): Array<{ threshold: number; role: DollarRole }> {
+  return rollingWindow4(
+    DOLLAR_THRESHOLDS,
+    t => earned.has(t),
+    isLatest => isLatest ? 'latest-earned' : 'dim-earned',
+    isNext => isNext ? 'next-up' : 'faded-next'
+  ).map(({ item, role }) => ({ threshold: item, role: role as DollarRole }))
+}
+
+function getFidelityWindow(
   earnedFidelity: Set<string>,
   fidelityOnTrack: Set<string>,
   currentAge: number
 ): Array<{ label: string; role: FidelityRole }> {
-  const earnedInOrder = FIDELITY_LABELS.filter(l => earnedFidelity.has(l))
-  return FIDELITY_LABELS.map(label => {
-    const benchmarkAge = FIDELITY_BENCHMARK_AGES[label]
-    if (earnedFidelity.has(label)) {
-      return { label, role: label === earnedInOrder[earnedInOrder.length - 1] ? 'latest-earned' : 'dim-earned' }
+  // Only consider non-hidden benchmarks for the window
+  const visible = FIDELITY_LABELS.filter(label => {
+    if (earnedFidelity.has(label)) return true
+    return currentAge <= FIDELITY_BENCHMARK_AGES[label]
+  })
+  return rollingWindow4(
+    visible,
+    label => earnedFidelity.has(label),
+    isLatest => isLatest ? 'latest-earned' : 'dim-earned',
+    isNext => {
+      const label = isNext  // label value passed via closure below
+      return isNext ? 'on-track' : 'faded-future'
     }
-    if (currentAge > benchmarkAge) return { label, role: 'hidden' }
-    if (fidelityOnTrack.has(label)) return { label, role: 'on-track' }
-    return { label, role: 'faded-future' }
+  ).map(({ item: label, role }) => {
+    // Refine unearned role: check if actually on-track or just faded
+    if (role === 'on-track' && !fidelityOnTrack.has(label)) return { label, role: 'faded-future' as FidelityRole }
+    if (role === 'faded-future' && fidelityOnTrack.has(label)) return { label, role: 'on-track' as FidelityRole }
+    return { label, role: role as FidelityRole }
   })
 }
+
 
 const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
   'dim-earned':    { background: 'rgba(13,148,136,0.7)', color: '#ccc',    border: 'none',                    fontWeight: 600, opacity: 0.6 },
@@ -64,8 +97,7 @@ function Pill({ label, role }: { label: string; role: PillRole }) {
 
 export default function MilestoneBadges({ earnedDollar, earnedFidelity, fidelityOnTrack, currentAge }: Props) {
   const dollarPills = getDollarPills(earnedDollar)
-  const fidelityPills = getFidelityPills(earnedFidelity, fidelityOnTrack, currentAge)
-  const visibleFidelity = fidelityPills.filter(p => p.role !== 'hidden')
+  const visibleFidelity = getFidelityWindow(earnedFidelity, fidelityOnTrack, currentAge)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

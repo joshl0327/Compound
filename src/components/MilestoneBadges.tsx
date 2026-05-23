@@ -70,11 +70,17 @@ const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
   'faded-future':  { background: 'rgba(4,58,58,0.85)',  color: '#2a6a6a', border: '1px dashed #0d4a4a',       fontWeight: 400 },
 }
 
-const BASE: CSSProperties = { borderRadius: 2, padding: '2px 5px', fontSize: 8, fontFamily: 'DM Mono, monospace', whiteSpace: 'nowrap', lineHeight: 1.4 }
+const BASE: CSSProperties = {
+  borderRadius: 2, padding: '2px 5px', fontSize: 8, fontFamily: 'DM Mono, monospace',
+  whiteSpace: 'nowrap', lineHeight: 1.4, minWidth: 58, display: 'inline-block', textAlign: 'center',
+}
 
-function Pill({ label, role, earned }: { label: string; role: PillRole; earned: boolean }) {
+function Pill({ label, role }: { label: string; role: PillRole }) {
   if (role === 'hidden') return null
-  return <span style={{ ...BASE, ...ROLE_STYLES[role] }}>{earned ? '✓ ' : ''}{label}</span>
+  const prefix = (role === 'dim-earned' || role === 'latest-earned') ? '✓ '
+    : role === 'on-track' ? '→ '
+    : ''
+  return <span style={{ ...BASE, ...ROLE_STYLES[role] }}>{prefix}{label}</span>
 }
 
 function Dots() {
@@ -91,14 +97,14 @@ export default function MilestoneBadges({ earnedDollar, earnedFidelity, fidelity
       <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
         {hasMoreEarned && <Dots />}
         {dollarPills.map(({ threshold, role }) => (
-          <Pill key={threshold} label={DOLLAR_LABELS[threshold]} role={role} earned={role === 'dim-earned' || role === 'latest-earned'} />
+          <Pill key={threshold} label={DOLLAR_LABELS[threshold]} role={role} />
         ))}
         {hasMoreUpcoming && <Dots />}
       </div>
       {visibleFidelity.length > 0 && (
         <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
           {visibleFidelity.map(({ label, role }) => (
-            <Pill key={label} label={label} role={role} earned={role === 'dim-earned' || role === 'latest-earned'} />
+            <Pill key={label} label={label} role={role} />
           ))}
         </div>
       )}

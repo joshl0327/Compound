@@ -72,7 +72,7 @@ export default function App() {
   return (
     <div
       className="min-h-screen font-body"
-      style={{ background: '#022e2e' }}
+      style={{ background: 'var(--color-bg)' }}
     >
       {onboardScreen === 'welcome' && (
         <WelcomeModal
@@ -91,7 +91,7 @@ export default function App() {
       )}
 
       {/* Header + nav — single sticky bar */}
-      <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'rgba(1,16,16,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+      <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'var(--color-nav)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
         <div className="mx-auto flex items-center" style={{ height: 48, maxWidth: 'min(94vw, 2200px)' }}>
           {/* Wordmark */}
           <span className="text-slate-100 flex-shrink-0" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 700, fontSize: 18, letterSpacing: '-0.02em' }}>Compound</span>
@@ -105,8 +105,8 @@ export default function App() {
                 className={`px-3 whitespace-nowrap border-b-2 transition-colors text-xs font-medium`}
                 style={{
                   height: 48,
-                  borderBottomColor: activeTab === t.id ? '#0d9488' : 'transparent',
-                  color: activeTab === t.id ? '#0d9488' : '#5aabab',
+                  borderBottomColor: activeTab === t.id ? 'var(--color-accent)' : 'transparent',
+                  color: activeTab === t.id ? 'var(--color-accent)' : 'var(--color-text-muted)',
                 }}
               >
                 {t.label}
@@ -119,18 +119,18 @@ export default function App() {
             <button
               onClick={handleExport}
               className="text-xs font-medium transition-colors"
-              style={{ color: '#2e7a7a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#5aabab')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#2e7a7a')}
+              style={{ color: 'var(--color-text-dim)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-dim)')}
             >
               Export
             </button>
             <button
               onClick={handleImport}
               className="text-xs font-medium transition-colors"
-              style={{ color: '#2e7a7a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#5aabab')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#2e7a7a')}
+              style={{ color: 'var(--color-text-dim)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-dim)')}
             >
               Import
             </button>

@@ -26,11 +26,16 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
   const containerRef = useRef<HTMLDivElement>(null)
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
   const [overlayScale, setOverlayScale] = useState(1)
+  const refWidthRef = useRef<number | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
-    const obs = new ResizeObserver(([entry]) => setOverlayScale(entry.contentRect.width / w))
+    const obs = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width
+      if (refWidthRef.current === null) refWidthRef.current = width
+      setOverlayScale(width / refWidthRef.current)
+    })
     obs.observe(el)
     return () => obs.disconnect()
   }, [])

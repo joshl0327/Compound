@@ -144,7 +144,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
         {/* Progress bar */}
         <div
           className="h-[3px] rounded-sm mb-7 overflow-hidden"
-          style={{ background: 'var(--color-surface)' }}
+          style={{ background: 'var(--color-surface-2)' }}
         >
           <div
             className="h-full rounded-sm transition-all duration-300"
@@ -322,7 +322,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                       background: 'none',
                       border: '1px solid var(--color-border)',
                       borderRadius: 6,
-                      color: currentDebt === 0 ? 'var(--color-border)' : '#60a5fa',
+                      color: currentDebt === 0 ? 'var(--color-text-dim)' : '#60a5fa',
                       width: 28,
                       height: 28,
                       cursor: currentDebt === 0 ? 'default' : 'pointer',
@@ -369,7 +369,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                       background: 'none',
                       border: '1px solid var(--color-border)',
                       borderRadius: 6,
-                      color: currentDebt === debts.length - 1 ? 'var(--color-border)' : '#60a5fa',
+                      color: currentDebt === debts.length - 1 ? 'var(--color-text-dim)' : '#60a5fa',
                       width: 28,
                       height: 28,
                       cursor: currentDebt === debts.length - 1 ? 'default' : 'pointer',
@@ -547,7 +547,7 @@ export default function QuickStart({ onComplete, onBack }: QuickStartProps) {
                 : 'linear-gradient(135deg, #1d4ed8, #0ea5e9)',
               border: 'none',
               borderRadius: 10,
-              color: isNextDisabled() ? 'var(--color-border)' : '#fff',
+              color: isNextDisabled() ? 'var(--color-text-dim)' : '#fff',
               fontSize: 14,
               fontWeight: 700,
               cursor: isNextDisabled() ? 'default' : 'pointer',

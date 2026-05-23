@@ -1,4 +1,5 @@
 import { useData } from '../context/DataContext'
+import { useUI } from '../context/UIContext'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import type { DebtStrategy, IncomeBasis } from '../types'
@@ -16,6 +17,7 @@ const INCOME_BASES: { id: IncomeBasis; label: string; desc: string }[] = [
 
 export default function SettingsTab() {
   const { data, setData } = useData()
+  const { theme, setTheme } = useUI()
 
   function updateSetting<K extends keyof typeof data.settings>(key: K, value: typeof data.settings[K]) {
     setData(d => ({ ...d, settings: { ...d.settings, [key]: value } }))
@@ -42,6 +44,36 @@ export default function SettingsTab() {
 
       <div className="grid gap-3.5 max-w-[680px]">
         <Card>
+          <SectionTitle accent="var(--color-accent)">Appearance</SectionTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] font-semibold mb-0.5" style={{ color: 'var(--color-text)' }}>Theme</div>
+              <div className="text-xs" style={{ color: 'var(--color-text-dim)' }}>Defaults to your system preference</div>
+            </div>
+            <div
+              className="flex rounded-lg overflow-hidden"
+              style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+            >
+              {(['dark', 'light'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTheme(t)}
+                  className="px-4 py-1.5 text-[12px] font-semibold capitalize transition-colors"
+                  style={{
+                    background: theme === t ? 'var(--color-accent-dim)' : 'transparent',
+                    color: theme === t ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                    border: 'none',
+                    borderRight: t === 'dark' ? '1px solid var(--color-border)' : 'none',
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <Card>
           <SectionTitle accent="#f97316">Debt Payoff Strategy</SectionTitle>
           {DEBT_STRATEGIES.map(opt => {
             const sel = data.settings.debtStrategy === opt.id
@@ -51,13 +83,13 @@ export default function SettingsTab() {
                 onClick={() => updateSetting('debtStrategy', opt.id)}
                 className="flex gap-3 p-3.5 rounded-[10px] mb-2 cursor-pointer"
                 style={{
-                  background: sel ? '#1a0e06' : '#0a1520',
-                  border: `1px solid ${sel ? '#4a2a0a' : '#1a2840'}`,
+                  background: sel ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                  border: `1px solid ${sel ? '#f97316' : 'var(--color-border)'}`,
                 }}
               >
                 <div
                   className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-                  style={{ border: `2px solid ${sel ? '#f97316' : '#2a4060'}` }}
+                  style={{ border: `2px solid ${sel ? '#f97316' : 'var(--color-border)'}` }}
                 >
                   {sel && <div className="w-2 h-2 rounded-full bg-orange" />}
                 </div>
@@ -80,15 +112,15 @@ export default function SettingsTab() {
                 onClick={() => updateSetting('incomeBasis', opt.id)}
                 className="flex gap-3 p-3.5 rounded-[10px] mb-2 cursor-pointer"
                 style={{
-                  background: sel ? '#050f14' : '#0a1520',
-                  border: `1px solid ${sel ? '#0e374a' : '#1a2840'}`,
+                  background: sel ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                  border: `1px solid ${sel ? 'var(--color-accent)' : 'var(--color-border)'}`,
                 }}
               >
                 <div
                   className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-                  style={{ border: `2px solid ${sel ? '#0e7490' : '#2a4060'}` }}
+                  style={{ border: `2px solid ${sel ? 'var(--color-accent)' : 'var(--color-border)'}` }}
                 >
-                  {sel && <div className="w-2 h-2 rounded-full" style={{ background: '#0e7490' }} />}
+                  {sel && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
                 </div>
                 <div>
                   <div className="text-[13px] font-semibold text-slate-100 mb-0.5">{opt.label}</div>
@@ -101,13 +133,13 @@ export default function SettingsTab() {
 
         <Card>
           <SectionTitle accent="#0e7490">Privacy</SectionTitle>
-          <p className="m-0 mb-2 text-[13px] font-semibold" style={{ color: '#0e7490' }}>
+          <p className="m-0 mb-2 text-[13px] font-semibold" style={{ color: 'var(--color-accent)' }}>
             Your data never leaves your device.
           </p>
           <p className="m-0 mb-3 text-[13px] text-dim leading-relaxed">
             Everything you enter in Compound is stored locally in your browser using localStorage — a built-in browser feature that keeps data on your device. Nothing is transmitted to any server, database, or third party. There are no accounts, no tracking, and no ads.
           </p>
-          <div className="rounded-lg p-3 text-[12px] leading-relaxed" style={{ background: '#0a1520', border: '1px solid #1a2840', color: '#8b9cb5' }}>
+          <div className="rounded-lg p-3 text-[12px] leading-relaxed" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
             <span className="font-bold text-slate-300">Important: </span>
             Because your data lives only in this browser, it will be lost if you clear your browser data or switch to a different browser or device. Use the <span className="font-bold text-slate-100">Export</span> button in the header to save a backup file and <span className="font-bold text-slate-100">Import</span> to restore it on any device.
           </div>
@@ -121,7 +153,7 @@ export default function SettingsTab() {
           <button
             onClick={restartTour}
             className="px-4 py-2 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
-            style={{ background: 'none', border: '1px solid #4a7fa5', color: '#4a7fa5' }}
+            style={{ background: 'none', border: '1px solid var(--color-text-muted)', color: 'var(--color-text-muted)' }}
           >
             Restart Tour
           </button>

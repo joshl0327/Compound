@@ -125,7 +125,7 @@ export default function OverviewTab() {
     }, 0) + hsaBal + investBal
   const monthlyContrib = sourceCalcs.reduce((s, c) => s + c.trad401k + c.roth401k + c.match + c.rothIra, 0)
     + liquidSavingsMonthly
-  const { earnedDollar, earnedFidelity, fidelityOnTrack, currentAge, newlyUnlocked } = useMilestones(retirementBalance, annualGross, retChartData)
+  const { earnedDollar, fidelityOnTrack, newlyUnlocked } = useMilestones(retirementBalance, annualGross, retChartData)
 
   return (
     <div>
@@ -283,9 +283,7 @@ export default function OverviewTab() {
               badgeOverlay={retChartData.length > 0 ? (
                 <MilestoneBadges
                   earnedDollar={earnedDollar}
-                  earnedFidelity={earnedFidelity}
                   fidelityOnTrack={fidelityOnTrack}
-                  currentAge={currentAge}
                 />
               ) : undefined}
             />

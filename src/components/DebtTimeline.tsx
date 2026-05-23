@@ -90,7 +90,7 @@ function buildMonthlyBalances(debts: SimDebt[], mode: Mode, extra: number, nMont
 }
 
 export default function DebtTimeline({ data, liquidSavingsBalance, retirementBalance, monthlyContrib, debtPlanTotal, surplus }: DebtTimelineProps) {
-  const [mode, setMode] = useState<Mode>('minimum')
+  const [mode, setMode] = useState<Mode>('plan')
   const [hoverMonth, setHoverMonth] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -205,9 +205,9 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({ value: maxY * pct, y: toY(maxY * pct) }))
   const showNwp = nwpMonths !== null && nwpMonths > 0 && nwpMonths <= nMonths
 
-  // Comparison vs Minimum (baseline for all other modes)
-  const monthsDiff = minMaxMonths - activeMaxMonths
-  const interestDiff = minTotalInterest - activeTotalInterest
+  // Comparison vs Plan (baseline for snowball/avalanche)
+  const monthsDiff = planMaxMonths - activeMaxMonths
+  const interestDiff = planTotalInterest - activeTotalInterest
 
   // Hover tooltip data
   const hoverData = hoverMonth !== null ? {
@@ -260,15 +260,15 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#2e7a7a' }}>Freed/mo</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
               </div>
-              {mode !== 'minimum' && monthsDiff !== 0 && (
+              {(mode === 'snowball' || mode === 'avalanche') && monthsDiff !== 0 && (
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Min</div>
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>vs Plan</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
                     {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
                   </div>
                 </div>
               )}
-              {mode !== 'minimum' && interestDiff !== 0 && (
+              {(mode === 'snowball' || mode === 'avalanche') && interestDiff !== 0 && (
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: '#1a5a5a' }}>Interest saved</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>

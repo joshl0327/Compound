@@ -40,9 +40,29 @@ export function computeFidelityEarned(
   return earned
 }
 
+export function computeFidelityOnTrack(
+  currentAge: number,
+  annualGross: number,
+  projectionPoints: DataPoint[]
+): Set<string> {
+  const onTrack = new Set<string>()
+  if (projectionPoints.length === 0) return onTrack
+  for (const b of FIDELITY_BENCHMARKS) {
+    const threshold = annualGross * b.multiplier
+    if (threshold <= 0) continue
+    const qualifies = currentAge > b.age
+      ? (projectionPoints[0]?.balance ?? 0) >= threshold
+      : (projectionPoints.find(p => p.age === b.age)?.balance ?? 0) >= threshold
+    if (qualifies) onTrack.add(b.label)
+  }
+  return onTrack
+}
+
 export interface MilestoneResult {
   earnedDollar: Set<number>
   earnedFidelity: Set<string>
+  fidelityOnTrack: Set<string>
+  currentAge: number
   newlyUnlocked: string[]
 }
 
@@ -73,6 +93,8 @@ export function useMilestones(
     return {
       earnedDollar: computeDollarEarned(currentBalance, stored.dollar),
       earnedFidelity: computeFidelityEarned(currentAge, annualGross, projectionPoints, stored.fidelity),
+      fidelityOnTrack: computeFidelityOnTrack(currentAge, annualGross, projectionPoints),
+      currentAge,
     }
   }, [currentBalance, annualGross, projectionPoints])
 
@@ -97,5 +119,11 @@ export function useMilestones(
     prevRef.current = { dollar: earned.earnedDollar, fidelity: earned.earnedFidelity }
   }, [earned])
 
-  return { earnedDollar: earned.earnedDollar, earnedFidelity: earned.earnedFidelity, newlyUnlocked }
+  return {
+    earnedDollar: earned.earnedDollar,
+    earnedFidelity: earned.earnedFidelity,
+    fidelityOnTrack: earned.fidelityOnTrack,
+    currentAge: earned.currentAge,
+    newlyUnlocked,
+  }
 }

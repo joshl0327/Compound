@@ -154,4 +154,22 @@ describe('useMilestones', () => {
     expect(result.current.earnedDollar.has(10_000)).toBe(true)
     expect(result.current.earnedDollar.has(100_000)).toBe(true)
   })
+
+  it('returns fidelityOnTrack for future benchmarks the projection hits', async () => {
+    const points = [{ age: 28, balance: 50_000 }, { age: 30, balance: 120_000 }]
+    const { result } = renderHook(() => useMilestones(50_000, 100_000, points))
+    expect(result.current.fidelityOnTrack.has('1× by 30')).toBe(true)
+  })
+
+  it('returns currentAge from first projection point', () => {
+    const points = [{ age: 35, balance: 200_000 }]
+    const { result } = renderHook(() => useMilestones(200_000, 100_000, points))
+    expect(result.current.currentAge).toBe(35)
+  })
+
+  it('fidelityOnTrack does not include benchmarks the projection misses', () => {
+    const points = [{ age: 28, balance: 1_000 }, { age: 30, balance: 5_000 }]
+    const { result } = renderHook(() => useMilestones(1_000, 100_000, points))
+    expect(result.current.fidelityOnTrack.has('1× by 30')).toBe(false)
+  })
 })

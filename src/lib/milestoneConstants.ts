@@ -20,3 +20,10 @@ export const FIDELITY_BENCHMARKS = [
   { label: '6× by 50', age: 50, multiplier: 6 },
   { label: '8× by 60', age: 60, multiplier: 8 },
 ]
+
+export const FIDELITY_BENCHMARK_AGES: Record<string, number> = {
+  '1× by 30': 30,
+  '3× by 40': 40,
+  '6× by 50': 50,
+  '8× by 60': 60,
+}

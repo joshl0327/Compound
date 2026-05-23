@@ -49,7 +49,7 @@ export default function SavingsCard({
       <SectionTitle accent={accent}>{title}</SectionTitle>
 
       {description && (
-        <p className="text-xs mb-3.5 leading-relaxed" style={{ color: '#5a7a9a' }}>
+        <p className="text-xs mb-3.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
           {description}
         </p>
       )}
@@ -57,7 +57,7 @@ export default function SavingsCard({
       {note && (
         <p
           className="text-xs mb-3.5 leading-relaxed rounded-lg px-2.5 py-2"
-          style={{ color: '#f59e0b', background: '#0a1520' }}
+          style={{ color: '#f59e0b', background: 'var(--color-surface)' }}
         >
           {note}
         </p>
@@ -104,7 +104,7 @@ export default function SavingsCard({
         <div className="mt-2">
           <div
             className="overflow-hidden mb-1.5"
-            style={{ height: 6, background: '#0a1520', borderRadius: 3 }}
+            style={{ height: 6, background: 'var(--color-border)', borderRadius: 3 }}
           >
             <div
               style={{
@@ -115,7 +115,7 @@ export default function SavingsCard({
               }}
             />
           </div>
-          <div className="flex justify-between text-[11px]" style={{ color: '#5a7a9a' }}>
+          <div className="flex justify-between text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
             <span>{pct.toFixed(0)}% funded</span>
             <span>{months ? `Fully funded ${payoffDate(months)}` : 'Set a monthly amount'}</span>
           </div>

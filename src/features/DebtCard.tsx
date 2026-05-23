@@ -55,7 +55,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
   return (
     <div
       className="rounded-[12px] p-4"
-      style={{ background: '#0a1520', borderLeft: `3px solid ${color}` }}
+      style={{ background: 'var(--color-surface)', borderLeft: `3px solid ${color}` }}
     >
       {/* Top row: name + PROMO badge + pencil + delete */}
       <div className="flex justify-between items-center mb-2.5">
@@ -81,8 +81,8 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
             <button
               onClick={enterEdit}
               title="Edit debt"
-              className="rounded p-1 cursor-pointer transition-colors hover:bg-[#1e2d3d]"
-              style={{ background: 'none', border: 'none', color: '#3a5a7a' }}
+              className="rounded p-1 cursor-pointer transition-colors hover:bg-border"
+              style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)' }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
@@ -92,7 +92,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
           <button
             onClick={onDelete}
             className="bg-transparent border-none text-[16px] px-1.5 py-0.5 cursor-pointer"
-            style={{ color: '#3a5a7a' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             ×
           </button>
@@ -104,14 +104,14 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
         <>
           <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Balance</div>
-              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: '#e8f0f8' }}>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Balance</div>
+              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: 'var(--color-text)' }}>
                 {fmt(parseFloat(debt.balance) || 0)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>{displayRateLabel}</div>
-              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: '#e8f0f8' }}>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>{displayRateLabel}</div>
+              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: 'var(--color-text)' }}>
                 {displayRateValue ? `${displayRateValue}%` : '—'}
               </div>
             </div>
@@ -119,13 +119,13 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
 
           <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Minimum</div>
-              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: '#e8f0f8' }}>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Minimum</div>
+              <div className="font-mono text-[13px] px-2 py-1.5" style={{ color: 'var(--color-text)' }}>
                 {fmt(parseFloat(debt.minPayment) || 0)}
               </div>
             </div>
             <div>
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>
                 Plan Payment
                 {extra > 0.005 && (
                   <span className="font-bold normal-case tracking-normal text-[10px]" style={{ color: '#10b981' }}>
@@ -139,13 +139,13 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
                 value={fmtCurrencyInput(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment)}
                 onChange={e => onChange({ ...debt, planPayment: stripCommas(e.target.value) })}
                 className={inputBase}
-                style={{ background: '#0f1923', borderColor: `${color}44`, color: '#e8f0f8' }}
+                style={{ background: 'var(--color-surface)', borderColor: `${color}44`, color: 'var(--color-text)' }}
               />
             </div>
           </div>
 
           {debt.isPromo && (
-            <div className="mt-2 text-[11px]" style={{ color: '#4a7fa5' }}>
+            <div className="mt-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
               {debt.promoRate || 0}% promo rate
               {debt.promoEndDate ? ` · ends ${debt.promoEndDate}` : ''}
             </div>
@@ -158,19 +158,19 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
         <>
           <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Balance</div>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Balance</div>
               <input
                 type="text"
                 inputMode="numeric"
                 value={fmtCurrencyInput(draft.balance)}
                 onChange={e => setDraft(d => ({ ...d, balance: stripCommas(e.target.value) }))}
                 className={inputBase}
-                style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
+                style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
                 autoFocus
               />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>{displayRateLabel}</div>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>{displayRateLabel}</div>
               <input
                 type="text"
                 inputMode="decimal"
@@ -181,61 +181,61 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
                   setDraft(d => ({ ...d, [field]: v }))
                 }}
                 className={inputBase}
-                style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
+                style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
               />
             </div>
           </div>
 
           <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Minimum</div>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Minimum</div>
               <input
                 type="text"
                 inputMode="numeric"
                 value={fmtCurrencyInput(draft.minPayment)}
                 onChange={e => setDraft(d => ({ ...d, minPayment: stripCommas(e.target.value) }))}
                 className={inputBase}
-                style={{ background: '#060e18', borderColor: '#2a4060', color: '#e8f0f8' }}
+                style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
               />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Plan Payment</div>
+              <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Plan Payment</div>
               <input
                 type="text"
                 inputMode="decimal"
                 value={fmtCurrencyInput(draft.planPayment !== undefined ? draft.planPayment : draft.minPayment)}
                 onChange={e => setDraft(d => ({ ...d, planPayment: stripCommas(e.target.value) }))}
                 className={inputBase}
-                style={{ background: '#0f1923', borderColor: `${color}44`, color: '#e8f0f8' }}
+                style={{ background: 'var(--color-surface)', borderColor: `${color}44`, color: 'var(--color-text)' }}
               />
             </div>
           </div>
 
           {draft.isPromo && (
-            <div className="mt-1 rounded-[8px] p-3 mb-2" style={{ background: '#060e18', border: '1px solid #10b98133' }}>
+            <div className="mt-1 rounded-[8px] p-3 mb-2" style={{ background: 'var(--color-bg)', border: '1px solid #10b98133' }}>
               <div className="text-[10px] font-bold uppercase tracking-[0.06em] mb-2.5" style={{ color: '#10b981' }}>
                 Promo Details
               </div>
               <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Promo Rate %</div>
+                  <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Promo Rate %</div>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={draft.promoRate || '0'}
                     onChange={e => setDraft(d => ({ ...d, promoRate: e.target.value.replace(/[^0-9.]/g, '') }))}
                     className={inputBase}
-                    style={{ background: '#0a1520', borderColor: '#2a4060', color: '#e8f0f8' }}
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
                   />
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Promo End Date</div>
+                  <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Promo End Date</div>
                   <input
                     type="date"
                     value={draft.promoEndDate || ''}
                     onChange={e => setDraft(d => ({ ...d, promoEndDate: e.target.value }))}
                     className={inputBase}
-                    style={{ background: '#0a1520', borderColor: '#2a4060', color: '#e8f0f8' }}
+                    style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
                   />
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
             <button
               onClick={cancel}
               className="flex-1 rounded-[6px] py-1.5 text-[12px] font-semibold cursor-pointer"
-              style={{ background: 'transparent', color: '#5a7a9a', border: '1px solid #1e2d3d' }}
+              style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
             >
               Cancel
             </button>
@@ -263,7 +263,7 @@ export default function DebtCard({ debt, color, onChange, onDelete, onCommitSort
 
       {/* Payoff summary — always visible */}
       {payoff !== null && (
-        <div className="mt-2.5 text-[11px]" style={{ color: '#4a7fa5' }}>
+        <div className="mt-2.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
           Payoff in{' '}
           <span className="font-mono font-bold" style={{ color: '#10b981' }}>
             {payoff.months} mo ({payoffDate(payoff.months)})

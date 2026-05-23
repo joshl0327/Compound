@@ -21,7 +21,7 @@ function field(src: IncomeSource, key: keyof IncomeSource, value: unknown): Inco
 // A row in the paycheck summary
 function SummaryRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="flex justify-between items-center py-1 border-b border-[#1a2840] last:border-0">
+    <div className="flex justify-between items-center py-1 border-b border-border last:border-0">
       <span className="text-[12px] text-dim">{label}</span>
       <span className="text-[12px] font-mono font-bold" style={{ color }}>{value}</span>
     </div>
@@ -119,7 +119,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
   // ─── OTHER INCOME ────────────────────────────────────────────────────────────
   if (!isW2) {
     return (
-      <div className="bg-[#111c28] border border-[#1a2840] rounded-xl p-4 mb-3">
+      <div className="bg-surface border border-border rounded-xl p-4 mb-3">
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">
           <input
@@ -127,7 +127,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
             type="text"
             value={source.name}
             onChange={e => onChange(field(source, 'name', e.target.value))}
-            className="bg-transparent border-none outline-none font-display font-bold text-base text-slate-100 p-0 min-w-0"
+            className="bg-transparent border-none outline-none font-display font-bold text-base text-[color:var(--color-text)] p-0 min-w-0"
           />
           <button
             onClick={() => nameInputRef.current?.select()}
@@ -150,7 +150,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
 
         <div>
           <div className="text-[11px] text-subtle uppercase tracking-widest mb-1.5">Monthly Net Income</div>
-          <div className="flex items-center bg-[#0a1520] border border-[#1e3a5f] rounded-lg overflow-hidden">
+          <div className="flex items-center bg-surface border border-border rounded-lg overflow-hidden">
             <span className="px-2.5 text-subtle text-[13px] font-semibold">$</span>
             <input
               type="text"
@@ -158,7 +158,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
               placeholder="e.g. 1,200"
               value={fmtCurrencyInput(source.monthlyNet)}
               onChange={e => onChange(field(source, 'monthlyNet', e.target.value.replace(/[^0-9.]/g, '')))}
-              className="flex-1 bg-transparent border-none outline-none font-mono text-[14px] text-slate-100"
+              className="flex-1 bg-transparent border-none outline-none font-mono text-[14px] text-[color:var(--color-text)]"
               style={{ padding: '10px 12px' }}
             />
           </div>
@@ -180,7 +180,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
           type="text"
           value={source.name}
           onChange={e => onChange(field(source, 'name', e.target.value))}
-          className="bg-transparent border-none outline-none font-display font-bold text-base text-slate-100 p-0 min-w-0"
+          className="bg-transparent border-none outline-none font-display font-bold text-base text-[color:var(--color-text)] p-0 min-w-0"
         />
         <button
           onClick={() => nameInputRef.current?.select()}
@@ -196,13 +196,13 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
         <span className="flex-1" />
 
         {/* Mode toggle */}
-        <div className="flex bg-[#0a1520] rounded-[10px] p-[3px] border border-[#1a2840] flex-shrink-0">
+        <div className="flex bg-surface rounded-[10px] p-[3px] border border-border flex-shrink-0">
           <button
             onClick={() => onChange(field(source, 'mode', 'simple'))}
             className="px-4 py-2 rounded-lg border-none text-[12px] font-bold cursor-pointer tracking-wider uppercase transition-colors"
             style={{
               background: isSimple ? '#1d4ed8' : 'transparent',
-              color: isSimple ? '#fff' : '#5a7a9a',
+              color: isSimple ? '#fff' : 'var(--color-text-muted)',
             }}
           >Simple</button>
           <button
@@ -210,7 +210,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
             className="px-4 py-2 rounded-lg border-none text-[12px] font-bold cursor-pointer tracking-wider uppercase transition-colors"
             style={{
               background: !isSimple ? '#1d4ed8' : 'transparent',
-              color: !isSimple ? '#fff' : '#5a7a9a',
+              color: !isSimple ? '#fff' : 'var(--color-text-muted)',
             }}
           >Detailed</button>
         </div>
@@ -252,9 +252,9 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                     onClick={() => onChange(field(source, 'frequency', f.id))}
                     className="py-2 px-3 rounded-lg text-[12px] font-semibold cursor-pointer border transition-colors"
                     style={{
-                      background: sel ? '#1d4ed8' : '#0f1923',
-                      borderColor: sel ? '#1d4ed8' : '#1e2d3d',
-                      color: sel ? '#fff' : '#5a7a9a',
+                      background: sel ? '#1d4ed8' : 'var(--color-surface)',
+                      borderColor: sel ? '#1d4ed8' : 'var(--color-border)',
+                      color: sel ? '#fff' : 'var(--color-text-muted)',
                     }}
                   >{f.label}</button>
                 )
@@ -271,7 +271,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
           />
 
           {/* Summary */}
-          <div className="bg-[#0a1520] rounded-lg p-3 mt-1 text-[12px] text-dim leading-[1.8]">
+          <div className="bg-surface rounded-lg p-3 mt-1 text-[12px] text-dim leading-[1.8]">
             <div className="flex justify-between">
               <span>Monthly gross</span>
               <span className="font-mono font-bold text-blue">{fmt(grossMonthly)}</span>
@@ -280,7 +280,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
               <span>Monthly take-home</span>
               <span className="font-mono font-bold text-blue">{fmt(netMonthly)}</span>
             </div>
-            <div className="flex justify-between border-t border-[#1e2d3d] pt-1.5 mt-1">
+            <div className="flex justify-between border-t border-border pt-1.5 mt-1">
               <span>Inferred deductions</span>
               <span className="font-mono text-blue">{fmt(grossMonthly - netMonthly)}</span>
             </div>
@@ -313,9 +313,9 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                         onClick={() => onChange(field(source, 'frequency', f.id))}
                         className="py-2 px-3 rounded-lg text-[12px] font-semibold cursor-pointer border transition-colors"
                         style={{
-                          background: sel ? '#1d4ed8' : '#0f1923',
-                          borderColor: sel ? '#1d4ed8' : '#1e2d3d',
-                          color: sel ? '#fff' : '#5a7a9a',
+                          background: sel ? '#1d4ed8' : 'var(--color-surface)',
+                          borderColor: sel ? '#1d4ed8' : 'var(--color-border)',
+                          color: sel ? '#fff' : 'var(--color-text-muted)',
                         }}
                       >{f.label}</button>
                     )
@@ -330,7 +330,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                 prefix="$"
                 type="number"
               />
-              <div className="bg-[#0a1520] rounded-lg p-2.5 text-[12px] text-dim flex justify-between">
+              <div className="bg-surface rounded-lg p-2.5 text-[12px] text-dim flex justify-between">
                 <span>Monthly gross</span>
                 <span className="font-mono font-bold text-blue">{fmt(grossMonthly)}</span>
               </div>
@@ -356,7 +356,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                   : 'Federal + state + FICA combined'}
               </div>
 
-              <div className="border-t border-[#1a2840] my-2 mb-4" />
+              <div className="border-t border-border my-2 mb-4" />
 
               <Input
                 label="Traditional 401k"
@@ -405,13 +405,13 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                           (source.customPreTax || []).map(x => x.id === d.id ? { ...x, label: e.target.value } : x)
                         )
                       }
-                      className="w-full bg-[#0a1520] border border-[#1e3a5f] rounded-lg px-3 py-2.5 text-slate-100 text-[13px] outline-none font-body"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-[color:var(--color-text)] text-[13px] outline-none font-body"
                       style={{ boxSizing: 'border-box' }}
                     />
                   </div>
                   <div style={{ width: 130 }}>
                     <div className="text-[10px] font-bold tracking-widest text-dim uppercase mb-1">Per Paycheck</div>
-                    <div className="flex items-center bg-[#0f1923] border border-[#1e2d3d] rounded-lg overflow-hidden">
+                    <div className="flex items-center bg-surface border border-border rounded-lg overflow-hidden">
                       <span className="px-2 text-subtle text-[13px]">$</span>
                       <input
                         type="text"
@@ -425,7 +425,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                             )
                           )
                         }
-                        className="flex-1 bg-transparent border-none outline-none font-mono text-[13px] text-slate-100"
+                        className="flex-1 bg-transparent border-none outline-none font-mono text-[13px] text-[color:var(--color-text)]"
                         style={{ padding: '10px 8px' }}
                       />
                     </div>
@@ -446,7 +446,7 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
                     { id: 'ded-' + Date.now(), label: '', amount: '' },
                   ])
                 }
-                className="mt-1 px-3.5 py-2 bg-[#0f1923] border border-[#1e3a5f] rounded-lg text-blue text-[12px] font-semibold cursor-pointer font-body"
+                className="mt-1 px-3.5 py-2 bg-surface border border-border rounded-lg text-blue text-[12px] font-semibold cursor-pointer font-body"
               >+ Add Deduction</button>
             </Card>
           </div>
@@ -457,21 +457,21 @@ export default function IncomeSourceCard({ source, onChange, onDelete, isPrimary
               <SectionTitle accent="#10b981">Paycheck Summary</SectionTitle>
 
               <SummaryRow label="Gross Pay" value={fmtDec(grossMonthly)} color="#60a5fa" />
-              {taxesMonthly > 0 && <SummaryRow label="Taxes" value={`- ${fmtDec(taxesMonthly)}`} color="#5a7a9a" />}
-              {trad401kMonthly > 0 && <SummaryRow label="Traditional 401k" value={`- ${fmtDec(trad401kMonthly)}`} color="#5a7a9a" />}
-              {roth401kMonthly > 0 && <SummaryRow label="Roth 401k (post-tax)" value={`- ${fmtDec(roth401kMonthly)}`} color="#5a7a9a" />}
-              {hsaMonthly > 0 && <SummaryRow label="HSA" value={`- ${fmtDec(hsaMonthly)}`} color="#5a7a9a" />}
+              {taxesMonthly > 0 && <SummaryRow label="Taxes" value={`- ${fmtDec(taxesMonthly)}`} color="var(--color-text-muted)" />}
+              {trad401kMonthly > 0 && <SummaryRow label="Traditional 401k" value={`- ${fmtDec(trad401kMonthly)}`} color="var(--color-text-muted)" />}
+              {roth401kMonthly > 0 && <SummaryRow label="Roth 401k (post-tax)" value={`- ${fmtDec(roth401kMonthly)}`} color="var(--color-text-muted)" />}
+              {hsaMonthly > 0 && <SummaryRow label="HSA" value={`- ${fmtDec(hsaMonthly)}`} color="var(--color-text-muted)" />}
               {(source.customPreTax || []).map(d => {
                 const mo = (parseFloat(d.amount) || 0) * perYear / 12
                 if (mo <= 0) return null
-                return <SummaryRow key={d.id} label={d.label || 'Other Deduction'} value={`- ${fmtDec(mo)}`} color="#5a7a9a" />
+                return <SummaryRow key={d.id} label={d.label || 'Other Deduction'} value={`- ${fmtDec(mo)}`} color="var(--color-text-muted)" />
               })}
 
               {/* Net take-home */}
               <div
                 className="mt-2.5 p-3"
                 style={{
-                  background: 'linear-gradient(135deg, #0d1f10, #0a1c14)',
+                  background: 'linear-gradient(135deg, var(--color-surface), var(--color-surface))',
                   border: '1px solid #10b98133',
                   borderRadius: 10,
                 }}

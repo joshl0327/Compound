@@ -1,7 +1,7 @@
 import type { Debt } from '../types'
 import { fmtCurrencyInput, stripCommas, fmt } from '../lib/format'
 
-const MORTGAGE_COLOR = '#2a4060'
+const MORTGAGE_COLOR = 'var(--color-border)'
 
 export interface MortgageCardProps {
   debt: Debt
@@ -29,7 +29,7 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
   return (
     <div
       className="rounded-[12px] p-4"
-      style={{ background: '#0a1520', borderLeft: `3px solid ${MORTGAGE_COLOR}` }}
+      style={{ background: 'var(--color-surface)', borderLeft: `3px solid ${MORTGAGE_COLOR}` }}
     >
       {/* Top row: name + MORTGAGE badge + delete */}
       <div className="flex justify-between items-center mb-2.5">
@@ -51,7 +51,7 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
         <button
           onClick={onDelete}
           className="bg-transparent border-none text-[16px] px-1.5 py-0.5 cursor-pointer flex-shrink-0"
-          style={{ color: '#3a5a7a' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           ×
         </button>
@@ -59,32 +59,32 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
 
       {/* Balance row (full width for mortgage) */}
       <div className="mb-2">
-        <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Loan Balance</div>
+        <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Loan Balance</div>
         <input
           type="text"
           inputMode="numeric"
           value={fmtCurrencyInput(debt.balance)}
           onChange={e => onChange({ ...debt, balance: stripCommas(e.target.value) })}
           className={inputBase}
-          style={{ background: '#060e18', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+          style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
         />
       </div>
 
       {/* P&I + Plan Payment */}
       <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div>
-          <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>P&amp;I Payment</div>
+          <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>P&amp;I Payment</div>
           <input
             type="text"
             inputMode="numeric"
             value={fmtCurrencyInput(debt.minPayment)}
             onChange={e => onChange({ ...debt, minPayment: stripCommas(e.target.value) })}
             className={inputBase}
-            style={{ background: '#060e18', borderColor: '#1e2d3d', color: '#e8f0f8' }}
+            style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
           />
         </div>
         <div>
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>
+          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>
             Plan Payment
             {extra > 0.005 && (
               <span className="font-bold normal-case tracking-normal text-[10px]" style={{ color: '#10b981' }}>
@@ -98,13 +98,13 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
             value={fmtCurrencyInput(debt.planPayment !== undefined ? debt.planPayment : debt.minPayment)}
             onChange={e => onChange({ ...debt, planPayment: stripCommas(e.target.value) })}
             className={inputBase}
-            style={{ background: '#0f1923', borderColor: `${MORTGAGE_COLOR}44`, color: '#e8f0f8' }}
+            style={{ background: 'var(--color-surface)', borderColor: `${MORTGAGE_COLOR}44`, color: 'var(--color-text)' }}
           />
         </div>
       </div>
 
       {/* Mortgage Details panel */}
-      <div className="mt-2.5 rounded-[8px] p-3" style={{ background: '#060e18', border: '1px solid #1e3a5f' }}>
+      <div className="mt-2.5 rounded-[8px] p-3" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
         <div className="text-[10px] font-bold uppercase tracking-[0.06em] mb-2.5" style={{ color: '#60a5fa' }}>
           Mortgage Details
         </div>
@@ -112,7 +112,7 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
         {/* Escrow row */}
         <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Monthly Escrow</div>
+            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Monthly Escrow</div>
             <input
               type="text"
               inputMode="decimal"
@@ -120,12 +120,12 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
               placeholder="0"
               onChange={e => onChange({ ...debt, monthlyEscrow: stripCommas(e.target.value) })}
               className={inputBase}
-              style={{ background: '#0a1520', borderColor: '#1e3a5f', color: '#e8f0f8' }}
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             />
-            <div className="text-[10px] mt-0.5" style={{ color: '#3a5a7a' }}>Taxes + Insurance</div>
+            <div className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Taxes + Insurance</div>
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Escrow Balance</div>
+            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Escrow Balance</div>
             <input
               type="text"
               inputMode="decimal"
@@ -133,7 +133,7 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
               placeholder="0"
               onChange={e => onChange({ ...debt, escrowBalance: stripCommas(e.target.value) })}
               className={inputBase}
-              style={{ background: '#0a1520', borderColor: '#1e3a5f', color: '#e8f0f8' }}
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
             />
           </div>
         </div>
@@ -141,23 +141,23 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
         {/* Dates row */}
         <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Loan Start</div>
+            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Loan Start</div>
             <input
               type="date"
               value={debt.loanStartDate || ''}
               onChange={e => onChange({ ...debt, loanStartDate: e.target.value })}
               className={inputBase}
-              style={{ background: '#0a1520', borderColor: '#1e3a5f', color: '#e8f0f8', fontFamily: "'DM Sans', sans-serif" }}
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)', fontFamily: "'DM Sans', sans-serif" }}
             />
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: '#5a7a9a' }}>Loan End (Payoff Date)</div>
+            <div className="text-[10px] uppercase tracking-[0.06em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Loan End (Payoff Date)</div>
             <input
               type="date"
               value={debt.loanEndDate || ''}
               onChange={e => onChange({ ...debt, loanEndDate: e.target.value })}
               className={inputBase}
-              style={{ background: '#0a1520', borderColor: '#1e3a5f', color: '#e8f0f8', fontFamily: "'DM Sans', sans-serif" }}
+              style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)', fontFamily: "'DM Sans', sans-serif" }}
             />
           </div>
         </div>
@@ -165,16 +165,16 @@ export default function MortgageCard({ debt, onChange, onDelete }: MortgageCardP
         {/* PITI summary + duration */}
         <div
           className="flex justify-between items-center flex-wrap gap-2 pt-2"
-          style={{ borderTop: '1px solid #1e3a5f' }}
+          style={{ borderTop: '1px solid var(--color-border)' }}
         >
           {piti > 0 && (
-            <div className="text-[12px]" style={{ color: '#e8f0f8' }}>
-              <span style={{ color: '#5a7a9a' }}>Total PITI: </span>
+            <div className="text-[12px]" style={{ color: 'var(--color-text)' }}>
+              <span style={{ color: 'var(--color-text-muted)' }}>Total PITI: </span>
               <span className="font-mono font-bold" style={{ color: '#60a5fa' }}>{fmt(piti)}/mo</span>
             </div>
           )}
           {startLabel && endLabel && (
-            <div className="text-[12px]" style={{ color: '#5a7a9a' }}>
+            <div className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
               {startLabel} — {endLabel}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { fmtShort } from '../lib/format'
 
@@ -23,7 +23,17 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
   const chartW = w - pad.l - pad.r
   const chartH = h - pad.t - pad.b
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+  const [overlayScale, setOverlayScale] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([entry]) => setOverlayScale(entry.contentRect.width / w))
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   if (!data || data.length < 2) {
     return <div className="text-muted text-[13px] text-center py-10">Enter your age and target age to see projections</div>
@@ -65,7 +75,7 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
   const tipY = Math.max(pad.t + 2, hy - 30)
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       <svg
         ref={svgRef}
         width="100%"
@@ -157,7 +167,14 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
         )}
       </svg>
       {badgeOverlay && (
-        <div style={{ position: 'absolute', top: 8, left: `calc(${(pad.l / w * 100).toFixed(2)}% + 4px)`, pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          left: `calc(${(pad.l / w * 100).toFixed(2)}% + 4px)`,
+          pointerEvents: 'none',
+          transformOrigin: 'top left',
+          transform: `scale(${overlayScale})`,
+        }}>
           {badgeOverlay}
         </div>
       )}

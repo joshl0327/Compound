@@ -12,27 +12,15 @@ interface Props {
   currentAge: number
 }
 
-function getDollarWindow(earned: Set<number>): Array<{ threshold: number; role: DollarRole }> {
-  const earnedList = DOLLAR_THRESHOLDS.filter(t => earned.has(t))
-  const unearnedList = DOLLAR_THRESHOLDS.filter(t => !earned.has(t))
-  const pills: Array<{ threshold: number; role: DollarRole }> = []
-
-  if (unearnedList.length === 0) {
-    earnedList.slice(-4).forEach((t, i, arr) => {
-      pills.push({ threshold: t, role: i === arr.length - 1 ? 'latest-earned' : 'dim-earned' })
-    })
-  } else {
-    const recentEarned = earnedList.slice(-2)
-    recentEarned.forEach((t, i) => {
-      pills.push({ threshold: t, role: i === recentEarned.length - 1 ? 'latest-earned' : 'dim-earned' })
-    })
-    const remaining = 4 - pills.length
-    unearnedList.slice(0, remaining).forEach((t, i) => {
-      pills.push({ threshold: t, role: i === 0 ? 'next-up' : 'faded-next' })
-    })
-  }
-
-  return pills
+function getDollarPills(earned: Set<number>): Array<{ threshold: number; role: DollarRole }> {
+  const latestEarned = [...DOLLAR_THRESHOLDS].reverse().find(t => earned.has(t))
+  const firstUnearned = DOLLAR_THRESHOLDS.find(t => !earned.has(t))
+  return DOLLAR_THRESHOLDS.map(t => {
+    if (earned.has(t)) {
+      return { threshold: t, role: t === latestEarned ? 'latest-earned' : 'dim-earned' }
+    }
+    return { threshold: t, role: t === firstUnearned ? 'next-up' : 'faded-next' }
+  })
 }
 
 function getFidelityPills(
@@ -63,7 +51,7 @@ const ROLE_STYLES: Record<Exclude<PillRole, 'hidden'>, CSSProperties> = {
 
 const BASE: CSSProperties = {
   borderRadius: 2, padding: '4px 14px', fontSize: 9, fontFamily: 'DM Mono, monospace',
-  whiteSpace: 'nowrap', lineHeight: 1.4, minWidth: 68, display: 'inline-block', textAlign: 'center',
+  whiteSpace: 'nowrap', lineHeight: 1.4, display: 'inline-block', textAlign: 'center',
 }
 
 function Pill({ label, role }: { label: string; role: PillRole }) {
@@ -75,7 +63,7 @@ function Pill({ label, role }: { label: string; role: PillRole }) {
 }
 
 export default function MilestoneBadges({ earnedDollar, earnedFidelity, fidelityOnTrack, currentAge }: Props) {
-  const dollarPills = getDollarWindow(earnedDollar)
+  const dollarPills = getDollarPills(earnedDollar)
   const fidelityPills = getFidelityPills(earnedFidelity, fidelityOnTrack, currentAge)
   const visibleFidelity = fidelityPills.filter(p => p.role !== 'hidden')
 

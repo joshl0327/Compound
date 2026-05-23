@@ -73,7 +73,7 @@ export default function PlanTab() {
     <div>
       {/* Page heading */}
       <h1 className="text-2xl font-display font-extrabold m-0 mb-1">Plan</h1>
-      <p className="text-[13px] text-[#5a7a9a] mt-0 mb-4">
+      <p className="text-[13px] text-[var(--color-text-muted)] mt-0 mb-4">
         What-if sandbox. Adjust plan expenses, set savings goals, and model debt payoff scenarios without affecting your Expenses tab.
       </p>
 
@@ -81,8 +81,8 @@ export default function PlanTab() {
       <div className="flex justify-end mb-4">
         <button
           onClick={resetToBaseline}
-          className="px-4 py-2 text-[12px] font-semibold text-[#5a7a9a] border border-[#1a2840] rounded-lg cursor-pointer"
-          style={{ background: '#0a1520' }}
+          className="px-4 py-2 text-[12px] font-semibold border rounded-lg cursor-pointer"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
         >
           Reset to Baseline
         </button>
@@ -90,22 +90,22 @@ export default function PlanTab() {
 
       {/* Header stats bar */}
       <div
-        className="flex justify-between items-center flex-wrap gap-3 rounded-xl px-[18px] py-[14px] mb-[18px] border border-[#1a2840]"
-        style={{ background: '#0a1520' }}
+        className="flex justify-between items-center flex-wrap gap-3 rounded-xl px-[18px] py-[14px] mb-[18px] border border-border"
+        style={{ background: 'var(--color-surface)' }}
       >
         {/* Take-Home */}
         <div>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-0.5">Take-Home</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-0.5">Take-Home</div>
           <div className="font-mono text-[20px] font-bold text-[#38bdf8]">{fmt(netMonthly)}</div>
         </div>
         {/* Baseline */}
         <div>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-0.5">Baseline</div>
-          <div className="font-mono text-[18px] font-bold text-[#5a7a9a]">{fmt(planTabBaselineTotal)}</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-0.5">Baseline</div>
+          <div className="font-mono text-[18px] font-bold text-[var(--color-text-muted)]">{fmt(planTabBaselineTotal)}</div>
         </div>
         {/* Plan Total */}
         <div>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-0.5">Plan Total</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-0.5">Plan Total</div>
           <div
             className="font-mono text-[18px] font-bold"
             style={{ color: planTabTotalWithSavings > planTabBaselineTotal ? '#f97316' : '#a78bfa' }}
@@ -115,7 +115,7 @@ export default function PlanTab() {
         </div>
         {/* Remaining */}
         <div>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-0.5">Remaining</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-0.5">Remaining</div>
           <div
             className="font-mono text-[20px] font-bold"
             style={{ color: planTabSurplus >= 0 ? '#10b981' : '#ef4444' }}
@@ -130,8 +130,8 @@ export default function PlanTab() {
         <SectionTitle accent="#f59e0b">Essentials</SectionTitle>
         {/* Column headers */}
         <div className="grid gap-2 px-3 mb-1" style={{ gridTemplateColumns: '1fr 1fr 1fr auto' }}>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Category</div>
-          <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Actual</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em]">Category</div>
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em]">Actual</div>
           <div className="text-[10px] text-[#f59e0b] uppercase tracking-[0.06em]">Plan</div>
           <div />
         </div>
@@ -144,13 +144,13 @@ export default function PlanTab() {
             <div
               key={item.id}
               className="grid gap-2 items-center px-3 py-2 rounded-[10px] mb-1.5"
-              style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #f59e0b' }}
+              style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: 'var(--color-surface)', borderLeft: '3px solid #f59e0b' }}
             >
               <div className="text-xs font-semibold text-slate-100">{item.name}</div>
               {/* Actual (read-only) */}
               <div
-                className="rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-[#5a7a9a]"
-                style={{ background: '#060e18', border: '1px solid #1e2d3d' }}
+                className="rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-[var(--color-text-muted)]"
+                style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
               >
                 {fmtCurrencyInput(item.baseline)}
               </div>
@@ -161,7 +161,7 @@ export default function PlanTab() {
                 value={fmtCurrencyInput(planVal)}
                 onChange={e => setPlanEssential(item.id, stripCommas(e.target.value))}
                 className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-                style={{ background: '#0f1923', border: '1px solid #f59e0b44', boxSizing: 'border-box' }}
+                style={{ background: 'var(--color-surface)', border: '1px solid #f59e0b44', boxSizing: 'border-box' }}
               />
               <div className="w-6" />
             </div>
@@ -173,12 +173,12 @@ export default function PlanTab() {
       <Card style={{ marginBottom: 14 }}>
         <SectionTitle accent="#fb923c">Discretionary</SectionTitle>
         {data.budget.discretionary.length === 0 ? (
-          <p className="text-[#5a7a9a] text-[13px]">No discretionary items added yet.</p>
+          <p className="text-[var(--color-text-muted)] text-[13px]">No discretionary items added yet.</p>
         ) : (
           <>
             <div className="grid gap-2 px-3 mb-1" style={{ gridTemplateColumns: '1fr 1fr 1fr auto' }}>
-              <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Category</div>
-              <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em]">Actual</div>
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em]">Category</div>
+              <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em]">Actual</div>
               <div className="text-[10px] text-[#fb923c] uppercase tracking-[0.06em]">Plan</div>
               <div />
             </div>
@@ -191,12 +191,12 @@ export default function PlanTab() {
                 <div
                   key={item.id}
                   className="grid gap-2 items-center px-3 py-2 rounded-[10px] mb-1.5"
-                  style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: '#0a1520', borderLeft: '3px solid #fb923c' }}
+                  style={{ gridTemplateColumns: '1fr 1fr 1fr auto', background: 'var(--color-surface)', borderLeft: '3px solid #fb923c' }}
                 >
                   <div className="text-xs font-semibold text-slate-100">{item.name}</div>
                   <div
-                    className="rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-[#5a7a9a]"
-                    style={{ background: '#060e18', border: '1px solid #1e2d3d' }}
+                    className="rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-[var(--color-text-muted)]"
+                    style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   >
                     {fmtCurrencyInput(item.baseline)}
                   </div>
@@ -206,7 +206,7 @@ export default function PlanTab() {
                     value={fmtCurrencyInput(planVal)}
                     onChange={e => setPlanDiscretionary(item.id, stripCommas(e.target.value))}
                     className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-                    style={{ background: '#0f1923', border: '1px solid #fb923c44', boxSizing: 'border-box' }}
+                    style={{ background: 'var(--color-surface)', border: '1px solid #fb923c44', boxSizing: 'border-box' }}
                   />
                   <div className="w-6" />
                 </div>
@@ -231,13 +231,13 @@ export default function PlanTab() {
                 <div
                   key={goal.id}
                   className="flex justify-between items-start flex-wrap gap-2 px-3 py-3 rounded-[10px] mb-2"
-                  style={{ background: '#0a1520', borderLeft: '3px solid #2dd4bf' }}
+                  style={{ background: 'var(--color-surface)', borderLeft: '3px solid #2dd4bf' }}
                 >
                   <div>
                     <div className="text-[13px] font-semibold text-slate-100 mb-1">
                       {goal.name || 'Unnamed Goal'}
                     </div>
-                    <div className="text-[11px] text-[#5a7a9a]">
+                    <div className="text-[11px] text-[var(--color-text-muted)]">
                       {fmt(monthly)}/mo toward {fmt(target)}
                     </div>
                     {months && (
@@ -260,18 +260,18 @@ export default function PlanTab() {
         {/* Add goal form */}
         <div className="grid gap-2 items-end" style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}>
           <div>
-            <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1">Goal Name</div>
+            <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-1">Goal Name</div>
             <input
               type="text"
               placeholder="e.g. New Car"
               value={newGoal.name}
               onChange={e => setNewGoal(g => ({ ...g, name: e.target.value }))}
               className="w-full rounded-[6px] px-2 py-1.5 text-[13px] text-slate-100 outline-none"
-              style={{ background: '#0f1923', border: '1px solid #1e2d3d', boxSizing: 'border-box' }}
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
             />
           </div>
           <div>
-            <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1">Target ($)</div>
+            <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-1">Target ($)</div>
             <input
               type="text"
               inputMode="decimal"
@@ -279,11 +279,11 @@ export default function PlanTab() {
               value={fmtCurrencyInput(newGoal.target)}
               onChange={e => setNewGoal(g => ({ ...g, target: stripCommas(e.target.value) }))}
               className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-              style={{ background: '#0f1923', border: '1px solid #1e2d3d', boxSizing: 'border-box' }}
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
             />
           </div>
           <div>
-            <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1">Monthly ($)</div>
+            <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-1">Monthly ($)</div>
             <input
               type="text"
               inputMode="decimal"
@@ -291,7 +291,7 @@ export default function PlanTab() {
               value={fmtCurrencyInput(newGoal.monthly)}
               onChange={e => setNewGoal(g => ({ ...g, monthly: stripCommas(e.target.value) }))}
               className="w-full rounded-[6px] px-2 py-1.5 text-[13px] font-mono text-slate-100 outline-none"
-              style={{ background: '#0f1923', border: '1px solid #1e2d3d', boxSizing: 'border-box' }}
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
             />
           </div>
           <button
@@ -308,7 +308,7 @@ export default function PlanTab() {
       <Card>
         <SectionTitle accent="#f87171">Debt Obligations</SectionTitle>
         {nonMortgageDebts.length === 0 ? (
-          <p className="text-[#5a7a9a] text-[13px]">No non-mortgage debts added yet.</p>
+          <p className="text-[var(--color-text-muted)] text-[13px]">No non-mortgage debts added yet.</p>
         ) : (
           <>
             {nonMortgageDebts.map(debt => {
@@ -324,26 +324,26 @@ export default function PlanTab() {
                 <div
                   key={debt.id}
                   className="px-[14px] py-[14px] rounded-[10px] mb-2.5"
-                  style={{ background: '#0a1520', borderLeft: '3px solid #f87171' }}
+                  style={{ background: 'var(--color-surface)', borderLeft: '3px solid #f87171' }}
                 >
                   {/* Debt header */}
                   <div className="flex justify-between items-center mb-2.5">
                     <div className="text-[13px] font-semibold text-slate-100">{debt.name}</div>
-                    <div className="text-[12px] text-[#5a7a9a] font-mono">
+                    <div className="text-[12px] text-[var(--color-text-muted)] font-mono">
                       {fmt(balance)} @ {rate}%
                     </div>
                   </div>
                   {/* Two-column layout: min vs plan */}
                   <div className="grid grid-cols-2 gap-2.5">
                     {/* Min Payment column */}
-                    <div className="rounded-lg px-3 py-2.5" style={{ background: '#060e18' }}>
-                      <div className="text-[10px] text-[#5a7a9a] uppercase tracking-[0.06em] mb-1.5">
+                    <div className="rounded-lg px-3 py-2.5" style={{ background: 'var(--color-surface)' }}>
+                      <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-[0.06em] mb-1.5">
                         Min Payment — {fmt(minPay)}/mo
                       </div>
                       {minResult ? (
                         <>
                           <div className="text-[13px] font-semibold text-slate-100 font-mono">{minResult.months} months</div>
-                          <div className="text-[11px] text-[#5a7a9a]">{payoffDate(minResult.months)}</div>
+                          <div className="text-[11px] text-[var(--color-text-muted)]">{payoffDate(minResult.months)}</div>
                           <div className="text-[11px] text-[#f87171] mt-0.5">{fmt(minResult.totalInterest)} in interest</div>
                         </>
                       ) : (
@@ -353,7 +353,7 @@ export default function PlanTab() {
                     {/* Plan Payment column */}
                     <div
                       className="rounded-lg px-3 py-2.5"
-                      style={{ background: '#060e18', border: '1px solid #f8717133' }}
+                      style={{ background: 'var(--color-surface)', border: '1px solid #f8717133' }}
                     >
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <div className="text-[10px] text-[#f87171] uppercase tracking-[0.06em] whitespace-nowrap">
@@ -366,7 +366,7 @@ export default function PlanTab() {
                           onChange={e => setPlanDebt(debt.id, stripCommas(e.target.value))}
                           className="w-full rounded text-[11px] font-mono text-[#f87171] outline-none px-1.5 py-0.5"
                           style={{
-                            background: '#0f1923',
+                            background: 'var(--color-surface)',
                             border: '1px solid #f8717144',
                             boxSizing: 'border-box',
                           }}
@@ -378,12 +378,12 @@ export default function PlanTab() {
                           <div
                             className="text-[13px] font-semibold font-mono"
                             style={{
-                              color: minResult && planResult.months < minResult.months ? '#10b981' : '#e8f0f8',
+                              color: minResult && planResult.months < minResult.months ? '#10b981' : 'var(--color-text)',
                             }}
                           >
                             {planResult.months} months
                           </div>
-                          <div className="text-[11px] text-[#5a7a9a]">{payoffDate(planResult.months)}</div>
+                          <div className="text-[11px] text-[var(--color-text-muted)]">{payoffDate(planResult.months)}</div>
                           <div
                             className="text-[11px] mt-0.5"
                             style={{
@@ -409,7 +409,7 @@ export default function PlanTab() {
                   border: '1px solid #10b98133',
                 }}
               >
-                <span className="text-[13px] text-[#8b9cb5] font-semibold">Consumer Debt-Free</span>
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--color-text-muted)' }}>Consumer Debt-Free</span>
                 <span className="font-mono text-[15px] text-[#10b981] font-bold">
                   {payoffDate(maxPlanMonths)}
                 </span>

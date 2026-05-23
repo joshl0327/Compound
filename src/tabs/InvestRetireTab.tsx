@@ -48,7 +48,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
         {/* PERCENT / DOLLARS toggle */}
         <div
           className="flex"
-          style={{ background: '#0a1520', borderRadius: 8, padding: 3, border: '1px solid #1a2840' }}
+          style={{ background: 'var(--color-surface)', borderRadius: 8, padding: 3, border: '1px solid var(--color-border)' }}
         >
           {(['Percent', 'Dollars'] as const).map(mode => {
             const isActive = mode === 'Percent' ? usePercent : !usePercent
@@ -61,7 +61,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
                   borderRadius: 6,
                   border: 'none',
                   background: isActive ? '#1d4ed8' : 'transparent',
-                  color: isActive ? '#fff' : '#5a7a9a',
+                  color: isActive ? '#fff' : 'var(--color-text-muted)',
                   fontSize: 11,
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -79,7 +79,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
       {/* Trad + Roth 401k grid */}
       <div className="grid gap-3.5" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Traditional 401k */}
-        <div style={{ background: '#0a1520', borderRadius: 10, padding: 14, border: '1px solid #1a2840' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 10, padding: 14, border: '1px solid var(--color-border)' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#10b981', marginBottom: 8 }}>
             Traditional 401k (pre-tax)
           </div>
@@ -87,8 +87,8 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
             <div
               style={{
                 fontSize: 11,
-                color: '#4a7fa5',
-                background: '#060e18',
+                color: 'var(--color-text-muted)',
+                background: 'var(--color-surface)',
                 borderRadius: 6,
                 padding: '8px 10px',
                 marginBottom: 8,
@@ -115,7 +115,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
               type="number"
             />
           )}
-          <div style={{ fontSize: 11, color: '#4a7fa5' }}>{fmt(trad401kMonthly)}/mo</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{fmt(trad401kMonthly)}/mo</div>
           <div style={{ marginTop: 10 }}>
             <Input
               label="Current Balance"
@@ -129,7 +129,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
         </div>
 
         {/* Roth 401k */}
-        <div style={{ background: '#0a1520', borderRadius: 10, padding: 14, border: '1px solid #1a2840' }}>
+        <div style={{ background: 'var(--color-surface)', borderRadius: 10, padding: 14, border: '1px solid var(--color-border)' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#10b981', marginBottom: 8 }}>
             Roth 401k (post-tax)
           </div>
@@ -150,7 +150,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
               type="number"
             />
           )}
-          <div style={{ fontSize: 11, color: '#4a7fa5' }}>{fmt(roth401kMonthly)}/mo</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{fmt(roth401kMonthly)}/mo</div>
           <div style={{ marginTop: 10 }}>
             <Input
               label="Current Balance"
@@ -167,7 +167,7 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
         <div
           style={{
             gridColumn: '1 / -1',
-            background: '#0a1520',
+            background: 'var(--color-surface)',
             borderRadius: 10,
             padding: 14,
             border: '1px solid #10b98133',
@@ -194,8 +194,8 @@ function Source401kCard({ src, sc }: Source401kCardProps) {
         style={{
           marginTop: 12,
           fontSize: 11,
-          color: overLimit ? '#f97316' : '#4a7fa5',
-          background: '#0a1520',
+          color: overLimit ? '#f97316' : 'var(--color-text-muted)',
+          background: 'var(--color-surface)',
           borderRadius: 8,
           padding: '8px 12px',
         }}
@@ -248,7 +248,7 @@ function SourceRothIraCard({ src, sc }: SourceRothIraCardProps) {
           alignItems: 'center',
           gap: 6,
           padding: '4px 10px',
-          background: '#0a1520',
+          background: 'var(--color-surface)',
           border: '1px solid #34d39933',
           borderRadius: 20,
           fontSize: 11,
@@ -274,16 +274,16 @@ function SourceRothIraCard({ src, sc }: SourceRothIraCardProps) {
       />
       <div
         style={{
-          background: '#0a1520',
+          background: 'var(--color-surface)',
           borderRadius: 8,
           padding: 12,
           marginTop: 4,
           fontSize: 12,
-          color: '#5a7a9a',
+          color: 'var(--color-text-muted)',
           lineHeight: 1.6,
         }}
       >
-        <div style={{ marginBottom: 4, color: overLimit ? '#f97316' : '#5a7a9a' }}>
+        <div style={{ marginBottom: 4, color: overLimit ? '#f97316' : 'var(--color-text-muted)' }}>
           {overLimit ? 'Exceeds 2025 limit of $7,000/yr' : '2025 limit: $7,000/yr ($583/mo)'}
         </div>
         2025 phase-out: $150k–$165k single / $236k–$246k married.
@@ -385,7 +385,7 @@ export default function InvestRetireTab() {
       <h1 className="m-0 mb-1 font-display font-extrabold" style={{ fontSize: 24 }}>
         Invest &amp; Retire
       </h1>
-      <p className="mt-0 mb-5 text-[13px]" style={{ color: '#5a7a9a' }}>
+      <p className="mt-0 mb-5 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
         Tax-advantaged retirement accounts and taxable brokerage investing.
       </p>
 
@@ -415,7 +415,7 @@ export default function InvestRetireTab() {
             alignItems: 'center',
             gap: 6,
             padding: '4px 10px',
-            background: '#0a1520',
+            background: 'var(--color-surface)',
             border: '1px solid #10b98133',
             borderRadius: 20,
             fontSize: 11,
@@ -446,8 +446,8 @@ export default function InvestRetireTab() {
           <div
             style={{
               fontSize: 11,
-              color: '#4a7fa5',
-              background: '#0a1520',
+              color: 'var(--color-text-muted)',
+              background: 'var(--color-surface)',
               borderRadius: 6,
               padding: '8px 10px',
               marginBottom: 10,
@@ -489,10 +489,10 @@ export default function InvestRetireTab() {
                 style={{
                   flex: 1,
                   padding: '8px',
-                  background: active ? '#1d4ed8' : '#0f1923',
-                  border: `1px solid ${active ? '#1d4ed8' : '#1e2d3d'}`,
+                  background: active ? '#1d4ed8' : 'var(--color-surface)',
+                  border: `1px solid ${active ? '#1d4ed8' : 'var(--color-border)'}`,
                   borderRadius: 7,
-                  color: active ? '#fff' : '#5a7a9a',
+                  color: active ? '#fff' : 'var(--color-text-muted)',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -503,7 +503,7 @@ export default function InvestRetireTab() {
             )
           })}
         </div>
-        <div style={{ fontSize: 11, color: '#4a7fa5' }}>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
           2025 limit: {data.retirement.hsa.familyCoverage ? '$8,550/yr ($713/mo)' : '$4,300/yr ($358/mo)'}
         </div>
       </Card>
@@ -528,14 +528,14 @@ export default function InvestRetireTab() {
             />
 
             {/* Monthly breakdown summary */}
-            <div style={{ background: '#0a1520', borderRadius: 10, padding: 12, marginTop: 4 }}>
+            <div style={{ background: 'var(--color-surface)', borderRadius: 10, padding: 12, marginTop: 4 }}>
               {[
                 { label: 'Trad 401k + Match', value: trad401kMonthly + employerMatch, color: '#10b981' },
                 { label: 'Roth 401k', value: roth401kMonthly, color: '#10b981' },
                 { label: 'Roth IRA', value: rothIraMonthly, color: '#34d399' },
               ].map(row => (
                 <div key={row.label} className="flex justify-between mb-1.5" style={{ fontSize: 12 }}>
-                  <span style={{ color: '#5a7a9a' }}>{row.label}</span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>{row.label}</span>
                   <span style={{ fontFamily: "'DM Mono', monospace", color: row.color }}>
                     {fmt(row.value)}/mo
                   </span>
@@ -543,16 +543,16 @@ export default function InvestRetireTab() {
               ))}
               <div
                 className="flex justify-between mb-1.5"
-                style={{ fontSize: 12, paddingBottom: 6, borderBottom: '1px solid #1e2d3d' }}
+                style={{ fontSize: 12, paddingBottom: 6, borderBottom: '1px solid var(--color-border)' }}
               >
-                <span style={{ color: '#5a7a9a' }}>HSA (not projected)</span>
+                <span style={{ color: 'var(--color-text-muted)' }}>HSA (not projected)</span>
                 <span style={{ fontFamily: "'DM Mono', monospace", color: '#10b981' }}>
                   {fmt(hsaMonthly)}/mo
                 </span>
               </div>
               <div className="flex justify-between" style={{ fontSize: 12 }}>
-                <span style={{ color: '#e8f0f8', fontWeight: 600 }}>Total projected</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", color: '#e8f0f8', fontWeight: 700 }}>
+                <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>Total projected</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--color-text)', fontWeight: 700 }}>
                   {fmt(contribMonthly)}/mo
                 </span>
               </div>
@@ -589,7 +589,7 @@ export default function InvestRetireTab() {
 
             <Card>
               <SectionTitle accent="#34d399">Projected Balance Growth</SectionTitle>
-              <div style={{ fontSize: 11, color: '#4a7fa5', marginBottom: 12, marginTop: -8 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 12, marginTop: -8 }}>
                 7% avg annual return. Excludes HSA.
               </div>
               <LineChart data={retChartData} height={200} />
@@ -621,7 +621,7 @@ export default function InvestRetireTab() {
                 width: 20,
                 height: 20,
                 borderRadius: '50%',
-                background: item.done ? '#10b981' : '#1e2d3d',
+                background: item.done ? '#10b981' : 'var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -633,7 +633,7 @@ export default function InvestRetireTab() {
             >
               {item.done ? '✓' : '?'}
             </div>
-            <div style={{ fontSize: 13, color: item.done ? '#e8f0f8' : '#5a7a9a' }}>{item.label}</div>
+            <div style={{ fontSize: 13, color: item.done ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{item.label}</div>
           </div>
         ))}
       </div>
@@ -646,10 +646,10 @@ export default function InvestRetireTab() {
           <div
             style={{
               fontSize: 12,
-              color: '#5a7a9a',
+              color: 'var(--color-text-muted)',
               marginBottom: 14,
               lineHeight: 1.6,
-              background: '#0a1520',
+              background: 'var(--color-surface)',
               borderRadius: 8,
               padding: '10px 12px',
             }}
@@ -676,7 +676,7 @@ export default function InvestRetireTab() {
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: '0.08em',
-              color: '#8b9cb5',
+              color: 'var(--color-text-muted)',
               marginBottom: 4,
               textTransform: 'uppercase',
             }}
@@ -689,11 +689,11 @@ export default function InvestRetireTab() {
             placeholder="e.g. 80% VTI, 20% VXUS — three fund portfolio"
             style={{
               width: '100%',
-              background: '#0f1923',
-              border: '1px solid #1e2d3d',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
               borderRadius: 8,
               padding: '10px 12px',
-              color: '#e8f0f8',
+              color: 'var(--color-text)',
               fontSize: 13,
               fontFamily: "'DM Sans', sans-serif",
               outline: 'none',
@@ -707,7 +707,7 @@ export default function InvestRetireTab() {
         {/* Simple projection */}
         <Card>
           <SectionTitle accent="#34d399">Simple Projection</SectionTitle>
-          <p style={{ fontSize: 12, color: '#5a7a9a', margin: '0 0 14px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '0 0 14px', lineHeight: 1.6 }}>
             Estimated growth at 7% average annual return. Subject to capital gains tax on withdrawal,
             unlike retirement accounts.
           </p>
@@ -715,11 +715,11 @@ export default function InvestRetireTab() {
             <div
               key={p.years}
               className="flex justify-between items-center mb-2"
-              style={{ padding: '10px 14px', background: '#0a1520', borderRadius: 10 }}
+              style={{ padding: '10px 14px', background: 'var(--color-surface)', borderRadius: 10 }}
             >
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>{p.years} years</div>
-                <div style={{ fontSize: 11, color: '#4a7fa5' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{p.years} years</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
                   at {fmt(investMonthly)}/mo + current balance
                 </div>
               </div>

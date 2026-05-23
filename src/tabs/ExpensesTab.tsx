@@ -144,11 +144,11 @@ export default function ExpensesTab() {
   }
 
   const inputStyle: React.CSSProperties = {
-    background: '#0f1923',
-    border: '1px solid #1e2d3d',
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
     borderRadius: 7,
     padding: '8px 10px',
-    color: '#e8f0f8',
+    color: 'var(--color-text)',
     fontSize: 13,
     outline: 'none',
     boxSizing: 'border-box',
@@ -156,10 +156,10 @@ export default function ExpensesTab() {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 4px', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24, color: '#e8f0f8' }}>
+      <h1 style={{ margin: '0 0 4px', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24, color: 'var(--color-text)' }}>
         Expenses
       </h1>
-      <p style={{ margin: '0 0 20px', color: '#5a7a9a', fontSize: 13 }}>
+      <p style={{ margin: '0 0 20px', color: 'var(--color-text-muted)', fontSize: 13 }}>
         All amounts are monthly. Enter what you actually spend or owe each month.
       </p>
 
@@ -172,7 +172,7 @@ export default function ExpensesTab() {
             <div>
               <SectionTitle accent="#f59e0b">Essentials</SectionTitle>
               {data.debts.some(d => d.isMortgage) && (
-                <div style={{ fontSize: 11, color: '#f59e0b', background: '#0a1520', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid #f59e0b33' }}>
+                <div style={{ fontSize: 11, color: '#f59e0b', background: 'var(--color-surface)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid rgba(249,115,22,0.2)' }}>
                   You have a mortgage flagged in Debts. Include your full PITI (principal, interest, taxes, insurance) in Housing below.
                 </div>
               )}
@@ -206,7 +206,7 @@ export default function ExpensesTab() {
               ))}
 
               {/* Add Essential form */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px auto', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e2d3d' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px auto', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--color-border)' }}>
                 <input
                   type="text"
                   value={newEss.name}
@@ -233,8 +233,8 @@ export default function ExpensesTab() {
               </div>
 
               {/* Essentials total */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4 }}>
-                <div style={{ fontSize: 12, color: '#5a7a9a' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid var(--color-border)', marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                   Total:{' '}
                   <span style={{ fontFamily: "'DM Mono', monospace", color: '#f59e0b' }}>{fmt(essTotal)}</span>
                 </div>
@@ -277,8 +277,8 @@ export default function ExpensesTab() {
 
               {/* Discretionary total */}
               {data.budget.discretionary.length > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid #1e2d3d', marginTop: 4, marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, color: '#5a7a9a' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, padding: '8px 12px', borderTop: '1px solid var(--color-border)', marginTop: 4, marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                     Total:{' '}
                     <span style={{ fontFamily: "'DM Mono', monospace", color: '#fb923c' }}>{fmt(discTotal)}</span>
                   </div>
@@ -315,7 +315,7 @@ export default function ExpensesTab() {
               {/* Suggestions */}
               <button
                 onClick={() => setShowSugg(s => !s)}
-                style={{ background: 'none', border: '1px solid #1e2d3d', borderRadius: 7, padding: '6px 12px', color: '#5a7a9a', fontSize: 12, cursor: 'pointer', marginBottom: showSugg ? 12 : 0 }}
+                style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: 7, padding: '6px 12px', color: 'var(--color-text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: showSugg ? 12 : 0 }}
               >
                 {showSugg ? 'Hide suggestions' : 'Quick-add suggestions'}
               </button>
@@ -323,7 +323,7 @@ export default function ExpensesTab() {
                 <div>
                   {DISC_SUGGESTIONS.map(group => (
                     <div key={group.group} style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 10, color: '#5a7a9a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                      <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
                         {group.group}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -347,10 +347,10 @@ export default function ExpensesTab() {
                               }}
                               style={{
                                 padding: '5px 12px',
-                                background: exists ? '#0a1520' : '#0f1923',
-                                border: '1px solid ' + (exists ? '#1a2840' : '#1e3a5f'),
+                                background: 'var(--color-surface)',
+                                border: '1px solid var(--color-border)',
                                 borderRadius: 20,
-                                color: exists ? '#2a4060' : '#8b9cb5',
+                                color: exists ? 'var(--color-border)' : 'var(--color-text-muted)',
                                 fontSize: 12,
                                 cursor: exists ? 'default' : 'pointer',
                               }}
@@ -442,22 +442,22 @@ export default function ExpensesTab() {
                 onClick={() => setNewDebt(d => ({ ...d, isPromo: !d.isPromo }))}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                  background: newDebt.isPromo ? 'linear-gradient(135deg, #0d1a10, #0a1508)' : '#0a1520',
-                  border: '1px solid ' + (newDebt.isPromo ? '#10b98133' : '#1a2840'),
+                  background: newDebt.isPromo ? 'linear-gradient(135deg, #0d1a10, #0a1508)' : 'var(--color-surface)',
+                  border: '1px solid ' + (newDebt.isPromo ? '#10b98133' : 'var(--color-border)'),
                   borderRadius: 8, cursor: 'pointer', marginBottom: 12,
                 }}
               >
                 <div style={{
                   width: 18, height: 18, borderRadius: 4,
                   background: newDebt.isPromo ? '#10b981' : 'transparent',
-                  border: '2px solid ' + (newDebt.isPromo ? '#10b981' : '#2a4060'),
+                  border: '2px solid ' + (newDebt.isPromo ? '#10b981' : 'var(--color-border)'),
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   {newDebt.isPromo && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>Intro / 0% APR promo offer</div>
-                  <div style={{ fontSize: 11, color: '#4a7fa5' }}>Rate is 0% until a specific date, then jumps</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>Intro / 0% APR promo offer</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Rate is 0% until a specific date, then jumps</div>
                 </div>
               </div>
 
@@ -472,7 +472,7 @@ export default function ExpensesTab() {
               )}
 
               {newDebt.isPromo && (
-                <div style={{ background: '#0a1520', borderRadius: 8, padding: '12px', marginBottom: 12, border: '1px solid #10b98133' }}>
+                <div style={{ background: 'var(--color-surface)', borderRadius: 8, padding: '12px', marginBottom: 12, border: '1px solid #10b98133' }}>
                   <div style={{ fontSize: 11, color: '#10b981', fontWeight: 700, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Promo Details
                   </div>
@@ -500,27 +500,27 @@ export default function ExpensesTab() {
                 onClick={() => setNewDebt(d => ({ ...d, isMortgage: !d.isMortgage }))}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                  background: newDebt.isMortgage ? '#0d1a2e' : '#0a1520',
-                  border: '1px solid ' + (newDebt.isMortgage ? '#1e3a5f' : '#1a2840'),
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
                   borderRadius: 8, cursor: 'pointer', marginBottom: 12,
                 }}
               >
                 <div style={{
                   width: 18, height: 18, borderRadius: 4,
                   background: newDebt.isMortgage ? '#1d4ed8' : 'transparent',
-                  border: '2px solid ' + (newDebt.isMortgage ? '#1d4ed8' : '#2a4060'),
+                  border: '2px solid ' + (newDebt.isMortgage ? '#1d4ed8' : 'var(--color-border)'),
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   {newDebt.isMortgage && <div style={{ width: 8, height: 8, background: '#fff', borderRadius: 2 }} />}
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#e8f0f8' }}>This is a mortgage</div>
-                  <div style={{ fontSize: 11, color: '#4a7fa5' }}>Tracks payoff but excluded from consumer debt total and budget</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>This is a mortgage</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Tracks payoff but excluded from consumer debt total and budget</div>
                 </div>
               </div>
 
               {newDebt.isMortgage && (
-                <div style={{ background: '#0a1520', borderRadius: 10, padding: '14px', marginBottom: 12, border: '1px solid #1e3a5f' }}>
+                <div style={{ background: 'var(--color-surface)', borderRadius: 10, padding: '14px', marginBottom: 12, border: '1px solid var(--color-border)' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#f87171', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
                     Mortgage Details
                   </div>
@@ -554,7 +554,7 @@ export default function ExpensesTab() {
                       type="date"
                     />
                   </div>
-                  <div style={{ fontSize: 11, color: '#4a7fa5', marginTop: 10, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 10, lineHeight: 1.5 }}>
                     {newDebt.minPayment && newDebt.monthlyEscrow
                       ? `Total monthly PITI: ${fmt((parseFloat(newDebt.minPayment) || 0) + (parseFloat(newDebt.monthlyEscrow) || 0))} (P&I ${fmt(parseFloat(newDebt.minPayment) || 0)} + Escrow ${fmt(parseFloat(newDebt.monthlyEscrow) || 0)})`
                       : 'Total PITI = P&I + Escrow. Enter both to see combined payment.'}

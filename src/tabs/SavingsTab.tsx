@@ -31,7 +31,7 @@ export default function SavingsTab() {
       >
         Savings
       </h1>
-      <p className="mt-0 mb-5 text-[13px]" style={{ color: '#5a7a9a' }}>
+      <p className="mt-0 mb-5 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
         Emergency fund first, then general savings. Retirement and investing come later.
       </p>
 
@@ -50,7 +50,7 @@ export default function SavingsTab() {
         <div>
           <div
             className="text-[10px] uppercase tracking-widest mb-1"
-            style={{ color: '#5a7a9a' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             Available after expenses
           </div>
@@ -65,7 +65,7 @@ export default function SavingsTab() {
         {/* Breakdown */}
         <div className="flex gap-5 flex-wrap">
           <div>
-            <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
+            <div className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
               Emergency Fund
             </div>
             <div className="font-mono text-[15px] font-bold" style={{ color: '#2dd4bf' }}>
@@ -73,7 +73,7 @@ export default function SavingsTab() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
+            <div className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
               General
             </div>
             <div className="font-mono text-[15px] font-bold" style={{ color: '#2dd4bf' }}>
@@ -81,7 +81,7 @@ export default function SavingsTab() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
+            <div className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
               Roth IRA
             </div>
             <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>
@@ -89,7 +89,7 @@ export default function SavingsTab() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
+            <div className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
               Brokerage
             </div>
             <div className="font-mono text-[15px] font-bold" style={{ color: '#34d399' }}>
@@ -100,7 +100,7 @@ export default function SavingsTab() {
 
         {/* Remaining */}
         <div>
-          <div className="text-[10px] mb-1" style={{ color: '#5a7a9a' }}>
+          <div className="text-[10px] mb-1" style={{ color: 'var(--color-text-muted)' }}>
             Remaining
           </div>
           <div
@@ -208,9 +208,9 @@ export default function SavingsTab() {
         >
           {/* Annual savings summary */}
           {genMonthlyActual > 0 && (
-            <div className="mt-2 rounded-lg p-3" style={{ background: '#0a1520' }}>
+            <div className="mt-2 rounded-lg p-3" style={{ background: 'var(--color-surface)' }}>
               <div className="flex justify-between text-[12px]">
-                <span style={{ color: '#5a7a9a' }}>Annual savings</span>
+                <span style={{ color: 'var(--color-text-muted)' }}>Annual savings</span>
                 <span className="font-mono" style={{ color: '#2dd4bf' }}>
                   {fmt(genMonthlyActual * 12)}/yr
                 </span>
@@ -219,10 +219,10 @@ export default function SavingsTab() {
           )}
 
           {/* Recommended Priority Order */}
-          <div className="mt-3.5 rounded-xl p-3.5" style={{ background: '#0a1520' }}>
+          <div className="mt-3.5 rounded-xl p-3.5" style={{ background: 'var(--color-surface)' }}>
             <div
               className="text-[11px] font-bold uppercase tracking-widest mb-2.5"
-              style={{ color: '#8b9cb5' }}
+              style={{ color: 'var(--color-text-muted)' }}
             >
               Recommended Priority Order
             </div>
@@ -247,7 +247,7 @@ export default function SavingsTab() {
                 >
                   {item.step}
                 </div>
-                <div className="text-[12px]" style={{ color: '#8b9cb5' }}>
+                <div className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
                   {item.label}
                 </div>
               </div>

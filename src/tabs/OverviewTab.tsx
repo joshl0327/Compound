@@ -14,12 +14,12 @@ import MilestoneToast from '../components/MilestoneToast'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
 
-function KpiCell({ label, value, labelColor = '#2e7a7a', valueColor = '#f0faf8', sub, tooltip, last = false }: {
+function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueColor = 'var(--color-text)', sub, tooltip, last = false }: {
   label: string; value: string; labelColor?: string; valueColor?: string; sub?: string; tooltip?: string; last?: boolean
 }) {
   const [tip, setTip] = useState(false)
   return (
-    <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid rgba(13,148,136,0.2)', position: 'relative' }}>
+    <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid var(--color-border)', position: 'relative' }}>
       <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
         {tooltip && (
@@ -33,7 +33,7 @@ function KpiCell({ label, value, labelColor = '#2e7a7a', valueColor = '#f0faf8',
       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 10, color: `${labelColor}bb` }}>{sub}</div>}
       {tip && tooltip && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: '#032e2e', border: '1px solid rgba(13,148,136,0.25)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: '#5aabab', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
           {tooltip}
         </div>
       )}
@@ -130,7 +130,7 @@ export default function OverviewTab() {
   return (
     <div>
       {/* ── KPI strip ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid rgba(13,148,136,0.15)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--color-border)' }}>
         <KpiCell
           label="Gross Income"
           value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
@@ -139,7 +139,7 @@ export default function OverviewTab() {
         <KpiCell
           label="Take-Home"
           value={netMonthly > 0 ? fmt(netMonthly) : '—'}
-          labelColor="#2a7a8a"
+          labelColor="var(--color-text-muted)"
           sub={netMonthly > 0 ? '/month' : undefined}
         />
         <KpiCell
@@ -181,7 +181,7 @@ export default function OverviewTab() {
 
 
       {/* ── Sankey ── */}
-      <SectionTitle accent="#0d9488" hint="Click any category on the right to see a line-item breakdown.">Monthly Budget Flow</SectionTitle>
+      <SectionTitle accent="var(--color-accent)" hint="Click any category on the right to see a line-item breakdown.">Monthly Budget Flow</SectionTitle>
       <div>
         <SankeyChart input={sankeyInput} data={data} />
       </div>
@@ -190,7 +190,7 @@ export default function OverviewTab() {
       <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'stretch' }}>
         {/* Debt-free timeline */}
         <div className="flex flex-col">
-          <SectionTitle accent="#0d9488" hint={<>
+          <SectionTitle accent="var(--color-accent)" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Min:</strong> Minimum required payments only — slowest payoff, most interest</div>
             <div style={{ marginBottom: 6 }}>· <strong>Plan:</strong> Your configured payment amounts</div>
             <div style={{ marginBottom: 6 }}>· <strong>Snowball:</strong> Plan payments + surplus applied to smallest balance first, freed payments roll forward</div>
@@ -210,7 +210,7 @@ export default function OverviewTab() {
 
         {/* Retirement projection */}
         <div className="flex flex-col">
-          <SectionTitle accent="#0d9488" hint={<>
+          <SectionTitle accent="var(--color-accent)" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Growth:</strong> 7% nominal annual return</div>
             <div style={{ marginBottom: 6 }}>· <strong>Inflation:</strong> "Today's dollars" values adjust for 2% annual inflation</div>
             <div style={{ marginBottom: 6 }}>· <strong>Benchmarks:</strong> Fidelity targets — 3× salary by 40, 6× by 50, 8× by 60</div>
@@ -226,50 +226,50 @@ export default function OverviewTab() {
                     { label: '4% Monthly', value: fmt(projBal * 0.04 / 12), color: '#10b981' },
                     { label: 'Replaces', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
                   ].map((s, i) => (
-                    <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: i === 2 ? '1px solid rgba(13,148,136,0.2)' : 'none' }}>
-                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#2e7a7a' }}>{s.label}</div>
+                    <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: i === 2 ? '1px solid var(--color-border)' : 'none' }}>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                       <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>
                   ))}
                   {/* Today's dollars — right half */}
                   {[
-                    { label: `Value today`, value: fmtShort(projBalReal), color: '#2a9070' },
-                    { label: 'Monthly today', value: fmt(projBalReal * 0.04 / 12), color: '#2a9070' },
-                    { label: 'Income today', value: grossMonthly > 0 ? `${Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBalReal * 0.04 / 12) / grossMonthly >= 1 ? '#2a9070' : '#c07a30') : '#3a5a7a' },
+                    { label: `Value today`, value: fmtShort(projBalReal), color: 'var(--color-text-dim)' },
+                    { label: 'Monthly today', value: fmt(projBalReal * 0.04 / 12), color: 'var(--color-text-dim)' },
+                    { label: 'Income today', value: grossMonthly > 0 ? `${Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBalReal * 0.04 / 12) / grossMonthly >= 1 ? 'var(--color-text-dim)' : '#c07a30') : '#3a5a7a' },
                   ].map((s, i) => (
                     <div key={i} style={{ paddingLeft: i === 0 ? 10 : 0 }}>
-                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: '#1a5a5a' }}>{s.label}</div>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                       <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>
                   ))}
                 </div>
 
                 {(trad401kMonthly + roth401kMonthly + hsaMonthly + rothIraMonthly + employerMatch) > 0 && (
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-3 pb-2" style={{ borderBottom: '1px solid rgba(13,148,136,0.1)' }}>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mb-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
                     {trad401kMonthly > 0 && (
-                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        Trad 401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(trad401kMonthly)}/mo</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                        Trad 401(k) <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{fmt(trad401kMonthly)}/mo</span>
                       </span>
                     )}
                     {roth401kMonthly > 0 && (
-                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        Roth 401(k) <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(roth401kMonthly)}/mo</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                        Roth 401(k) <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{fmt(roth401kMonthly)}/mo</span>
                       </span>
                     )}
                     {employerMatch > 0 && (
-                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
                         Match{trad401kMonthly > 0 && roth401kMonthly === 0 ? ' → Trad' : roth401kMonthly > 0 && trad401kMonthly === 0 ? ' → Roth' : ''}{' '}
-                        <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(employerMatch)}/mo</span>
+                        <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{fmt(employerMatch)}/mo</span>
                       </span>
                     )}
                     {hsaMonthly > 0 && (
-                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        HSA <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(hsaMonthly)}/mo</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                        HSA <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{fmt(hsaMonthly)}/mo</span>
                       </span>
                     )}
                     {rothIraMonthly > 0 && (
-                      <span style={{ fontSize: 10, color: '#2e7a7a' }}>
-                        Roth IRA <span className="font-mono" style={{ color: '#5aabab' }}>{fmt(rothIraMonthly)}/mo</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+                        Roth IRA <span className="font-mono" style={{ color: 'var(--color-text-dim)' }}>{fmt(rothIraMonthly)}/mo</span>
                       </span>
                     )}
                   </div>

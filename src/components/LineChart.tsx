@@ -102,8 +102,8 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
           const y = pad.t + chartH - (v / maxVal) * chartH
           return (
             <g key={i}>
-              <line x1={pad.l} y1={y} x2={pad.l + chartW} y2={y} stroke="#1a2840" strokeWidth={1} strokeDasharray="4 4" />
-              <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="#5a7a9a">{fmtShort(v)}</text>
+              <line x1={pad.l} y1={y} x2={pad.l + chartW} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
+              <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={9} fill="var(--color-text-muted)">{fmtShort(v)}</text>
             </g>
           )
         })}
@@ -132,7 +132,7 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
           .map(d => {
             const idx = data.indexOf(d)
             return (
-              <text key={'x' + idx} x={pad.l + idx * xStep} y={h - 6} textAnchor="middle" fontSize={9} fill="#5a7a9a">
+              <text key={'x' + idx} x={pad.l + idx * xStep} y={h - 6} textAnchor="middle" fontSize={9} fill="var(--color-text-muted)">
                 {d.age}
               </text>
             )
@@ -153,15 +153,15 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
         {hd && (
           <g>
             <line x1={hx} y1={pad.t} x2={hx} y2={pad.t + chartH}
-              stroke="#5aabab" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 3" />
-            <circle cx={hx} cy={hy} r={4} fill="#34d399" stroke="#022e2e" strokeWidth={1.5} />
+              stroke="var(--color-text-dim)" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 3" />
+            <circle cx={hx} cy={hy} r={4} fill="#34d399" stroke="var(--color-bg)" strokeWidth={1.5} />
             <rect
               x={tipLeft ? hx - 78 : hx + 6} y={tipY}
               width={72} height={26} rx={3}
-              fill="#032e2e" stroke="rgba(13,148,136,0.3)" strokeWidth={1}
+              fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth={1}
             />
             <text x={tipLeft ? hx - 72 : hx + 12} y={tipY + 12}
-              fontSize={8} fill="#2e7a7a" fontFamily="DM Mono, monospace">
+              fontSize={8} fill="var(--color-text-muted)" fontFamily="DM Mono, monospace">
               Age {hd.age}
             </text>
             <text x={tipLeft ? hx - 72 : hx + 12} y={tipY + 22}

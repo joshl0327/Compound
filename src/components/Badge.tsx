@@ -16,8 +16,8 @@ export default function Badge({ label, value, color = '#3b82f6', sub, tooltip, l
     <div
       className="relative rounded-[10px] p-3.5"
       style={{
-        border: tint ? `1px solid ${color}22` : '1px solid #1a2840',
-        background: tint ? `linear-gradient(135deg, ${color}14, ${color}07)` : '#0a1520',
+        border: tint ? `1px solid ${color}22` : '1px solid var(--color-border)',
+        background: tint ? `linear-gradient(135deg, ${color}14, ${color}07)` : 'var(--color-surface)',
       }}
     >
       <div className="text-[10px] tracking-widest uppercase mb-1 flex items-center gap-1" style={{ color }}>
@@ -34,10 +34,10 @@ export default function Badge({ label, value, color = '#3b82f6', sub, tooltip, l
           >?</button>
         )}
       </div>
-      <div className={`${large ? 'text-2xl' : 'text-xl'} font-bold font-mono`} style={{ color: '#e8f0f8' }}>{value}</div>
+      <div className={`${large ? 'text-2xl' : 'text-xl'} font-bold font-mono`} style={{ color: 'var(--color-text)' }}>{value}</div>
       {sub && <div className="text-[11px] text-subtle mt-0.5">{sub}</div>}
       {tipOpen && tooltip && (
-        <div className="absolute top-full left-0 z-[100] bg-[#0d1e30] border border-[#1e3a5f] rounded-lg p-3 mt-1 text-xs text-dim leading-relaxed w-[220px] pointer-events-none">
+        <div className="absolute top-full left-0 z-[100] rounded-lg p-3 mt-1 text-xs text-dim leading-relaxed w-[220px] pointer-events-none" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           {tooltip}
         </div>
       )}

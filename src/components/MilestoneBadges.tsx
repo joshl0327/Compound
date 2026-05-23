@@ -52,12 +52,12 @@ function getFidelityPills(fidelityOnTrack: Set<string>): Array<{ label: string; 
 }
 
 const ROLE_STYLES: Record<PillRole, CSSProperties> = {
-  'dim-earned':    { background: 'rgba(13,148,136,0.7)', color: '#ccc',    border: 'none',              fontWeight: 600, opacity: 0.6 },
-  'latest-earned': { background: 'rgba(13,148,136,0.9)', color: '#fff',    border: 'none',              fontWeight: 700, boxShadow: '0 0 6px rgba(13,148,136,0.4)' },
-  'next-up':       { background: 'rgba(4,58,58,0.9)',   color: '#5aabab', border: '1px solid #0d9488',  fontWeight: 600 },
-  'on-track':      { background: 'rgba(4,58,58,0.9)',   color: '#3a8a8a', border: '1px dashed #0d9488', fontWeight: 400 },
-  'faded-next':    { background: 'rgba(4,58,58,0.85)',  color: '#2a6a6a', border: '1px dashed #0d4a4a', fontWeight: 400 },
-  'faded-future':  { background: 'rgba(4,58,58,0.85)',  color: '#2a6a6a', border: '1px dashed #0d4a4a', fontWeight: 400 },
+  'dim-earned':    { background: 'var(--color-accent-dim)',  color: 'var(--color-text-dim)',   border: 'none', fontWeight: 600, opacity: 0.7 },
+  'latest-earned': { background: 'var(--color-accent)',      color: '#fff',                    border: 'none', fontWeight: 700, boxShadow: '0 0 6px var(--color-accent-dim)' },
+  'next-up':       { background: 'var(--color-surface)',     color: 'var(--color-accent)',     border: '1px solid var(--color-accent)',      fontWeight: 600 },
+  'on-track':      { background: 'var(--color-surface)',     color: 'var(--color-text-muted)', border: '1px dashed var(--color-accent)',     fontWeight: 400 },
+  'faded-next':    { background: 'var(--color-surface)',     color: 'var(--color-text-dim)',   border: '1px dashed var(--color-border)',     fontWeight: 400 },
+  'faded-future':  { background: 'var(--color-surface)',     color: 'var(--color-text-dim)',   border: '1px dashed var(--color-border)',     fontWeight: 400 },
 }
 
 const BASE: CSSProperties = {

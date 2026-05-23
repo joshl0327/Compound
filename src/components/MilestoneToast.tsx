@@ -29,8 +29,8 @@ export default function MilestoneToast({ newlyUnlocked }: Props) {
       bottom: 24,
       right: 24,
       zIndex: 9999,
-      background: '#043a3a',
-      border: '1px solid rgba(13,148,136,0.5)',
+      background: 'var(--color-surface)',
+      border: '1px solid var(--color-accent)',
       borderRadius: 4,
       padding: '12px 16px',
       minWidth: 200,
@@ -38,7 +38,7 @@ export default function MilestoneToast({ newlyUnlocked }: Props) {
     }}>
       <div style={{
         fontSize: 10,
-        color: '#2e7a7a',
+        color: 'var(--color-text-muted)',
         textTransform: 'uppercase',
         letterSpacing: '0.08em',
         marginBottom: 4,

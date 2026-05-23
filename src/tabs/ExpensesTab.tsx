@@ -172,7 +172,7 @@ export default function ExpensesTab() {
             <div>
               <SectionTitle accent="#f59e0b">Essentials</SectionTitle>
               {data.debts.some(d => d.isMortgage) && (
-                <div style={{ fontSize: 11, color: '#f59e0b', background: 'var(--color-surface)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid rgba(249,115,22,0.2)' }}>
+                <div style={{ fontSize: 11, color: '#f59e0b', background: 'var(--color-surface)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, border: '1px solid rgba(245,158,11,0.2)' }}>
                   You have a mortgage flagged in Debts. Include your full PITI (principal, interest, taxes, insurance) in Housing below.
                 </div>
               )}
@@ -350,7 +350,7 @@ export default function ExpensesTab() {
                                 background: 'var(--color-surface)',
                                 border: '1px solid var(--color-border)',
                                 borderRadius: 20,
-                                color: exists ? 'var(--color-border)' : 'var(--color-text-muted)',
+                                color: exists ? 'var(--color-text-dim)' : 'var(--color-text-muted)',
                                 fontSize: 12,
                                 cursor: exists ? 'default' : 'pointer',
                               }}

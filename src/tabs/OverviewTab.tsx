@@ -26,12 +26,12 @@ function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueCo
           <button
             onMouseEnter={() => setTip(true)}
             onMouseLeave={() => setTip(false)}
-            style={{ background: 'none', border: `1px solid ${labelColor}55`, borderRadius: '50%', width: 13, height: 13, fontSize: 8, color: tip ? labelColor : `${labelColor}88`, cursor: 'default', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '50%', width: 13, height: 13, fontSize: 8, color: tip ? 'var(--color-text-muted)' : 'var(--color-text-dim)', cursor: 'default', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
           >?</button>
         )}
       </div>
       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: `${labelColor}bb` }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 10, color: 'var(--color-text-dim)' }}>{sub}</div>}
       {tip && tooltip && (
         <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
           {tooltip}

@@ -1,0 +1,16 @@
+
+> compound@0.0.0 test
+> vitest sankeyHelpers
+
+
+[1m[7m[34m DEV [39m[27m[22m [34mv2.1.9 [39m[90mC:/Users/joshl/Documents/Projects/Compound[39m
+
+ [32m✓[39m src/lib/sankeyHelpers.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m30 passed[39m[22m[90m (30)[39m
+[2m   Start at [22m 11:03:45
+[2m   Duration [22m 679ms[2m (transform 37ms, setup 45ms, collect 25ms, tests 14ms, environment 259ms, prepare 213ms)[22m
+
+[1m[7m[32m PASS [39m[27m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

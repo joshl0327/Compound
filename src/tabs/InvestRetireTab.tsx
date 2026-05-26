@@ -3,6 +3,8 @@ import { useMetrics } from '../hooks/useMetrics'
 import { fmt, fmtShort } from '../lib/format'
 import { buildProjection } from '../lib/calculations'
 import { Input, Card, SectionTitle, Badge, LineChart } from '../components'
+import { useMilestones } from '../hooks/useMilestones'
+import MilestoneBadges from '../components/MilestoneBadges'
 import type { IncomeSource, SourceCalc } from '../types'
 
 // -------------------------------------------------------------------
@@ -326,6 +328,15 @@ export default function InvestRetireTab() {
   const retChartData = primarySrc ? buildProjection(primarySrc, primaryCalc) : []
   const projBal = retChartData.length > 0 ? retChartData[retChartData.length - 1].balance : 0
 
+  // Milestone badges
+  const currentRetirementBalance = primarySrc
+    ? (parseFloat(primaryRet.traditional401kBalance || '') || 0)
+      + (parseFloat(primaryRet.roth401kBalance || '') || 0)
+      + (parseFloat(primaryRet.rothIra?.currentBalance || '') || 0)
+    : 0
+  const annualGross = primaryCalc.gross * 12
+  const { earnedDollar, fidelityOnTrack } = useMilestones(currentRetirementBalance, annualGross, retChartData)
+
   // Combined monthly retirement contribution (for summary)
   const contribMonthly = trad401kMonthly + roth401kMonthly + rothIraMonthly + employerMatch
 
@@ -592,7 +603,16 @@ export default function InvestRetireTab() {
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 12, marginTop: -8 }}>
                 7% avg annual return. Excludes HSA.
               </div>
-              <LineChart data={retChartData} height={200} />
+              <LineChart
+                data={retChartData}
+                height={200}
+                badgeOverlay={retChartData.length > 0 ? (
+                  <MilestoneBadges
+                    earnedDollar={earnedDollar}
+                    fidelityOnTrack={fidelityOnTrack}
+                  />
+                ) : undefined}
+              />
             </Card>
           </div>
         </div>

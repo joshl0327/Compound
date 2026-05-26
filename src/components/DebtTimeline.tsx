@@ -181,6 +181,13 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
 
   function toX(m: number) { return padL + (m / nMonths) * cW }
   function toY(b: number) { return padT + cH - (b / maxY) * cH }
+  function fmtMonthDiff(months: number): string {
+    const yrs = Math.floor(months / 12)
+    const mo = months % 12
+    if (yrs === 0) return `${mo}mo`
+    if (mo === 0) return `${yrs}yr`
+    return `${yrs}yr ${mo}mo`
+  }
   function monthLabel(months: number) {
     const d = new Date(now.getFullYear(), now.getMonth() + months, 1)
     return `${d.toLocaleDateString('en-US', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`
@@ -279,7 +286,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>vs Min</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: minMonthsDiff >= 0 ? '#34d399' : '#f87171' }}>
-                    {minMonthsDiff >= 0 ? '-' : '+'}{Math.abs(minMonthsDiff)}mo
+                    {minMonthsDiff >= 0 ? '-' : '+'}{fmtMonthDiff(Math.abs(minMonthsDiff))}
                   </div>
                 </div>
               )}

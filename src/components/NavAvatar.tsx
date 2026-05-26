@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useData } from '../context/DataContext'
+import { saveToCloud } from '../lib/cloudSync'
 import type { TabId } from '../types'
 
 interface NavAvatarProps {
@@ -8,6 +10,7 @@ interface NavAvatarProps {
 
 export default function NavAvatar({ setActiveTab }: NavAvatarProps) {
   const { session, user, loading, guestMode, signOut } = useAuth()
+  const { data } = useData()
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -128,7 +131,7 @@ export default function NavAvatar({ setActiveTab }: NavAvatarProps) {
           </button>
 
           <button
-            onClick={async () => { await signOut(); setOpen(false) }}
+            onClick={async () => { await saveToCloud(data); await signOut(); setOpen(false) }}
             style={{
               display: 'block',
               width: '100%',

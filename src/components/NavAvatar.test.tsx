@@ -5,6 +5,14 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn(),
 }))
 
+vi.mock('../context/DataContext', () => ({
+  useData: () => ({ data: {}, setData: vi.fn() }),
+}))
+
+vi.mock('../lib/cloudSync', () => ({
+  saveToCloud: vi.fn().mockResolvedValue(undefined),
+}))
+
 import { useAuth } from '../context/AuthContext'
 import NavAvatar from './NavAvatar'
 

@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import { DataProvider } from '../context/DataContext'
 import ExpensesTab from './ExpensesTab'
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({ session: null, user: null, loading: false, guestMode: false }),
+}))
+
+vi.mock('../lib/cloudSync', () => ({
+  saveToCloud: vi.fn(),
+  loadFromCloud: vi.fn().mockResolvedValue(null),
+}))
 
 function renderExpenses() {
   const { container } = render(

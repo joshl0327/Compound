@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import { DataProvider, useData } from './DataContext'
 import { STORAGE_KEY } from '../lib/storage'
+
+vi.mock('./AuthContext', () => ({
+  useAuth: () => ({ session: null, user: null, loading: false, guestMode: false }),
+}))
+
+vi.mock('../lib/cloudSync', () => ({
+  saveToCloud: vi.fn(),
+  loadFromCloud: vi.fn().mockResolvedValue(null),
+}))
 
 function TestConsumer() {
   const { data } = useData()

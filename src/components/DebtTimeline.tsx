@@ -20,6 +20,7 @@ interface SimDebt {
   planPayment: number
   promoMonthsLeft: number  // 0 for non-promo debts
   promoAnnualRate: number  // rate during promo period (0 for non-promo)
+  postPromoMinPct: number  // 0.01 for promo debts in min mode (dynamic "1% + interest"), 0 otherwise
 }
 
 // 10 hues evenly distributed ~36° apart around the wheel, all at 400-level brightness for dark bg
@@ -62,7 +63,10 @@ function buildMonthlyBalances(debts: SimDebt[], mode: Mode, extra: number, nMont
       let b = d.balance; const arr = [b]
       for (let m = 1; m <= nMonths; m++) {
         const r = m <= d.promoMonthsLeft ? promoRate : rate
-        b = b > 0 ? Math.max(0, b + b * r - d.planPayment) : 0
+        const pay = (m > d.promoMonthsLeft && d.postPromoMinPct > 0)
+          ? Math.max(d.planPayment, b * (d.postPromoMinPct + rate))
+          : d.planPayment
+        b = b > 0 ? Math.max(0, b + b * r - pay) : 0
         arr.push(b)
       }
       return { name: d.name, monthlyBalances: arr }
@@ -97,13 +101,14 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const consumerDebts = data.debts.filter(d => !d.isMortgage)
   const totalDebtBalance = consumerDebts.reduce((s, d) => s + (parseFloat(d.balance) || 0), 0)
 
-  const toSimDebt = (d: typeof consumerDebts[number], payment: number): SimDebt => ({
+  const toSimDebt = (d: typeof consumerDebts[number], payment: number, dynamicMin = false): SimDebt => ({
     name: d.name,
     balance: parseFloat(d.balance) || 0,
     annualRate: d.isPromo ? parseFloat(d.postPromoRate || '0') || 0 : parseFloat(d.rate) || 0,
     planPayment: payment,
     promoMonthsLeft: d.isPromo && d.promoEndDate ? promoMonthsRemaining(d.promoEndDate) : 0,
     promoAnnualRate: d.isPromo ? parseFloat(d.promoRate || '0') || 0 : parseFloat(d.rate) || 0,
+    postPromoMinPct: dynamicMin && d.isPromo && !!d.postPromoRate ? 0.01 : 0,
   })
 
   const simInputs = useMemo((): SimDebt[] =>
@@ -113,7 +118,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
 
   const simMinInputs = useMemo((): SimDebt[] =>
     consumerDebts
-      .map(d => toSimDebt(d, parseFloat(d.minPayment) || 0))
+      .map(d => toSimDebt(d, parseFloat(d.minPayment) || 0, true))
       .filter(d => d.balance > 0 && d.planPayment > 0), [consumerDebts])
 
   const calcForDebt = (d: typeof consumerDebts[number], payment: number) =>
@@ -121,12 +126,21 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
       ? calcPayoffPromo(d.balance, parseFloat(d.promoRate || '0') || 0, payment, promoMonthsRemaining(d.promoEndDate), parseFloat(d.postPromoRate) || 0)
       : calcPayoff(d.balance, d.rate, payment)
 
+  // Minimum mode uses dynamic post-promo minimums for promo debts (1% of balance + interest),
+  // matching how credit cards actually recalculate after a 0% promo period ends.
+  const calcForDebtMin = (d: typeof consumerDebts[number]) => {
+    const minPay = parseFloat(d.minPayment) || 0
+    return d.isPromo && d.promoEndDate && d.postPromoRate
+      ? calcPayoffPromo(d.balance, parseFloat(d.promoRate || '0') || 0, minPay, promoMonthsRemaining(d.promoEndDate), parseFloat(d.postPromoRate) || 0, 0.01)
+      : calcPayoff(d.balance, d.rate, minPay)
+  }
+
   const planItems = useMemo(() =>
     consumerDebts.map(d => calcForDebt(d, parseFloat(d.planPayment || '') || parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[],
     [consumerDebts])
 
   const minItems = useMemo(() =>
-    consumerDebts.map(d => calcForDebt(d, parseFloat(d.minPayment) || 0)).filter(Boolean) as { months: number; totalInterest: number }[],
+    consumerDebts.map(d => calcForDebtMin(d)).filter(Boolean) as { months: number; totalInterest: number }[],
     [consumerDebts])
 
   const planMaxMonths = planItems.length > 0 ? Math.max(...planItems.map(r => r.months)) : 0

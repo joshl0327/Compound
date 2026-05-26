@@ -72,6 +72,9 @@ export function calcPayoffPromo(
   monthlyPayment: string | number,
   promoMonthsLeft: number,
   postPromoAnnualRate: number,
+  // Credit card minimum mode: after promo, payment = max(staticMin, pct*balance + interest).
+  // 0.01 = standard "1% of balance + interest" formula; 0 = static payment (default).
+  postPromoMinPct = 0,
 ): PayoffResult | null {
   let b = parseFloat(balance as string) || 0
   const p = parseFloat(monthlyPayment as string) || 0
@@ -90,11 +93,25 @@ export function calcPayoffPromo(
 
   if (b <= 0.01) return { months, totalInterest: Math.max(0, totalInterest) }
 
+  const r2 = postPromoAnnualRate / 100 / 12
+
+  if (postPromoMinPct > 0) {
+    // Dynamic minimum: payment = max(staticMin, pct*balance + monthly_interest).
+    // Balance always shrinks by pct/month regardless of APR, so this always terminates.
+    for (let m = 0; m < 600 && b > 0.01; m++) {
+      const interest = b * r2
+      const payment = Math.max(p, b * postPromoMinPct + interest)
+      totalInterest += interest
+      b = Math.max(0, b + interest - payment)
+      months++
+    }
+    return { months, totalInterest: Math.max(0, totalInterest) }
+  }
+
   const phase2 = calcPayoff(b, postPromoAnnualRate, p)
   if (phase2) return { months: months + phase2.months, totalInterest: totalInterest + phase2.totalInterest }
 
   // Payment can't cover post-promo interest — simulate 120 months to show realistic accumulation
-  const r2 = postPromoAnnualRate / 100 / 12
   for (let m = 0; m < 120; m++) {
     if (b <= 0.01) break
     totalInterest += b * r2

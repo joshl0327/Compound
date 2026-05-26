@@ -52,12 +52,18 @@ function getFidelityPills(fidelityOnTrack: Set<string>): Array<{ label: string; 
 }
 
 const ROLE_STYLES: Record<PillRole, CSSProperties> = {
-  'dim-earned':    { background: 'var(--color-accent-dim)',  color: 'var(--color-text-dim)',   border: 'none', fontWeight: 600, opacity: 0.7 },
-  'latest-earned': { background: 'var(--color-accent)',      color: '#fff',                    border: 'none', fontWeight: 700, boxShadow: '0 0 6px rgba(13, 148, 136, 0.4)' },
-  'next-up':       { background: 'var(--color-surface)',     color: 'var(--color-accent)',     border: '1px solid var(--color-accent)',      fontWeight: 600 },
-  'on-track':      { background: 'var(--color-surface)',     color: 'var(--color-text-muted)', border: '1px dashed var(--color-accent)',     fontWeight: 400 },
-  'faded-next':    { background: 'var(--color-surface)',     color: 'var(--color-text-dim)',   border: '1px dashed var(--color-border)',     fontWeight: 400 },
-  'faded-future':  { background: 'var(--color-surface)',     color: 'var(--color-text-dim)',   border: '1px dashed var(--color-border)',     fontWeight: 400 },
+  // past earned: subtle teal tint + border so it reads as "achieved" without competing with latest
+  'dim-earned':    { background: 'rgba(13, 148, 136, 0.18)', color: 'var(--color-text-muted)', border: '1px solid rgba(13, 148, 136, 0.3)', fontWeight: 600 },
+  // current milestone: full teal fill — the standout
+  'latest-earned': { background: 'var(--color-accent)',       color: '#fff',                    border: 'none', fontWeight: 700, boxShadow: '0 0 6px rgba(13, 148, 136, 0.4)' },
+  // next goal: outlined in teal so it's clearly the target
+  'next-up':       { background: 'var(--color-surface)',      color: 'var(--color-accent)',     border: '1px solid var(--color-accent)',           fontWeight: 600 },
+  // on-track fidelity: teal accent text matches the teal dashed border, stands out from faded-future
+  'on-track':      { background: 'var(--color-surface)',      color: 'var(--color-accent)',     border: '1px dashed var(--color-accent)',           fontWeight: 500 },
+  // distant upcoming milestones: visible but clearly lower priority
+  'faded-next':    { background: 'var(--color-surface)',      color: 'var(--color-text-muted)', border: '1px dashed var(--color-text-dim)',         fontWeight: 400 },
+  // not-on-track fidelity: dim text + dim border = low visual weight
+  'faded-future':  { background: 'var(--color-surface)',      color: 'var(--color-text-dim)',   border: '1px dashed var(--color-text-dim)',         fontWeight: 400 },
 }
 
 const BASE: CSSProperties = {

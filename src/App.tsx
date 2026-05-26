@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AuthGate from './components/AuthGate'
 import { useUI } from './context/UIContext'
 import { useData } from './context/DataContext'
@@ -13,6 +13,7 @@ import PlanTab from './tabs/PlanTab'
 import WelcomeModal from './onboarding/WelcomeModal'
 import QuickStart from './onboarding/QuickStart'
 import { ONBOARDING_KEY, makeDefault, migrateData } from './lib/storage'
+import { loadFromCloud } from './lib/cloudSync'
 import NavAvatar from './components/NavAvatar'
 
 const TABS: { id: TabId; label: string }[] = [
@@ -30,13 +31,32 @@ export default function App() {
   const { data, setData } = useData()
 
 
-  const [onboardScreen, setOnboardScreen] = useState<'welcome' | 'quickstart' | 'done'>(() => {
+  // 'checking-cloud' is the initial state when ONBOARDING_KEY is absent.
+  // A one-shot useEffect resolves it: if the user has cloud data we skip
+  // onboarding entirely; otherwise we fall through to 'welcome' as normal.
+  // This prevents showing WelcomeModal to a returning signed-in user whose
+  // localStorage was cleared (new device, browser reset, etc.).
+  const [onboardScreen, setOnboardScreen] = useState<'welcome' | 'quickstart' | 'done' | 'checking-cloud'>(() => {
     try {
-      return localStorage.getItem(ONBOARDING_KEY) ? 'done' : 'welcome'
+      return localStorage.getItem(ONBOARDING_KEY) ? 'done' : 'checking-cloud'
     } catch {
       return 'done'
     }
   })
+
+  useEffect(() => {
+    if (onboardScreen !== 'checking-cloud') return
+    loadFromCloud().then(cloudData => {
+      if (cloudData) {
+        // Returning user with cloud data — skip onboarding
+        try { localStorage.setItem(ONBOARDING_KEY, '1') } catch {}
+        setOnboardScreen('done')
+      } else {
+        // Guest or brand-new user — show welcome modal
+        setOnboardScreen('welcome')
+      }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleExport() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

@@ -216,7 +216,6 @@ interface Debt {
 
 ## Known Gaps / Future Work
 
-- **Onboarding doesn't account for cloud data:** A signed-in user who clears localStorage sees the WelcomeModal even though their data is in the cloud. Onboarding should be skipped if `loadFromCloud()` returns data on first mount.
 - **No multi-device conflict resolution:** Cloud wins on sign-in load; local changes during a session overwrite cloud on the 3s debounce. If the same account is used on two devices simultaneously, whichever saves last wins. Acceptable for now.
 - **Dynamic minimum payments:** App uses the static minimum entered by the user. Credit card minimums auto-adjust post-promo (typically 1% of balance + interest). Wells Fargo Reflect's minimum jumps from ~$56 to ~$173 after promo expires — this is why the app shows "↑ growing" when Wells Fargo's own disclosure says 20 years at minimum.
 - **Fidelity row is projection-only:** No confirmed history since the app has no balance tracking over time.

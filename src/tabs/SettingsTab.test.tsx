@@ -60,8 +60,8 @@ vi.mock('../lib/supabaseClient', () => ({
 // Prevent actual page reload
 vi.stubGlobal('location', { reload: vi.fn() })
 // Prevent URL errors in jsdom
-global.URL.createObjectURL = vi.fn(() => 'blob:mock')
-global.URL.revokeObjectURL = vi.fn()
+;(globalThis as typeof globalThis & { URL: typeof URL }).URL.createObjectURL = vi.fn(() => 'blob:mock')
+;(globalThis as typeof globalThis & { URL: typeof URL }).URL.revokeObjectURL = vi.fn()
 
 import SettingsTab from './SettingsTab'
 

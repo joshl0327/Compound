@@ -105,6 +105,7 @@ describe('ResetModal flow', () => {
     localStorage.setItem('compound_v4', '{"test":true}')
     localStorage.setItem('compound_onboarding_done', '1')
     localStorage.setItem('compound_profile_done', '1')
+    localStorage.setItem('compound_guest_mode', '1')
 
     const callOrder: string[] = []
     mockDeleteFromCloud.mockImplementation(async () => { callOrder.push('deleteFromCloud') })
@@ -120,5 +121,6 @@ describe('ResetModal flow', () => {
     expect(localStorage.getItem('compound_v4')).toBeNull()
     expect(localStorage.getItem('compound_onboarding_done')).toBeNull()
     expect(localStorage.getItem('compound_profile_done')).toBeNull()
+    expect(localStorage.getItem('compound_guest_mode')).toBeNull()
   })
 })

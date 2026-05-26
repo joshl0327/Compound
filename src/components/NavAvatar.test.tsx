@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -88,14 +88,16 @@ describe('NavAvatar', () => {
     expect(screen.queryByText('Settings')).toBeNull()
   })
 
-  it('Sign out button calls signOut', () => {
+  it('Sign out button calls signOut', async () => {
     mockAuth({
       session: { user: { email: 'josh@example.com', user_metadata: {} } } as any,
       user: { email: 'josh@example.com', user_metadata: {} } as any,
     })
     render(<NavAvatar setActiveTab={mockSetActiveTab} />)
     fireEvent.click(screen.getByRole('button', { name: /account menu/i }))
-    fireEvent.click(screen.getByText('Sign out'))
+    await act(async () => {
+      fireEvent.click(screen.getByText('Sign out'))
+    })
     expect(mockSignOut).toHaveBeenCalled()
   })
 

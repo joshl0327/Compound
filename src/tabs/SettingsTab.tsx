@@ -7,6 +7,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import type { AppData, DebtStrategy, IncomeBasis } from '../types'
 import { deleteFromCloud } from '../lib/cloudSync'
+import { STORAGE_KEY, ONBOARDING_KEY, PROFILE_DONE_KEY } from '../lib/storage'
 
 const DEBT_STRATEGIES: { id: DebtStrategy; label: string; desc: string }[] = [
   { id: 'avalanche', label: 'Avalanche (recommended)', desc: 'Minimizes total interest paid. Best for saving the most money overall.' },
@@ -48,9 +49,10 @@ function ResetModal({ data, signOut, onClose }: ResetModalProps) {
     setDeleting(true)
     try {
       await deleteFromCloud()
-      localStorage.removeItem('compound_v4')
-      localStorage.removeItem('compound_onboarding_done')
-      localStorage.removeItem('compound_profile_done')
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(ONBOARDING_KEY)
+      localStorage.removeItem(PROFILE_DONE_KEY)
+      localStorage.removeItem('compound_guest_mode')
       await signOut()
     } catch {
       // best-effort — if signOut fails (e.g. network offline), localStorage is

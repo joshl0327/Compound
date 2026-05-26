@@ -128,7 +128,7 @@ export default function NavAvatar({ setActiveTab }: NavAvatarProps) {
           </button>
 
           <button
-            onClick={() => { signOut(); setOpen(false) }}
+            onClick={async () => { await signOut(); setOpen(false) }}
             style={{
               display: 'block',
               width: '100%',

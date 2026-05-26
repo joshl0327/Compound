@@ -254,13 +254,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.id === 'gross') {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={midX} y={nodeBottom + 16} textAnchor="middle"
-                        fontSize={9} fontWeight={700} fill="var(--color-text-muted)"
+                  <text x={midX} y={nodeBottom + 17} textAnchor="middle"
+                        fontSize={11} fontWeight={700} fill="var(--color-text-muted)"
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     GROSS INCOME
                   </text>
-                  <text x={midX} y={nodeBottom + 32} textAnchor="middle"
-                        fontSize={15} fontWeight={700} fill="var(--color-text)"
+                  <text x={midX} y={nodeBottom + 34} textAnchor="middle"
+                        fontSize={16} fontWeight={700} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -271,13 +271,13 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
             if (sn.id === 'takehome') {
               return (
                 <g key={`lbl-${sn.id}`}>
-                  <text x={midX} y={nodeBottom + 16} textAnchor="middle"
-                        fontSize={9} fontWeight={700} fill={CATEGORY_COLORS.takehome}
+                  <text x={midX} y={nodeBottom + 17} textAnchor="middle"
+                        fontSize={11} fontWeight={700} fill={CATEGORY_COLORS.takehome}
                         fontFamily="DM Mono, monospace" letterSpacing="0.1em">
                     TAKE-HOME
                   </text>
-                  <text x={midX} y={nodeBottom + 32} textAnchor="middle"
-                        fontSize={15} fontWeight={700} fill="var(--color-text)"
+                  <text x={midX} y={nodeBottom + 34} textAnchor="middle"
+                        fontSize={16} fontWeight={700} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -289,12 +289,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               return (
                 <g key={`lbl-${sn.id}`}>
                   <text x={nodeLeft - 8} y={midY - 7} textAnchor="end"
-                        fontSize={9} fontWeight={700} fill={sn.color}
+                        fontSize={11} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.06em">
                     {sn.label}
                   </text>
-                  <text x={nodeLeft - 8} y={midY + 8} textAnchor="end"
-                        fontSize={12} fontWeight={600} fill="var(--color-text)"
+                  <text x={nodeLeft - 8} y={midY + 9} textAnchor="end"
+                        fontSize={13} fontWeight={600} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>
@@ -306,12 +306,12 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
               return (
                 <g key={`lbl-${sn.id}`}>
                   <text x={nodeRight + 8} y={midY - 7}
-                        fontSize={9} fontWeight={700} fill={sn.color}
+                        fontSize={11} fontWeight={700} fill={sn.color}
                         fontFamily="DM Mono, monospace" letterSpacing="0.05em">
                     {sn.label}
                   </text>
-                  <text x={nodeRight + 8} y={midY + 8}
-                        fontSize={12} fontWeight={600} fill="var(--color-text)"
+                  <text x={nodeRight + 8} y={midY + 9}
+                        fontSize={13} fontWeight={600} fill="var(--color-text)"
                         fontFamily="DM Mono, monospace">
                     {fmt(sn.value ?? 0)}
                   </text>

@@ -20,7 +20,7 @@ function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueCo
   const [tip, setTip] = useState(false)
   return (
     <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid var(--color-border)', position: 'relative' }}>
-      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
         {tooltip && (
           <button
@@ -31,7 +31,7 @@ function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueCo
         )}
       </div>
       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: 'var(--color-text-dim)' }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>{sub}</div>}
       {tip && tooltip && (
         <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
           {tooltip}

@@ -135,7 +135,7 @@ Stacked area chart showing debt payoff over time. Supports four modes:
 - **Snowball** — plan payments + surplus applied to smallest balance first
 - **Avalanche** — plan payments + surplus applied to highest rate first
 
-Snowball/Avalanche show "vs Plan" diff (not "vs Min"). Promo APR debts use two-phase interest calculation: 0% during promo period, then post-promo rate. If minimum payment can't cover post-promo interest, simulates 120 months and shows "↑ growing" in legend.
+Plan/Snowball/Avalanche show a "vs Min" diff in the KPI bar (how much sooner and cheaper vs. minimum payments). Min mode shows no diff. Promo APR debts use two-phase interest calculation: 0% during promo period, then post-promo rate. Min simulation uses a dynamic minimum (`max(staticMin, 1% × balance + monthly interest)`) so the balance always declines — matching real credit card behavior. If plan payment can't cover post-promo interest in a static payment scenario, simulates 120 months and shows "↑ growing" in legend.
 
 ### `LineChart.tsx`
 Retirement projection curve. Renders SVG with crosshair tooltip, Fidelity benchmark lines, and a `badgeOverlay?: ReactNode` prop for milestone badges. The overlay scales responsively via `ResizeObserver` — captures the initial render width as the scale reference (so `scale = 1` at page-load size) and adjusts proportionally on resize.
@@ -155,7 +155,7 @@ React portal toast (renders to `document.body`, bypasses `overflow: hidden`) tha
 ### `calculations.ts`
 - `buildAggregateProjection(sources, sourceCalcs, hsaBalance, investBalance)` → `DataPoint[]` — retirement projection at 7% nominal return
 - `calcPayoff(balance, annualRate, payment)` → standard single-rate payoff
-- `calcPayoffPromo(balance, promoRate, payment, promoMonthsLeft, postPromoRate)` → two-phase payoff: promo period at promoRate, then post-promo rate. If payment can't cover post-promo interest, simulates 120 months and returns partial result (never returns null).
+- `calcPayoffPromo(balance, promoRate, payment, promoMonthsLeft, postPromoRate, postPromoMinPct?)` → two-phase payoff: promo period at promoRate, then post-promo rate. Optional `postPromoMinPct` (default `0`) enables dynamic minimum mode: post-promo payment = `max(staticMin, pct × balance + monthly_interest)`, guaranteeing 1%/month balance decline. Without it, falls back to static payment; if that can't cover post-promo interest, simulates 120 months and returns partial result.
 - `promoMonthsRemaining(promoEndDate)` → months until promo expires from today
 
 ### `cloudSync.ts`
@@ -217,11 +217,10 @@ interface Debt {
 ## Known Gaps / Future Work
 
 - **No multi-device conflict resolution:** Cloud wins on sign-in load; local changes during a session overwrite cloud on the 3s debounce. If the same account is used on two devices simultaneously, whichever saves last wins. Acceptable for now.
-- **Dynamic minimum payments:** App uses the static minimum entered by the user. Credit card minimums auto-adjust post-promo (typically 1% of balance + interest). Wells Fargo Reflect's minimum jumps from ~$56 to ~$173 after promo expires — this is why the app shows "↑ growing" when Wells Fargo's own disclosure says 20 years at minimum.
 - **Fidelity row is projection-only:** No confirmed history since the app has no balance tracking over time.
 - **InvestRetireTab `LineChart`:** Has its own chart instance without the milestone badge overlay.
 - **Bundle size:** ~534KB gzipped to ~143KB. Supabase adds meaningful weight. No code splitting yet.
-- **`debtColor` tests:** 3 pre-existing failures in `calculations.test.ts` — test expectations don't match current color interpolation. Safe to ignore during active development.
+- **Promo-aware payoff strategy:** Avalanche is only mathematically optimal when rates are static. When 0% promo periods are in play, pure avalanche can let a promo expire on a deprioritized card — triggering the full post-promo APR (often 24–29%) before it gets paid off — while snowball may accidentally clear the same card in time. The true optimal strategy treats promo expiration as a rate-change event: a debt with 2 months left at 0% is effectively the most expensive debt in the portfolio right now, regardless of its post-promo APR vs. others. Future work: add a "Smart" mode (or promo-aware advisory layer) that re-orders payoff priority by time-adjusted effective rate, factoring in how soon each promo expires. Could also surface a warning in Avalanche mode when it's on track to let a promo expire, costing more than the baseline minimum simulation.
 
 ---
 
@@ -230,6 +229,6 @@ interface Debt {
 ```bash
 npm run dev        # dev server at http://localhost:5173/Compound/
 npm run build      # production build
-npx vitest run     # tests (3 pre-existing debtColor failures are expected)
+npx vitest run     # run test suite
 npx tsc --noEmit   # type check
 ```

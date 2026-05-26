@@ -2,7 +2,7 @@
 
 ## What This Is
 
-**Compound** is a client-side personal finance planning tool. It helps users model their full financial picture: income, expenses, debt payoff, savings, and retirement projections. Everything runs in the browser — no backend, no accounts, no server.
+**Compound** is a personal finance planning tool with optional cloud sync. It helps users model their full financial picture: income, expenses, debt payoff, savings, and retirement projections. Everything runs in the browser; users can sign in with Google, Discord, or a magic link to sync their data across devices, or use the app locally without an account.
 
 The goal is a single dashboard where a user can enter their financial data once and immediately see how changes (more income, faster debt payoff, higher retirement contributions) affect their long-term trajectory.
 
@@ -15,18 +15,80 @@ The goal is a single dashboard where a user can enter their financial data once 
 | Frontend | React 18, TypeScript, Vite |
 | Styling | Tailwind CSS 3.4 + inline styles |
 | Charts | Custom SVG (no charting library) |
-| State | React Context (`DataContext`, `UIContext`) + localStorage |
+| State | React Context (`AuthContext`, `DataContext`, `UIContext`) + localStorage |
+| Auth + DB | Supabase (auth, `user_data` table) |
 | Testing | Vitest + @testing-library/react, jsdom |
 | Build | Vite (port 5173) |
-| Hosting | GitHub Pages (`/Compound/` base path) |
+| Hosting | GitHub Pages (`/Compound/` base path) — `https://joshl0327.github.io/Compound/` |
 
 **Key paths:**
 - Tabs: `src/tabs/`
 - Components: `src/components/`
+- Context: `src/context/` (`AuthContext.tsx`, `DataContext.tsx`, `UIContext.tsx`)
 - Business logic: `src/lib/`
 - Hooks: `src/hooks/`
+- Onboarding: `src/onboarding/`
 - Types: `src/types/index.ts`
-- localStorage keys: `compound_v4` (main data), `compound_milestones_v1` (milestone high-water marks)
+
+**localStorage keys:**
+
+| Key | Constant | Purpose |
+|---|---|---|
+| `compound_v4` | `STORAGE_KEY` | Main app data |
+| `compound_onboarding_done` | `ONBOARDING_KEY` | Suppresses welcome modal |
+| `compound_profile_done` | `PROFILE_DONE_KEY` | Suppresses profile setup prompt |
+| `compound_guest_mode` | `GUEST_KEY` (unexported, in AuthContext) | Persists guest-mode choice |
+| `compound_milestones_v1` | — | Milestone high-water marks |
+
+---
+
+## Auth & Cloud Sync
+
+### Supabase Setup
+
+- Auth providers: **Google**, **Discord**, **Magic Link (email OTP)**
+- Database table: `user_data` (`user_id uuid`, `key text`, `value jsonb`, `updated_at timestamptz`)
+- Unique constraint on `(user_id, key)` — upsert on conflict
+- RLS is **enabled** on `user_data` with four policies: SELECT, INSERT, UPDATE, DELETE — all using `auth.uid() = user_id`
+- Credentials in `.env` (gitignored): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- The anon key (`sb_publishable_...`) is intentionally public — baked into the bundle at build time. Security is entirely enforced by RLS. See comment in `src/lib/supabaseClient.js`.
+- `VITE_SUPABASE_ANON_KEY` must also be set as a **GitHub Actions secret** for the deploy workflow to bake it into the production build.
+
+### How Cloud Sync Works (`src/lib/cloudSync.ts`)
+
+- `saveToCloud(data)` — upserts the full `AppData` blob under `compound_v4` for the signed-in user. No-op if not signed in.
+- `loadFromCloud()` — returns `AppData | null`. No-op if not signed in.
+- `deleteFromCloud()` — deletes the user's row. Used by Reset All Data. No-op if not signed in.
+
+### DataContext Sync Behaviour (`src/context/DataContext.tsx`)
+
+- **On first sign-in:** loads from cloud, runs `migrateData()` to fill any gaps, hydrates state + localStorage. Guard ref prevents re-loading mid-session on token refreshes.
+- **On every data change:** 3-second debounce triggers `saveToCloud`. Rapid edits reset the timer.
+- **On sign-out (NavAvatar):** flushes a final `saveToCloud` before calling `signOut()` to capture any changes within the debounce window.
+- **Guests:** all three are no-ops; data lives in localStorage only.
+
+### AuthGate (`src/components/AuthGate.tsx`)
+
+Blocks the app until auth state is resolved. Renders a sign-in card with magic link input + Google + Discord OAuth buttons + "Use without signing in" guest bypass. OAuth redirect URL is built dynamically: `window.location.origin + import.meta.env.BASE_URL` — works correctly on both localhost and GitHub Pages without any code change.
+
+### NavAvatar (`src/components/NavAvatar.tsx`)
+
+Sticky navbar indicator (far right, after Export/Import). Three states:
+- **Loading:** renders nothing
+- **Guest:** "Sign in" text link → opens Settings tab
+- **Signed in:** 32×32 avatar circle (provider picture or initial letter) with a popover showing name/email, Settings link, and Sign Out
+
+---
+
+## Onboarding Flow
+
+Controlled by `onboardScreen` state in `App.tsx` (`'welcome' | 'quickstart' | 'done'`). Suppressed once `ONBOARDING_KEY` is set in localStorage.
+
+1. **WelcomeModal** — three paths: Quick Start wizard, import backup (writes to localStorage + reloads), or Skip
+2. **QuickStart** — multi-step guided data entry (income, expenses, savings, invest)
+3. **Done** — app renders normally
+
+⚠️ **The onboarding flow needs to be revisited.** It predates auth and doesn't account for signed-in users who already have cloud data. Currently, a signed-in returning user who clears localStorage would be shown the welcome modal even though their data is in the cloud. The fix would be to skip onboarding if `loadFromCloud()` returns data.
 
 ---
 
@@ -57,7 +119,7 @@ The app is a single-page tabbed layout. Tabs:
 | Savings | `SavingsTab.tsx` | Emergency fund, general savings goals |
 | Invest & Retire | `InvestRetireTab.tsx` | 401k, Roth IRA, HSA contributions and balances |
 | Plan | `PlanTab.tsx` | Budget surplus allocation |
-| Settings | `SettingsTab.tsx` | App preferences |
+| Settings | `SettingsTab.tsx` | App preferences + Reset All Data (two-step modal: export prompt → cloud wipe + sign-out) |
 
 ---
 
@@ -96,6 +158,9 @@ React portal toast (renders to `document.body`, bypasses `overflow: hidden`) tha
 - `calcPayoffPromo(balance, promoRate, payment, promoMonthsLeft, postPromoRate)` → two-phase payoff: promo period at promoRate, then post-promo rate. If payment can't cover post-promo interest, simulates 120 months and returns partial result (never returns null).
 - `promoMonthsRemaining(promoEndDate)` → months until promo expires from today
 
+### `cloudSync.ts`
+- `saveToCloud(data)`, `loadFromCloud()`, `deleteFromCloud()` — Supabase upsert/select/delete for `user_data`. All three are no-ops when not signed in. Errors are logged but never thrown.
+
 ### `milestoneConstants.ts`
 Shared constants for `useMilestones` and `MilestoneBadges`:
 - `DOLLAR_THRESHOLDS` — [10K, 100K, 500K, 1M, 2M, 5M, 10M]
@@ -105,7 +170,7 @@ Shared constants for `useMilestones` and `MilestoneBadges`:
 Sankey layout math, node/link calculations, net-worth-positive month detection.
 
 ### `storage.ts`
-localStorage read/write with data migration. Key: `compound_v4`.
+localStorage read/write with data migration (`migrateData`), `makeDefault()`, and key constants. Key: `compound_v4`.
 
 ### `format.ts`
 Currency/number formatting (`fmt`, `fmtShort`).
@@ -151,10 +216,13 @@ interface Debt {
 
 ## Known Gaps / Future Work
 
+- **Onboarding doesn't account for cloud data:** A signed-in user who clears localStorage sees the WelcomeModal even though their data is in the cloud. Onboarding should be skipped if `loadFromCloud()` returns data on first mount.
+- **No multi-device conflict resolution:** Cloud wins on sign-in load; local changes during a session overwrite cloud on the 3s debounce. If the same account is used on two devices simultaneously, whichever saves last wins. Acceptable for now.
 - **Dynamic minimum payments:** App uses the static minimum entered by the user. Credit card minimums auto-adjust post-promo (typically 1% of balance + interest). Wells Fargo Reflect's minimum jumps from ~$56 to ~$173 after promo expires — this is why the app shows "↑ growing" when Wells Fargo's own disclosure says 20 years at minimum.
 - **Fidelity row is projection-only:** No confirmed history since the app has no balance tracking over time.
-- **`debtColor` tests:** 3 pre-existing failures in `calculations.test.ts` — test expectations don't match current color interpolation. Safe to ignore during active development.
 - **InvestRetireTab `LineChart`:** Has its own chart instance without the milestone badge overlay.
+- **Bundle size:** ~534KB gzipped to ~143KB. Supabase adds meaningful weight. No code splitting yet.
+- **`debtColor` tests:** 3 pre-existing failures in `calculations.test.ts` — test expectations don't match current color interpolation. Safe to ignore during active development.
 
 ---
 

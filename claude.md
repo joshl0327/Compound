@@ -218,8 +218,7 @@ interface Debt {
 
 - **No multi-device conflict resolution:** Cloud wins on sign-in load; local changes during a session overwrite cloud on the 3s debounce. If the same account is used on two devices simultaneously, whichever saves last wins. Acceptable for now.
 - **Fidelity row is projection-only:** No confirmed history since the app has no balance tracking over time.
-- **InvestRetireTab `LineChart`:** Has its own chart instance without the milestone badge overlay.
-- **Bundle size:** ~534KB gzipped to ~143KB. Supabase adds meaningful weight. No code splitting yet.
+- **Bundle size:** Vendor chunks (Supabase ~55KB gz, React ~45KB gz) are cache-stable across app deploys. Tabs lazy-load on first visit. Initial shell + active tab is ~120KB gz on cold load.
 - **Promo-aware payoff strategy:** Avalanche is only mathematically optimal when rates are static. When 0% promo periods are in play, pure avalanche can let a promo expire on a deprioritized card — triggering the full post-promo APR (often 24–29%) before it gets paid off — while snowball may accidentally clear the same card in time. The true optimal strategy treats promo expiration as a rate-change event: a debt with 2 months left at 0% is effectively the most expensive debt in the portfolio right now, regardless of its post-promo APR vs. others. Future work: add a "Smart" mode (or promo-aware advisory layer) that re-orders payoff priority by time-adjusted effective rate, factoring in how soon each promo expires. Could also surface a warning in Avalanche mode when it's on track to let a promo expire, costing more than the baseline minimum simulation.
 
 ---

@@ -7,6 +7,17 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js',
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-d3': ['d3-sankey'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

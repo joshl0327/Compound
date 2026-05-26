@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import AuthGate from './components/AuthGate'
 import { useUI } from './context/UIContext'
 import { useData } from './context/DataContext'
 import type { TabId } from './types'
-import SettingsTab from './tabs/SettingsTab'
-import OverviewTab from './tabs/OverviewTab'
-import IncomeTab from './tabs/IncomeTab'
-import ExpensesTab from './tabs/ExpensesTab'
-import SavingsTab from './tabs/SavingsTab'
-import InvestRetireTab from './tabs/InvestRetireTab'
-import PlanTab from './tabs/PlanTab'
-import WelcomeModal from './onboarding/WelcomeModal'
-import QuickStart from './onboarding/QuickStart'
 import { ONBOARDING_KEY, makeDefault, migrateData } from './lib/storage'
 import { loadFromCloud } from './lib/cloudSync'
 import NavAvatar from './components/NavAvatar'
+
+const SettingsTab    = lazy(() => import('./tabs/SettingsTab'))
+const OverviewTab    = lazy(() => import('./tabs/OverviewTab'))
+const IncomeTab      = lazy(() => import('./tabs/IncomeTab'))
+const ExpensesTab    = lazy(() => import('./tabs/ExpensesTab'))
+const SavingsTab     = lazy(() => import('./tabs/SavingsTab'))
+const InvestRetireTab = lazy(() => import('./tabs/InvestRetireTab'))
+const PlanTab        = lazy(() => import('./tabs/PlanTab'))
+const WelcomeModal   = lazy(() => import('./onboarding/WelcomeModal'))
+const QuickStart     = lazy(() => import('./onboarding/QuickStart'))
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -97,21 +98,23 @@ export default function App() {
       className="min-h-screen font-body"
       style={{ background: 'var(--color-bg)' }}
     >
-      {onboardScreen === 'welcome' && (
-        <WelcomeModal
-          onQuickStart={() => setOnboardScreen('quickstart')}
-          onSkip={() => {
-            try { localStorage.setItem(ONBOARDING_KEY, '1') } catch {}
-            setOnboardScreen('done')
-          }}
-        />
-      )}
-      {onboardScreen === 'quickstart' && (
-        <QuickStart
-          onComplete={() => setOnboardScreen('done')}
-          onBack={() => setOnboardScreen('welcome')}
-        />
-      )}
+      <Suspense fallback={null}>
+        {onboardScreen === 'welcome' && (
+          <WelcomeModal
+            onQuickStart={() => setOnboardScreen('quickstart')}
+            onSkip={() => {
+              try { localStorage.setItem(ONBOARDING_KEY, '1') } catch {}
+              setOnboardScreen('done')
+            }}
+          />
+        )}
+        {onboardScreen === 'quickstart' && (
+          <QuickStart
+            onComplete={() => setOnboardScreen('done')}
+            onBack={() => setOnboardScreen('welcome')}
+          />
+        )}
+      </Suspense>
 
       {/* Header + nav — single sticky bar */}
       <div className="sticky top-0 z-50 border-b border-border px-4" style={{ background: 'var(--color-nav)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
@@ -166,13 +169,19 @@ export default function App() {
 
       {/* Tab content */}
       <div className="mx-auto px-4 py-6" style={{ maxWidth: 'min(94vw, 2200px)' }}>
-        {activeTab === 'settings' && <SettingsTab />}
-        {activeTab === 'overview' && <OverviewTab />}
-        {activeTab === 'income' && <IncomeTab />}
-        {activeTab === 'expenses' && <ExpensesTab />}
-        {activeTab === 'savings' && <SavingsTab />}
-        {activeTab === 'invest' && <InvestRetireTab />}
-        {activeTab === 'plan' && <PlanTab />}
+        <Suspense fallback={
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200, color: 'var(--color-text-dim)', fontSize: 13 }}>
+            Loading…
+          </div>
+        }>
+          {activeTab === 'settings' && <SettingsTab />}
+          {activeTab === 'overview' && <OverviewTab />}
+          {activeTab === 'income' && <IncomeTab />}
+          {activeTab === 'expenses' && <ExpensesTab />}
+          {activeTab === 'savings' && <SavingsTab />}
+          {activeTab === 'invest' && <InvestRetireTab />}
+          {activeTab === 'plan' && <PlanTab />}
+        </Suspense>
       </div>
     </div>
     </AuthGate>

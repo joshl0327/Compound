@@ -219,9 +219,10 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({ value: maxY * pct, y: toY(maxY * pct) }))
   const showNwp = nwpMonths !== null && nwpMonths > 0 && nwpMonths <= nMonths
 
-  // Comparison vs Plan (baseline for snowball/avalanche)
-  const monthsDiff = planMaxMonths - activeMaxMonths
-  const interestDiff = planTotalInterest - activeTotalInterest
+  // Comparison vs Min — shown for plan/snowball/avalanche so any mode can be
+  // benchmarked against "what if you just paid minimums forever?"
+  const minMonthsDiff = minMaxMonths - activeMaxMonths
+  const minInterestDiff = minTotalInterest - activeTotalInterest
 
   // Hover tooltip data
   const hoverData = hoverMonth !== null ? {
@@ -274,19 +275,19 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Freed/mo</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
               </div>
-              {(mode === 'snowball' || mode === 'avalanche') && monthsDiff !== 0 && (
+              {mode !== 'minimum' && minMonthsDiff !== 0 && (
                 <div>
-                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>vs Plan</div>
-                  <div className="font-mono text-[14px] font-bold" style={{ color: monthsDiff >= 0 ? '#34d399' : '#f87171' }}>
-                    {monthsDiff >= 0 ? '-' : '+'}{Math.abs(monthsDiff)}mo
+                  <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>vs Min</div>
+                  <div className="font-mono text-[14px] font-bold" style={{ color: minMonthsDiff >= 0 ? '#34d399' : '#f87171' }}>
+                    {minMonthsDiff >= 0 ? '-' : '+'}{Math.abs(minMonthsDiff)}mo
                   </div>
                 </div>
               )}
-              {(mode === 'snowball' || mode === 'avalanche') && interestDiff !== 0 && (
+              {mode !== 'minimum' && minInterestDiff !== 0 && (
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Interest saved</div>
-                  <div className="font-mono text-[14px] font-bold" style={{ color: interestDiff >= 0 ? '#34d399' : '#f87171' }}>
-                    {interestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(interestDiff)))}
+                  <div className="font-mono text-[14px] font-bold" style={{ color: minInterestDiff >= 0 ? '#34d399' : '#f87171' }}>
+                    {minInterestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(minInterestDiff)))}
                   </div>
                 </div>
               )}

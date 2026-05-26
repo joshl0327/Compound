@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AuthGate from './components/AuthGate'
 import { useUI } from './context/UIContext'
 import { useData } from './context/DataContext'
 import type { TabId } from './types'
@@ -12,6 +13,7 @@ import PlanTab from './tabs/PlanTab'
 import WelcomeModal from './onboarding/WelcomeModal'
 import QuickStart from './onboarding/QuickStart'
 import { ONBOARDING_KEY, makeDefault, migrateData } from './lib/storage'
+import NavAvatar from './components/NavAvatar'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -70,6 +72,7 @@ export default function App() {
   }
 
   return (
+    <AuthGate>
     <div
       className="min-h-screen font-body"
       style={{ background: 'var(--color-bg)' }}
@@ -114,7 +117,7 @@ export default function App() {
             ))}
           </div>
 
-          {/* Export / Import */}
+          {/* Export / Import / Avatar */}
           <div className="flex items-center gap-2 ml-6 flex-shrink-0">
             <button
               onClick={handleExport}
@@ -134,6 +137,9 @@ export default function App() {
             >
               Import
             </button>
+            <div style={{ marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid var(--color-border)', display: 'flex', alignItems: 'center' }}>
+              <NavAvatar setActiveTab={setActiveTab} />
+            </div>
           </div>
         </div>
       </div>
@@ -149,5 +155,6 @@ export default function App() {
         {activeTab === 'plan' && <PlanTab />}
       </div>
     </div>
+    </AuthGate>
   )
 }

@@ -601,7 +601,7 @@ export default function InvestRetireTab() {
             <Card>
               <SectionTitle accent="#34d399">Projected Balance Growth</SectionTitle>
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 12, marginTop: -8 }}>
-                7% avg annual return. Excludes HSA.
+                401k + Roth IRA only · 7% avg annual return · for full picture see Overview
               </div>
               <LineChart
                 data={retChartData}

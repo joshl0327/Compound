@@ -211,10 +211,10 @@ export default function OverviewTab() {
         {/* Retirement projection */}
         <div className="flex flex-col">
           <SectionTitle accent="var(--color-accent)" hint={<>
+            <div style={{ marginBottom: 6 }}>· <strong>Includes:</strong> all 401k, Roth IRA, HSA, and investment account balances</div>
             <div style={{ marginBottom: 6 }}>· <strong>Growth:</strong> 7% nominal annual return</div>
             <div style={{ marginBottom: 6 }}>· <strong>Inflation:</strong> "Today's dollars" values adjust for 2% annual inflation</div>
-            <div style={{ marginBottom: 6 }}>· <strong>Benchmarks:</strong> Fidelity targets — 3× salary by 40, 6× by 50, 8× by 60</div>
-            <div>· <strong>HSA:</strong> Projection settings coming to Invest &amp; Retire</div>
+            <div>· <strong>Benchmarks:</strong> Fidelity targets — 3× salary by 40, 6× by 50, 8× by 60</div>
           </>}>Retirement Projection</SectionTitle>
           <Card className="flex-1">
             {projBal > 0 && (

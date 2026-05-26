@@ -106,16 +106,19 @@ describe('ResetModal flow', () => {
     localStorage.setItem('compound_onboarding_done', '1')
     localStorage.setItem('compound_profile_done', '1')
 
+    const callOrder: string[] = []
+    mockDeleteFromCloud.mockImplementation(async () => { callOrder.push('deleteFromCloud') })
+    mockSignOut.mockImplementation(async () => { callOrder.push('signOut') })
+
     render(<SettingsTab />)
     fireEvent.click(screen.getByText('Reset All Data'))
     fireEvent.click(screen.getByText('Skip'))
     fireEvent.click(screen.getByText('Delete Everything'))
 
-    await waitFor(() => expect(mockDeleteFromCloud).toHaveBeenCalled())
+    await waitFor(() => expect(window.location.reload).toHaveBeenCalled())
+    expect(callOrder).toEqual(['deleteFromCloud', 'signOut'])
     expect(localStorage.getItem('compound_v4')).toBeNull()
     expect(localStorage.getItem('compound_onboarding_done')).toBeNull()
     expect(localStorage.getItem('compound_profile_done')).toBeNull()
-    expect(mockSignOut).toHaveBeenCalled()
-    expect(window.location.reload).toHaveBeenCalled()
   })
 })

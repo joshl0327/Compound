@@ -37,18 +37,25 @@ function ResetModal({ data, signOut, onClose }: ResetModalProps) {
     const a = document.createElement('a')
     a.href = url
     a.download = 'compound-backup.json'
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
     setView('confirm')
   }
 
   async function handleDeleteEverything() {
     setDeleting(true)
-    await deleteFromCloud()
-    localStorage.removeItem('compound_v4')
-    localStorage.removeItem('compound_onboarding_done')
-    localStorage.removeItem('compound_profile_done')
-    await signOut()
+    try {
+      await deleteFromCloud()
+      localStorage.removeItem('compound_v4')
+      localStorage.removeItem('compound_onboarding_done')
+      localStorage.removeItem('compound_profile_done')
+      await signOut()
+    } catch {
+      // best-effort — if signOut fails (e.g. network offline), localStorage is
+      // already cleared; reload anyway to reset the app to a clean state
+    }
     window.location.reload()
   }
 
@@ -121,7 +128,7 @@ function ResetModal({ data, signOut, onClose }: ResetModalProps) {
                 style={{
                   padding: '6px 14px', fontSize: 13, background: 'none',
                   border: '1px solid var(--color-border)', borderRadius: 6,
-                  color: 'var(--color-text-muted)', cursor: 'pointer',
+                  color: 'var(--color-text-muted)', cursor: deleting ? 'not-allowed' : 'pointer',
                 }}
               >
                 Cancel
@@ -132,7 +139,7 @@ function ResetModal({ data, signOut, onClose }: ResetModalProps) {
                 style={{
                   padding: '6px 14px', fontSize: 13,
                   background: '#2a0a0a', border: '1px solid #f87171',
-                  borderRadius: 6, color: '#f87171', cursor: 'pointer',
+                  borderRadius: 6, color: '#f87171', cursor: deleting ? 'not-allowed' : 'pointer',
                 }}
               >
                 {deleting ? 'Deleting…' : 'Delete Everything'}

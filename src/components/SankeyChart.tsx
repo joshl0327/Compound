@@ -132,7 +132,7 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
     const taxes = input.grossMonthly - input.netMonthly
       - input.trad401kMonthly - input.hsaMonthly - input.roth401kMonthly
     const retHsa = input.trad401kMonthly + input.roth401kMonthly + input.hsaMonthly
-    const showDeductionCard = input.grossMonthly - input.netMonthly > 0
+    const showDeductionCard = taxes > 0 || retHsa > 0
 
     const bucketSum = input.essTotalP + input.discPlanTotal + input.debtPlanTotal
       + input.liquidSavingsMonthly + input.rothIraMonthly
@@ -158,7 +158,7 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
       )
     }
 
-    // ── Fan SVG layout constants ──
+    // ── Parallel-band SVG layout constants ──
     const NODE_GAP = 4
     const MIN_NODE_H = 4
     const N = outputs.length
@@ -324,22 +324,25 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
                   fill={o.color} fillOpacity={isActive ? 0.6 : 0.3}
                   stroke={o.color} strokeWidth={isActive ? 1.5 : 0.8} strokeOpacity={0.7}
                 />
-                {/* Category name */}
-                <text
-                  x={LABEL_X} y={midY - 5}
-                  fontSize={10} fontWeight={700} fill={o.color}
-                  fontFamily="DM Mono, monospace" letterSpacing="0.04em"
-                >
-                  {o.label}
-                </text>
-                {/* Amount */}
-                <text
-                  x={LABEL_X} y={midY + 9}
-                  fontSize={11} fontWeight={600} fill="var(--color-text)"
-                  fontFamily="DM Mono, monospace"
-                >
-                  {fmt(o.amount)}
-                </text>
+                {/* Category name + amount — hidden for very small nodes to prevent overflow */}
+                {nodeHeights[i] >= 12 && (
+                  <>
+                    <text
+                      x={LABEL_X} y={midY - 5}
+                      fontSize={10} fontWeight={700} fill={o.color}
+                      fontFamily="DM Mono, monospace" letterSpacing="0.04em"
+                    >
+                      {o.label}
+                    </text>
+                    <text
+                      x={LABEL_X} y={midY + 9}
+                      fontSize={11} fontWeight={600} fill="var(--color-text)"
+                      fontFamily="DM Mono, monospace"
+                    >
+                      {fmt(o.amount)}
+                    </text>
+                  </>
+                )}
               </g>
             )
           })}

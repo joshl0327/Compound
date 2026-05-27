@@ -104,7 +104,7 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
           return (
             <g key={i}>
               <line x1={pad.l} y1={y} x2={pad.l + chartW} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
-              <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={isMobile ? 11 : 9} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{fmtShort(v)}</text>
+              <text x={pad.l - 4} y={y + 4} textAnchor="end" fontSize={isMobile ? 13 : 9} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{fmtShort(v)}</text>
             </g>
           )
         })}
@@ -133,7 +133,7 @@ export default function LineChart({ data, height: h = 200, benchmarks, badgeOver
           .map(d => {
             const idx = data.indexOf(d)
             return (
-              <text key={'x' + idx} x={pad.l + idx * xStep} y={h - 6} textAnchor="middle" fontSize={isMobile ? 11 : 9} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>
+              <text key={'x' + idx} x={pad.l + idx * xStep} y={h - 6} textAnchor="middle" fontSize={isMobile ? 13 : 9} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>
                 {d.age}
               </text>
             )

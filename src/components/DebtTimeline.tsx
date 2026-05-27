@@ -391,7 +391,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {yTicks.map(({ value, y }) => (
           <g key={value}>
             <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
-            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={isMobile ? 9 : 8} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{fmtShort(value)}</text>
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={isMobile ? 13 : 8} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{fmtShort(value)}</text>
           </g>
         ))}
 
@@ -436,14 +436,14 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         })()}
 
         {/* X-axis date labels */}
-        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>Now</text>
+        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={isMobile ? 13 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>Now</text>
         {ticks.map(m => (
           <g key={m}>
             <line x1={toX(m)} y1={padT + cH} x2={toX(m)} y2={padT + cH + 4} stroke="var(--color-border)" strokeWidth={1} />
-            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(m)}</text>
+            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 13 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(m)}</text>
           </g>
         ))}
-        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(nMonths)}</text>
+        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 13 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(nMonths)}</text>
 
         {/* Hover crosshair + tooltip */}
         {hoverData && (() => {

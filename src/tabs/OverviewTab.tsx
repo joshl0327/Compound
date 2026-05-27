@@ -297,7 +297,7 @@ export default function OverviewTab() {
       {/* ── Bottom row ── */}
       <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', alignItems: 'stretch' }}>
         {/* Debt-free timeline */}
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ minWidth: 0 }}>
           <SectionTitle accent="var(--color-accent)" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Min:</strong> Minimum required payments only — slowest payoff, most interest</div>
             <div style={{ marginBottom: 6 }}>· <strong>Plan:</strong> Your configured payment amounts</div>
@@ -318,7 +318,7 @@ export default function OverviewTab() {
         </div>
 
         {/* Retirement projection */}
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ minWidth: 0 }}>
           <SectionTitle accent="var(--color-accent)" hint={<>
             <div style={{ marginBottom: 6 }}>· <strong>Includes:</strong> all 401k, Roth IRA, HSA, and investment account balances</div>
             <div style={{ marginBottom: 6 }}>· <strong>Growth:</strong> 7% nominal annual return</div>

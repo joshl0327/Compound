@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react'
+import { useRef, useState, useMemo, useLayoutEffect, useCallback, useEffect } from 'react'
 import { sankey, sankeyLeft } from 'd3-sankey'
 import type { SankeyNode, SankeyLink } from 'd3-sankey'
 import { buildSankeyData } from '../lib/sankeyHelpers'
@@ -121,6 +121,9 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
 
   const handleMouseLeave = useCallback(() => setTooltip(null), [])
 
+  // Clear active node when switching between mobile and desktop layouts
+  useEffect(() => { setActiveNode(null) }, [mobile])
+
   if (!graph) return (
     <div className="flex items-center justify-center h-64 text-sm" style={{ color: 'var(--color-text-muted)' }}>
       Add your income to see the flow.
@@ -158,31 +161,42 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
       )
     }
 
-    // ── Parallel-band SVG layout constants ──
-    const NODE_GAP = 4
-    const MIN_NODE_H = 4
-    const N = outputs.length
-    const totalH = Math.max(N * 30 - NODE_GAP, 160)
-    const innerH = totalH - (N - 1) * NODE_GAP
-
-    // Proportional node heights — floored at MIN_NODE_H, scaled to sum to innerH
-    const rawHeights = outputs.map(o => Math.max(MIN_NODE_H, (o.amount / input.netMonthly) * innerH))
-    const rawSum = rawHeights.reduce((s, h) => s + h, 0)
-    const nodeHeights = rawSum > 0 ? rawHeights.map(h => (h / rawSum) * innerH) : rawHeights
-
-    // Output node Y positions
-    const nodeY: number[] = []
-    let cy = 0
-    nodeHeights.forEach((h, i) => {
-      nodeY.push(cy)
-      cy += h + (i < N - 1 ? NODE_GAP : 0)
-    })
-
-    // SVG viewport: fits a 390px screen
-    const VIEW_W = 364
-    const SRC_X0 = 10, SRC_X1 = 24
-    const TGT_X0 = 214, TGT_X1 = 224
-    const LABEL_X = 232
+    // Returns drill-down items for a node — mirrors DrillDownPanel logic
+    function getNodeItems(nodeId: string): DrillDownItem[] {
+      switch (nodeId) {
+        case 'essentials':
+          return data.budget.essentials.map(e => ({
+            name: e.name, amount: parseFloat(e.plan || e.baseline) || 0, total: input.essTotalP,
+          }))
+        case 'discretionary':
+          return data.budget.discretionary.map(e => ({
+            name: e.name, amount: parseFloat(e.plan || e.baseline) || 0, total: input.discPlanTotal,
+          }))
+        case 'debt':
+          return data.debts.filter(d => !d.isMortgage).map(d => ({
+            name: d.name, amount: parseFloat(d.planPayment || d.minPayment) || 0,
+            balance: parseFloat(d.balance) || 0, total: input.debtPlanTotal,
+          }))
+        case 'liquid-savings': {
+          const efAmt = parseFloat(data.savings.emergencyFund.monthly) || 0
+          const genAmt = parseFloat(data.savings.generalSavings.monthly) || 0
+          return [
+            { name: 'Emergency Fund', amount: efAmt, total: efAmt + genAmt },
+            { name: 'General Savings', amount: genAmt, total: efAmt + genAmt },
+          ].filter(i => i.amount > 0)
+        }
+        case 'retirement':
+          return data.income.sources
+            .filter(s => s.type === 'w2' && parseFloat(s.retirement?.rothIra?.monthly || '0') > 0)
+            .map(s => ({
+              name: `${s.name} — Roth IRA`,
+              amount: parseFloat(s.retirement!.rothIra.monthly) || 0,
+              total: input.rothIraMonthly,
+            }))
+        default:
+          return []
+      }
+    }
 
     return (
       <div>
@@ -193,7 +207,7 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
             border: '1px solid var(--color-border)',
             borderRadius: 5,
             padding: '12px 14px',
-            marginBottom: 16,
+            marginBottom: 14,
           }}>
             {/* Gross Income row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
@@ -247,118 +261,86 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
           </div>
         )}
 
-        {/* ── Take-Home fan SVG ── */}
-        <svg
-          width="100%"
-          viewBox={`0 0 ${VIEW_W} ${totalH + 24}`}
-          style={{ display: 'block', overflow: 'visible' }}
-          aria-label="Take-home budget flow"
-          role="img"
-        >
-          <defs>
-            <filter id="mobile-takehome-glow">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+        {/* ── Take-Home breakdown table ── */}
+        <div style={{
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 5,
+          overflow: 'hidden',
+        }}>
+          {/* Table header */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+            padding: '10px 14px 8px',
+            borderBottom: '1px solid var(--color-border)',
+          }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              Take-Home
+            </span>
+            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text)', fontWeight: 600 }}>
+              {fmt(input.netMonthly)}
+            </span>
+          </div>
 
-          {/* Source node: Take-Home */}
-          <rect
-            x={SRC_X0} y={0}
-            width={SRC_X1 - SRC_X0} height={totalH}
-            rx={2}
-            fill="#38bdf8" fillOpacity={0.13}
-            stroke="#38bdf8" strokeWidth={2} strokeOpacity={0.9}
-            filter="url(#mobile-takehome-glow)"
-          />
-          {/* Label below source node */}
-          <text
-            x={(SRC_X0 + SRC_X1) / 2} y={totalH + 16}
-            textAnchor="middle"
-            fontSize={9} fontWeight={700} fill={CATEGORY_COLORS.takehome}
-            fontFamily="DM Mono, monospace" letterSpacing="0.08em"
-          >
-            TAKE-HOME
-          </text>
-
-          {/* Ribbons + output nodes + labels */}
+          {/* Category rows */}
           {outputs.map((o, i) => {
-            const srcY0 = nodeY[i]
-            const srcY1 = srcY0 + nodeHeights[i]
-            const tgtY0 = nodeY[i]
-            const tgtY1 = tgtY0 + nodeHeights[i]
-            const mx = (SRC_X1 + TGT_X0) / 2
-            const ribbonD = [
-              `M${SRC_X1},${srcY0}`,
-              `C${mx},${srcY0} ${mx},${tgtY0} ${TGT_X0},${tgtY0}`,
-              `L${TGT_X0},${tgtY1}`,
-              `C${mx},${tgtY1} ${mx},${srcY1} ${SRC_X1},${srcY1}`,
-              'Z',
-            ].join(' ')
-            const midY = (tgtY0 + tgtY1) / 2
-            const isActive = activeNode === o.id
+            const items = getNodeItems(o.id)
+            const hasItems = items.length > 0
+            const isExpanded = activeNode === o.id
+            const isLast = i === outputs.length - 1
 
             return (
-              <g
-                key={o.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setActiveNode(prev => prev === o.id ? null : o.id)}
-              >
-                {/* Ribbon */}
-                <path
-                  d={ribbonD}
-                  fill={o.color}
-                  fillOpacity={isActive ? 0.5 : 0.3}
-                  stroke={o.color}
-                  strokeWidth={0.3}
-                  strokeOpacity={0.5}
-                />
-                {/* Output node */}
-                <rect
-                  x={TGT_X0} y={tgtY0}
-                  width={TGT_X1 - TGT_X0} height={Math.max(nodeHeights[i], 2)}
-                  rx={2}
-                  fill={o.color} fillOpacity={isActive ? 0.6 : 0.3}
-                  stroke={o.color} strokeWidth={isActive ? 1.5 : 0.8} strokeOpacity={0.7}
-                />
-                {/* Category name + amount — hidden for very small nodes to prevent overflow */}
-                {nodeHeights[i] >= 12 && (
-                  <>
-                    <text
-                      x={LABEL_X} y={midY - 5}
-                      fontSize={10} fontWeight={700} fill={o.color}
-                      fontFamily="DM Mono, monospace" letterSpacing="0.04em"
-                    >
-                      {o.label}
-                    </text>
-                    <text
-                      x={LABEL_X} y={midY + 9}
-                      fontSize={11} fontWeight={600} fill="var(--color-text)"
-                      fontFamily="DM Mono, monospace"
-                    >
-                      {fmt(o.amount)}
-                    </text>
-                  </>
+              <div key={o.id} style={{ borderBottom: isLast ? 'none' : '1px solid var(--color-border)' }}>
+                {/* Category row — tap to expand/collapse */}
+                <div
+                  role={hasItems ? 'button' : undefined}
+                  tabIndex={hasItems ? 0 : undefined}
+                  aria-expanded={hasItems ? isExpanded : undefined}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '9px 14px',
+                    cursor: hasItems ? 'pointer' : 'default',
+                    background: isExpanded ? 'var(--color-accent-dim)' : 'transparent',
+                  }}
+                  onClick={() => hasItems && setActiveNode(prev => prev === o.id ? null : o.id)}
+                  onKeyDown={e => { if (hasItems && (e.key === 'Enter' || e.key === ' ')) setActiveNode(prev => prev === o.id ? null : o.id) }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 9, color: 'var(--color-text-dim)', width: 10, flexShrink: 0 }}>
+                      {hasItems ? (isExpanded ? '▼' : '▶') : ''}
+                    </span>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: o.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{o.label}</span>
+                  </div>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text)' }}>
+                    {fmt(o.amount)}
+                  </span>
+                </div>
+
+                {/* Expanded sub-items */}
+                {isExpanded && (
+                  <div style={{
+                    background: 'var(--color-surface-2)',
+                    borderTop: '1px solid var(--color-border)',
+                    padding: '8px 14px 8px 32px',
+                  }}>
+                    {items.map((item, j) => (
+                      <div key={j} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                        padding: '3px 0',
+                      }}>
+                        <span style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>{item.name}</span>
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--color-text-muted)' }}>
+                          {fmt(item.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </g>
+              </div>
             )
           })}
-        </svg>
-
-        {/* DrillDownPanel — below SVG on mobile */}
-        {activeNode && (
-          <div style={{ marginTop: 12 }}>
-            <DrillDownPanel
-              nodeId={activeNode}
-              data={data}
-              input={input}
-              onClose={() => setActiveNode(null)}
-            />
-          </div>
-        )}
+        </div>
       </div>
     )
   }

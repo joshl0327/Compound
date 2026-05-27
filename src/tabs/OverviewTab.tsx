@@ -312,6 +312,7 @@ export default function OverviewTab() {
               monthlyContrib={monthlyContrib}
               debtPlanTotal={debtPlanTotal}
               surplus={surplus}
+              isMobile={isMobile}
             />
           </Card>
         </div>
@@ -388,13 +389,21 @@ export default function OverviewTab() {
               data={retChartData}
               height={180}
               benchmarks={grossMonthly > 0 ? benchmarks : []}
-              badgeOverlay={retChartData.length > 0 ? (
+              badgeOverlay={!isMobile && retChartData.length > 0 ? (
                 <MilestoneBadges
                   earnedDollar={earnedDollar}
                   fidelityOnTrack={fidelityOnTrack}
                 />
               ) : undefined}
             />
+            {isMobile && retChartData.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <MilestoneBadges
+                  earnedDollar={earnedDollar}
+                  fidelityOnTrack={fidelityOnTrack}
+                />
+              </div>
+            )}
           </Card>
         </div>
       </div>

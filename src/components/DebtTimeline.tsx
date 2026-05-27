@@ -11,6 +11,7 @@ interface DebtTimelineProps {
   monthlyContrib: number
   debtPlanTotal: number
   surplus: number
+  isMobile?: boolean
 }
 
 type Mode = 'minimum' | 'plan' | 'snowball' | 'avalanche'
@@ -93,7 +94,7 @@ function buildMonthlyBalances(debts: SimDebt[], mode: Mode, extra: number, nMont
   return sorted.map((d, i) => ({ name: d.name, monthlyBalances: history[i] }))
 }
 
-export default function DebtTimeline({ data, liquidSavingsBalance, retirementBalance, monthlyContrib, debtPlanTotal, surplus }: DebtTimelineProps) {
+export default function DebtTimeline({ data, liquidSavingsBalance, retirementBalance, monthlyContrib, debtPlanTotal, surplus, isMobile = false }: DebtTimelineProps) {
   const [mode, setMode] = useState<Mode>('plan')
   const [hoverMonth, setHoverMonth] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -261,14 +262,78 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
     }
   }
 
+  // Shared KPI values used in both mobile and desktop headers
+  const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
+  const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
+  const showVsMin = mode !== 'minimum' && minMonthsDiff !== 0
+  const showInterestSaved = mode !== 'minimum' && minInterestDiff !== 0
+
+  const modeButtons = (['minimum', 'plan', 'snowball', 'avalanche'] as Mode[]).map(m => (
+    <button key={m} style={btnStyle(m)}
+      onClick={() => { if (!((m === 'snowball' || m === 'avalanche') && surplus <= 0)) setMode(m) }}>
+      {m === 'minimum' ? 'Min' : m.charAt(0).toUpperCase() + m.slice(1)}
+    </button>
+  ))
+
   return (
     <div>
-      {/* KPI row (left) + scenario toggle (right) — single header row */}
-      <div className="flex items-start justify-between mb-2">
-        {activeMaxMonths > 0 && (() => {
-          const minPmtTotal = consumerDebts.reduce((s, d) => s + (parseFloat(d.minPayment) || 0), 0)
-          const freedMonthly = mode === 'minimum' ? minPmtTotal : mode === 'plan' ? debtPlanTotal : debtPlanTotal + surplus
-          return (
+      {isMobile ? (
+        /* ── Mobile header: buttons first, then KPI rows ── */
+        <div style={{ marginBottom: 10 }}>
+          {/* Row 1: Mode buttons (equal-width) */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            {(['minimum', 'plan', 'snowball', 'avalanche'] as Mode[]).map(m => (
+              <button key={m} style={{ ...btnStyle(m), flex: 1, textAlign: 'center' }}
+                onClick={() => { if (!((m === 'snowball' || m === 'avalanche') && surplus <= 0)) setMode(m) }}>
+                {m === 'minimum' ? 'Min' : m.charAt(0).toUpperCase() + m.slice(1)}
+              </button>
+            ))}
+          </div>
+          {activeMaxMonths > 0 && (
+            <>
+              {/* Row 2: Debt-Free · Interest Paid · Freed/Mo */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: (showVsMin || showInterestSaved) ? 6 : 0 }}>
+                <div>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Debt-free</div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Interest paid</div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Freed/mo</div>
+                  <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
+                </div>
+              </div>
+              {/* Row 3: VS Min · Interest Saved (conditional) */}
+              {(showVsMin || showInterestSaved) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                  {showVsMin && (
+                    <div>
+                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>vs Min</div>
+                      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: minMonthsDiff >= 0 ? '#34d399' : '#f87171' }}>
+                        {minMonthsDiff >= 0 ? '-' : '+'}{fmtMonthDiff(Math.abs(minMonthsDiff))}
+                      </div>
+                    </div>
+                  )}
+                  {showInterestSaved && (
+                    <div>
+                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Interest saved</div>
+                      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: minInterestDiff >= 0 ? '#34d399' : '#f87171' }}>
+                        {minInterestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(minInterestDiff)))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        /* ── Desktop header: KPIs left, mode buttons right ── */
+        <div className="flex items-start justify-between mb-2">
+          {activeMaxMonths > 0 && (
             <div className="flex gap-4">
               <div>
                 <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Debt-free</div>
@@ -282,7 +347,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Freed/mo</div>
                 <div className="font-mono text-[14px] font-bold" style={{ color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
               </div>
-              {mode !== 'minimum' && minMonthsDiff !== 0 && (
+              {showVsMin && (
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>vs Min</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: minMonthsDiff >= 0 ? '#34d399' : '#f87171' }}>
@@ -290,7 +355,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                   </div>
                 </div>
               )}
-              {mode !== 'minimum' && minInterestDiff !== 0 && (
+              {showInterestSaved && (
                 <div>
                   <div className="text-[9px] uppercase tracking-[0.06em] mb-0.5" style={{ color: 'var(--color-text-dim)' }}>Interest saved</div>
                   <div className="font-mono text-[14px] font-bold" style={{ color: minInterestDiff >= 0 ? '#34d399' : '#f87171' }}>
@@ -299,17 +364,12 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
                 </div>
               )}
             </div>
-          )
-        })()}
-        <div className="flex gap-1 flex-shrink-0">
-          {(['minimum', 'plan', 'snowball', 'avalanche'] as Mode[]).map(m => (
-            <button key={m} style={btnStyle(m)}
-              onClick={() => { if (!((m === 'snowball' || m === 'avalanche') && surplus <= 0)) setMode(m) }}>
-              {m === 'minimum' ? 'Min' : m.charAt(0).toUpperCase() + m.slice(1)}
-            </button>
-          ))}
+          )}
+          <div className="flex gap-1 flex-shrink-0">
+            {modeButtons}
+          </div>
         </div>
-      </div>
+      )}
 
       <svg ref={svgRef} width="100%" viewBox={`0 0 ${w} ${h}`}
         onMouseMove={handleMouseMove} onMouseLeave={() => setHoverMonth(null)}

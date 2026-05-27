@@ -34,6 +34,26 @@ export default function App() {
   const isMobile = useIsMobile()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  // Close drawer if user resizes to desktop
+  useEffect(() => { if (!isMobile) setDrawerOpen(false) }, [isMobile])
+
+  // Escape key closes the drawer
+  useEffect(() => {
+    if (!drawerOpen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [drawerOpen])
+
+  // Lock body scroll while drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [drawerOpen])
 
   // 'checking-cloud' is the initial state when ONBOARDING_KEY is absent.
   // A one-shot useEffect resolves it: if the user has cloud data we skip
@@ -131,6 +151,8 @@ export default function App() {
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Open menu"
+              aria-expanded={drawerOpen}
+              aria-controls="mobile-drawer"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}
             >
               <div style={{ width: 18, height: 2, background: 'var(--color-text-muted)', borderRadius: 1 }} />
@@ -201,14 +223,20 @@ export default function App() {
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }}
           />
           {/* Drawer panel */}
-          <div style={{
-            position: 'fixed', top: 0, left: 0, bottom: 0,
-            width: '75vw', maxWidth: 300,
-            background: 'var(--color-surface)',
-            borderRight: '1px solid var(--color-border)',
-            zIndex: 61,
-            display: 'flex', flexDirection: 'column',
-          }}>
+          <div
+            id="mobile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            style={{
+              position: 'fixed', top: 0, left: 0, bottom: 0,
+              width: '75vw', maxWidth: 300,
+              background: 'var(--color-surface)',
+              borderRight: '1px solid var(--color-border)',
+              zIndex: 61,
+              display: 'flex', flexDirection: 'column',
+            }}
+          >
             {/* Tab list */}
             <div style={{ flex: 1, paddingTop: 8, paddingBottom: 8, overflowY: 'auto' }}>
               {TABS.map(t => (

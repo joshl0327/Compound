@@ -389,6 +389,7 @@ export default function OverviewTab() {
               data={retChartData}
               height={180}
               benchmarks={grossMonthly > 0 ? benchmarks : []}
+              isMobile={isMobile}
               badgeOverlay={!isMobile && retChartData.length > 0 ? (
                 <MilestoneBadges
                   earnedDollar={earnedDollar}

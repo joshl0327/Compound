@@ -212,7 +212,8 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
   // Payoff events — sorted by payoff month; debts that never reach zero shown as ongoing
   const payoffEvents = stackOrder.map((series, layerIdx) => {
     const idx = series.monthlyBalances.findIndex(b => b < 0.01)
-    const name = series.name.length > 11 ? series.name.slice(0, 10) + '…' : series.name
+    const maxChars = isMobile ? 20 : 11
+    const name = series.name.length > maxChars ? series.name.slice(0, maxChars - 1) + '…' : series.name
     const color = bandColor(layerIdx, totalLayers)
     if (idx > 0) return { month: idx, label: monthLabel(idx), name, color }
     const finalBal = series.monthlyBalances[series.monthlyBalances.length - 1] ?? 0
@@ -220,9 +221,20 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
     return null
   }).filter(Boolean).sort((a, b) => a!.month - b!.month) as { month: number; label: string; name: string; color: string }[]
 
-  // Always tick every 12 months (one per year)
+  // Smart ticks: on mobile ~3–4 evenly-spaced ticks; on desktop tick every year
   const ticks: number[] = []
-  for (let m = 12; m < nMonths; m += 12) { if ((nMonths - m) / nMonths < 0.06) continue; ticks.push(m) }
+  if (isMobile) {
+    const totalYears = Math.ceil(nMonths / 12)
+    const minStep = Math.ceil(totalYears / 4) // at most 4 intervals
+    const stepCandidates = [1, 2, 3, 4, 5, 6, 8, 10]
+    const stepYears = stepCandidates.find(c => c >= minStep) ?? minStep
+    for (let m = stepYears * 12; m < nMonths; m += stepYears * 12) {
+      if ((nMonths - m) / nMonths < 0.06) continue
+      ticks.push(m)
+    }
+  } else {
+    for (let m = 12; m < nMonths; m += 12) { if ((nMonths - m) / nMonths < 0.06) continue; ticks.push(m) }
+  }
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({ value: maxY * pct, y: toY(maxY * pct) }))
   const showNwp = nwpMonths !== null && nwpMonths > 0 && nwpMonths <= nMonths
@@ -379,7 +391,7 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         {yTicks.map(({ value, y }) => (
           <g key={value}>
             <line x1={padL} y1={y} x2={padL + cW} y2={y} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="4 4" />
-            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={8} fill="var(--color-text-muted)">{fmtShort(value)}</text>
+            <text x={padL - 4} y={y + 3} textAnchor="end" fontSize={isMobile ? 9 : 8} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{fmtShort(value)}</text>
           </g>
         ))}
 
@@ -400,8 +412,8 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         <line x1={padL} y1={padT + cH} x2={padL + cW} y2={padT + cH} stroke="var(--color-border)" strokeWidth={1.5} />
 
 
-        {/* Payoff summary legend — top-right empty space */}
-        {payoffEvents.length > 0 && (() => {
+        {/* Payoff summary legend — top-right, desktop only; mobile uses HTML table below */}
+        {!isMobile && payoffEvents.length > 0 && (() => {
           const lineH = 10
           const legX = padL + cW - 4
           const legY = padT + 8
@@ -424,14 +436,14 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         })()}
 
         {/* X-axis date labels */}
-        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={7.5} fill="var(--color-text-muted)">Now</text>
+        <text x={toX(0)} y={padT + cH + 13} textAnchor="start" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>Now</text>
         {ticks.map(m => (
           <g key={m}>
             <line x1={toX(m)} y1={padT + cH} x2={toX(m)} y2={padT + cH + 4} stroke="var(--color-border)" strokeWidth={1} />
-            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="var(--color-text-muted)">{monthLabel(m)}</text>
+            <text x={toX(m)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(m)}</text>
           </g>
         ))}
-        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={7.5} fill="var(--color-text-muted)">{monthLabel(nMonths)}</text>
+        <text x={toX(nMonths)} y={padT + cH + 13} textAnchor="middle" fontSize={isMobile ? 9 : 7.5} fill={isMobile ? 'var(--color-text)' : 'var(--color-text-muted)'}>{monthLabel(nMonths)}</text>
 
         {/* Hover crosshair + tooltip */}
         {hoverData && (() => {
@@ -458,7 +470,18 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
         })()}
       </svg>
 
-
+      {/* Mobile payoff legend — table below the chart */}
+      {isMobile && payoffEvents.length > 0 && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {payoffEvents.map((evt, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: evt.color, opacity: 0.85, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', flex: 1 }}>{evt.name}</span>
+              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: evt.color }}>{evt.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

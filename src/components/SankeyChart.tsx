@@ -26,9 +26,10 @@ interface DrillDownItem {
 interface SankeyChartProps {
   input: SankeyInput
   data: AppData
+  mobile?: boolean
 }
 
-export default function SankeyChart({ input, data }: SankeyChartProps) {
+export default function SankeyChart({ input, data, mobile = false }: SankeyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [dims, setDims] = useState({ w: 800, h: 580 })
@@ -125,6 +126,239 @@ export default function SankeyChart({ input, data }: SankeyChartProps) {
       Add your income to see the flow.
     </div>
   )
+
+  // ── Mobile render ──
+  if (mobile) {
+    const taxes = input.grossMonthly - input.netMonthly
+      - input.trad401kMonthly - input.hsaMonthly - input.roth401kMonthly
+    const retHsa = input.trad401kMonthly + input.roth401kMonthly + input.hsaMonthly
+    const showDeductionCard = input.grossMonthly - input.netMonthly > 0
+
+    const bucketSum = input.essTotalP + input.discPlanTotal + input.debtPlanTotal
+      + input.liquidSavingsMonthly + input.rothIraMonthly
+    const remaining = input.netMonthly - bucketSum
+
+    const outputs: { id: string; label: string; amount: number; color: string }[] = [
+      { id: 'essentials',    label: 'Essentials',    amount: input.essTotalP,           color: CATEGORY_COLORS.essentials },
+      { id: 'discretionary', label: 'Discretionary', amount: input.discPlanTotal,        color: CATEGORY_COLORS.discretionary },
+      { id: 'debt',          label: 'Debt',          amount: input.debtPlanTotal,        color: CATEGORY_COLORS.debt },
+      { id: 'liquid-savings',label: 'Liquid Savings',amount: input.liquidSavingsMonthly, color: CATEGORY_COLORS.liquidSavings },
+      { id: 'retirement',    label: 'Retirement',    amount: input.rothIraMonthly,       color: CATEGORY_COLORS.retirement },
+      ...(remaining > 1
+        ? [{ id: 'remaining', label: 'Remaining', amount: remaining, color: CATEGORY_COLORS.remaining }]
+        : []),
+    ].filter(o => o.amount > 1)
+
+    if (outputs.length === 0 || input.netMonthly <= 0) {
+      return (
+        <div className="flex items-center justify-center h-32 text-sm"
+          style={{ color: 'var(--color-text-muted)' }}>
+          Add your income to see the flow.
+        </div>
+      )
+    }
+
+    // ── Fan SVG layout constants ──
+    const NODE_GAP = 4
+    const MIN_NODE_H = 4
+    const N = outputs.length
+    const totalH = Math.max(N * 30 - NODE_GAP, 160)
+    const innerH = totalH - (N - 1) * NODE_GAP
+
+    // Proportional node heights — floored at MIN_NODE_H, scaled to sum to innerH
+    const rawHeights = outputs.map(o => Math.max(MIN_NODE_H, (o.amount / input.netMonthly) * innerH))
+    const rawSum = rawHeights.reduce((s, h) => s + h, 0)
+    const nodeHeights = rawSum > 0 ? rawHeights.map(h => (h / rawSum) * innerH) : rawHeights
+
+    // Output node Y positions
+    const nodeY: number[] = []
+    let cy = 0
+    nodeHeights.forEach((h, i) => {
+      nodeY.push(cy)
+      cy += h + (i < N - 1 ? NODE_GAP : 0)
+    })
+
+    // SVG viewport: fits a 390px screen
+    const VIEW_W = 364
+    const SRC_X0 = 10, SRC_X1 = 24
+    const TGT_X0 = 214, TGT_X1 = 224
+    const LABEL_X = 232
+
+    return (
+      <div>
+        {/* ── Deduction summary card ── */}
+        {showDeductionCard && (
+          <div style={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 5,
+            padding: '12px 14px',
+            marginBottom: 16,
+          }}>
+            {/* Gross Income row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                Gross Income
+              </span>
+              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
+                {fmt(input.grossMonthly)}
+              </span>
+            </div>
+            <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: 10 }} />
+
+            {/* Taxes row */}
+            {taxes > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.taxes, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Taxes</span>
+                </div>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
+                  − {fmt(taxes)}
+                </span>
+              </div>
+            )}
+
+            {/* 401(k) & HSA row */}
+            {retHsa > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.retHsa, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>401(k) & HSA</span>
+                </div>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
+                  − {fmt(retHsa)}
+                </span>
+              </div>
+            )}
+
+            <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: 10 }} />
+
+            {/* Take-Home total row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.takehome, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: CATEGORY_COLORS.takehome, fontWeight: 600 }}>Take-Home</span>
+              </div>
+              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
+                {fmt(input.netMonthly)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Take-Home fan SVG ── */}
+        <svg
+          width="100%"
+          viewBox={`0 0 ${VIEW_W} ${totalH + 24}`}
+          style={{ display: 'block', overflow: 'visible' }}
+          aria-label="Take-home budget flow"
+          role="img"
+        >
+          <defs>
+            <filter id="mobile-takehome-glow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Source node: Take-Home */}
+          <rect
+            x={SRC_X0} y={0}
+            width={SRC_X1 - SRC_X0} height={totalH}
+            rx={2}
+            fill="#38bdf8" fillOpacity={0.13}
+            stroke="#38bdf8" strokeWidth={2} strokeOpacity={0.9}
+            filter="url(#mobile-takehome-glow)"
+          />
+          {/* Label below source node */}
+          <text
+            x={(SRC_X0 + SRC_X1) / 2} y={totalH + 16}
+            textAnchor="middle"
+            fontSize={9} fontWeight={700} fill={CATEGORY_COLORS.takehome}
+            fontFamily="DM Mono, monospace" letterSpacing="0.08em"
+          >
+            TAKE-HOME
+          </text>
+
+          {/* Ribbons + output nodes + labels */}
+          {outputs.map((o, i) => {
+            const srcY0 = nodeY[i]
+            const srcY1 = srcY0 + nodeHeights[i]
+            const tgtY0 = nodeY[i]
+            const tgtY1 = tgtY0 + nodeHeights[i]
+            const mx = (SRC_X1 + TGT_X0) / 2
+            const ribbonD = [
+              `M${SRC_X1},${srcY0}`,
+              `C${mx},${srcY0} ${mx},${tgtY0} ${TGT_X0},${tgtY0}`,
+              `L${TGT_X0},${tgtY1}`,
+              `C${mx},${tgtY1} ${mx},${srcY1} ${SRC_X1},${srcY1}`,
+              'Z',
+            ].join(' ')
+            const midY = (tgtY0 + tgtY1) / 2
+            const isActive = activeNode === o.id
+
+            return (
+              <g
+                key={o.id}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setActiveNode(prev => prev === o.id ? null : o.id)}
+              >
+                {/* Ribbon */}
+                <path
+                  d={ribbonD}
+                  fill={o.color}
+                  fillOpacity={isActive ? 0.5 : 0.3}
+                  stroke={o.color}
+                  strokeWidth={0.3}
+                  strokeOpacity={0.5}
+                />
+                {/* Output node */}
+                <rect
+                  x={TGT_X0} y={tgtY0}
+                  width={TGT_X1 - TGT_X0} height={Math.max(nodeHeights[i], 2)}
+                  rx={2}
+                  fill={o.color} fillOpacity={isActive ? 0.6 : 0.3}
+                  stroke={o.color} strokeWidth={isActive ? 1.5 : 0.8} strokeOpacity={0.7}
+                />
+                {/* Category name */}
+                <text
+                  x={LABEL_X} y={midY - 5}
+                  fontSize={10} fontWeight={700} fill={o.color}
+                  fontFamily="DM Mono, monospace" letterSpacing="0.04em"
+                >
+                  {o.label}
+                </text>
+                {/* Amount */}
+                <text
+                  x={LABEL_X} y={midY + 9}
+                  fontSize={11} fontWeight={600} fill="var(--color-text)"
+                  fontFamily="DM Mono, monospace"
+                >
+                  {fmt(o.amount)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* DrillDownPanel — below SVG on mobile */}
+        {activeNode && (
+          <div style={{ marginTop: 12 }}>
+            <DrillDownPanel
+              nodeId={activeNode}
+              data={data}
+              input={input}
+              onClose={() => setActiveNode(null)}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const isOvershoot = rawNodes.some(n => n.isOvershoot)
 

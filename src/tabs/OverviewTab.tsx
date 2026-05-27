@@ -13,14 +13,43 @@ import MilestoneBadges from '../components/MilestoneBadges'
 import MilestoneToast from '../components/MilestoneToast'
 import type { SankeyInput } from '../lib/sankeyHelpers'
 import type { Benchmark } from '../components/LineChart'
+import { useIsMobile } from '../hooks/useIsMobile'
 
-function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueColor = 'var(--color-text)', sub, tooltip, last = false }: {
-  label: string; value: string; labelColor?: string; valueColor?: string; sub?: string; tooltip?: string; last?: boolean
+function KpiCell({
+  label, value,
+  labelColor = 'var(--color-text-muted)',
+  valueColor = 'var(--color-text)',
+  sub, tooltip, last = false,
+  centered = false,
+  valueFontSize = 20,
+  labelFontSize = 11,
+  subFontSize = 11,
+  subColor,
+}: {
+  label: string; value: string; labelColor?: string; valueColor?: string
+  sub?: string; tooltip?: string; last?: boolean
+  centered?: boolean; valueFontSize?: number; labelFontSize?: number
+  subFontSize?: number; subColor?: string
 }) {
   const [tip, setTip] = useState(false)
+
+  if (centered) {
+    return (
+      <div style={{ textAlign: 'center', padding: '0 8px' }}>
+        <div style={{ fontSize: labelFontSize, textTransform: 'uppercase', letterSpacing: '0.08em', color: labelColor, marginBottom: 5 }}>
+          {label}
+        </div>
+        <div style={{ fontFamily: 'DM Mono, monospace', fontSize: valueFontSize, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>
+          {value}
+        </div>
+        {sub && <div style={{ fontSize: subFontSize, color: subColor ?? 'var(--color-text-dim)' }}>{sub}</div>}
+      </div>
+    )
+  }
+
   return (
     <div style={{ paddingRight: last ? 0 : 16, marginRight: last ? 0 : 16, borderRight: last ? 'none' : '1px solid var(--color-border)', position: 'relative' }}>
-      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ fontSize: labelFontSize, textTransform: 'uppercase', letterSpacing: '0.1em', color: labelColor, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
         {label}
         {tooltip && (
           <button
@@ -30,8 +59,8 @@ function KpiCell({ label, value, labelColor = 'var(--color-text-muted)', valueCo
           >?</button>
         )}
       </div>
-      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 20, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>{sub}</div>}
+      <div style={{ fontFamily: 'DM Mono, monospace', fontSize: valueFontSize, fontWeight: 500, color: valueColor, lineHeight: 1, marginBottom: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: subFontSize, color: subColor ?? 'var(--color-text-dim)' }}>{sub}</div>}
       {tip && tooltip && (
         <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 5, padding: 12, marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, width: 220, pointerEvents: 'none' }}>
           {tooltip}
@@ -126,68 +155,147 @@ export default function OverviewTab() {
   const monthlyContrib = sourceCalcs.reduce((s, c) => s + c.trad401k + c.roth401k + c.match + c.rothIra, 0)
     + liquidSavingsMonthly
   const { earnedDollar, fidelityOnTrack, newlyUnlocked } = useMilestones(retirementBalance, annualGross, retChartData)
+  const isMobile = useIsMobile()
 
   return (
     <div>
       {/* ── KPI strip ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--color-border)' }}>
-        <KpiCell
-          label="Gross Income"
-          value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
-          sub={grossMonthly > 0 ? '/month' : 'Add income'}
-        />
-        <KpiCell
-          label="Take-Home"
-          value={netMonthly > 0 ? fmt(netMonthly) : '—'}
-          labelColor="var(--color-text-muted)"
-          sub={netMonthly > 0 ? '/month' : undefined}
-        />
-        <KpiCell
-          label="Consumer Debt"
-          value={consumerDebts.length > 0 ? fmtShort(consumerDebtBalance) : '—'}
-          sub={consumerDebts.length > 0 ? (data.debts.some(d => d.isMortgage) ? 'excl. mortgage' : undefined) : 'Add debts in Expenses'}
-          tooltip="Your non-mortgage debt total. Paying this down frees up monthly cash flow and improves your DTI."
-        />
-        <KpiCell
-          label="Housing %"
-          value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'}
-          labelColor={housingColor}
-          sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'}
-          tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt."
-        />
-        <KpiCell
-          label="Total DTI"
-          value={parseFloat(dti) > 0 ? dti + '%' : '—'}
-          labelColor={dtiColor}
-          sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'}
-          tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk."
-        />
-        <KpiCell
-          label="Retirement Rate"
-          value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
-          labelColor={retireColor}
-          sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'}
-          tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first."
-        />
-        <KpiCell
-          label="Total Savings Rate"
-          value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
-          labelColor={savingsColor}
-          sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'}
-          tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively."
-          last
-        />
-      </div>
+      {isMobile ? (
+        /* Mobile: 3 semantic rows */
+        <div style={{ marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--color-border)' }}>
+          {/* Row 1 — Income (2 cols) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--color-border)', padding: '12px 0' }}>
+            <div style={{ borderRight: '1px solid var(--color-border)' }}>
+              <KpiCell
+                centered valueFontSize={18} labelFontSize={8} subFontSize={9}
+                label="Gross Income"
+                value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
+                sub={grossMonthly > 0 ? '/month' : 'Add income'}
+              />
+            </div>
+            <div>
+              <KpiCell
+                centered valueFontSize={18} labelFontSize={8} subFontSize={9}
+                label="Take-Home"
+                value={netMonthly > 0 ? fmt(netMonthly) : '—'}
+                sub={netMonthly > 0 ? '/month' : undefined}
+              />
+            </div>
+          </div>
+
+          {/* Row 2 — Health metrics (3 cols) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1px solid var(--color-border)', padding: '12px 0' }}>
+            <div style={{ borderRight: '1px solid var(--color-border)' }}>
+              <KpiCell
+                centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
+                label="Consumer Debt"
+                value={consumerDebts.length > 0 ? fmtShort(consumerDebtBalance) : '—'}
+                sub={consumerDebts.length > 0 ? (data.debts.some(d => d.isMortgage) ? 'excl. mortgage' : undefined) : 'Add in Expenses'}
+              />
+            </div>
+            <div style={{ borderRight: '1px solid var(--color-border)' }}>
+              <KpiCell
+                centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
+                label="Housing %"
+                labelColor={housingColor} valueColor={housingColor} subColor={housingColor}
+                value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'}
+                sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28%' : 'within 28%') : undefined}
+              />
+            </div>
+            <div>
+              <KpiCell
+                centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
+                label="Total DTI"
+                labelColor={dtiColor} valueColor={dtiColor}
+                value={parseFloat(dti) > 0 ? dti + '%' : '—'}
+                sub={parseFloat(dti) > 0 ? 'Consumer ' + consumerDti + '%' : undefined}
+              />
+            </div>
+          </div>
+
+          {/* Row 3 — Savings rates (2 cols) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '12px 0 4px 0' }}>
+            <div style={{ borderRight: '1px solid var(--color-border)' }}>
+              <KpiCell
+                centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
+                label="Retirement Rate"
+                labelColor={retireColor} valueColor={retireColor} subColor={retireColor}
+                value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
+                sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥15%' : 'target 15%') : undefined}
+              />
+            </div>
+            <div>
+              <KpiCell
+                centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
+                label="Savings Rate"
+                labelColor={savingsColor} valueColor={savingsColor} subColor={savingsColor}
+                value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
+                sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥15%' : 'target 15–20%') : undefined}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Desktop: flat 7-column grid */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--color-border)' }}>
+          <KpiCell
+            label="Gross Income"
+            value={grossMonthly > 0 ? fmt(grossMonthly) : '—'}
+            sub={grossMonthly > 0 ? '/month' : 'Add income'}
+          />
+          <KpiCell
+            label="Take-Home"
+            value={netMonthly > 0 ? fmt(netMonthly) : '—'}
+            labelColor="var(--color-text-muted)"
+            sub={netMonthly > 0 ? '/month' : undefined}
+          />
+          <KpiCell
+            label="Consumer Debt"
+            value={consumerDebts.length > 0 ? fmtShort(consumerDebtBalance) : '—'}
+            sub={consumerDebts.length > 0 ? (data.debts.some(d => d.isMortgage) ? 'excl. mortgage' : undefined) : 'Add debts in Expenses'}
+            tooltip="Your non-mortgage debt total. Paying this down frees up monthly cash flow and improves your DTI."
+          />
+          <KpiCell
+            label="Housing %"
+            value={parseFloat(housingPct) > 0 ? housingPct + '%' : '—'}
+            labelColor={housingColor}
+            sub={parseFloat(housingPct) > 0 ? (parseFloat(housingPct) > 28 ? 'above 28% rule' : 'within 28% rule') : 'Add housing in Expenses'}
+            tooltip="Your rent or mortgage as a share of gross monthly income. Above 28% limits your ability to save and handle debt."
+          />
+          <KpiCell
+            label="Total DTI"
+            value={parseFloat(dti) > 0 ? dti + '%' : '—'}
+            labelColor={dtiColor}
+            sub={parseFloat(dti) > 0 ? 'Consumer DTI ' + consumerDti + '%' : 'Add income & debts'}
+            tooltip="Debt-to-Income ratio: total monthly debt payments ÷ gross monthly income. Under 36% is healthy; above 36% is high-risk."
+          />
+          <KpiCell
+            label="Retirement Rate"
+            value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
+            labelColor={retireColor}
+            sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : 'Set contributions in Invest & Retire'}
+            tooltip="Percentage of gross income going to retirement accounts. 15% is the common target. Employer match counts — capture it first."
+          />
+          <KpiCell
+            label="Total Savings Rate"
+            value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
+            labelColor={savingsColor}
+            sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : 'Add income & savings'}
+            tooltip="How much of your gross income you're setting aside across all accounts. 15% = on track, 20%+ = building wealth aggressively."
+            last
+          />
+        </div>
+      )}
 
 
       {/* ── Sankey ── */}
       <SectionTitle accent="var(--color-accent)" hint="Click any category on the right to see a line-item breakdown.">Monthly Budget Flow</SectionTitle>
       <div>
-        <SankeyChart input={sankeyInput} data={data} />
+        <SankeyChart input={sankeyInput} data={data} mobile={isMobile} />
       </div>
 
       {/* ── Bottom row ── */}
-      <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'stretch' }}>
+      <div className="grid gap-3.5 mt-5" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', alignItems: 'stretch' }}>
         {/* Debt-free timeline */}
         <div className="flex flex-col">
           <SectionTitle accent="var(--color-accent)" hint={<>
@@ -219,14 +327,14 @@ export default function OverviewTab() {
           <Card className="flex-1">
             {projBal > 0 && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', marginBottom: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', marginBottom: 10 }}>
                   {/* Nominal — left half */}
                   {[
                     { label: `Projected at ${retTargetAge}`, value: fmtShort(projBal), color: '#34d399' },
                     { label: '4% Monthly', value: fmt(projBal * 0.04 / 12), color: '#10b981' },
                     { label: 'Replaces', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
                   ].map((s, i) => (
-                    <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: i === 2 ? '1px solid var(--color-border)' : 'none' }}>
+                    <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: !isMobile && i === 2 ? '1px solid var(--color-border)' : 'none' }}>
                       <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                       <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>

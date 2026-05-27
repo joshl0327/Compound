@@ -206,7 +206,7 @@ export default function OverviewTab() {
               <KpiCell
                 centered valueFontSize={15} labelFontSize={7.5} subFontSize={9}
                 label="Total DTI"
-                labelColor={dtiColor} valueColor={dtiColor}
+                labelColor={dtiColor} valueColor={dtiColor} subColor={dtiColor}
                 value={parseFloat(dti) > 0 ? dti + '%' : '—'}
                 sub={parseFloat(dti) > 0 ? 'Consumer ' + consumerDti + '%' : undefined}
               />
@@ -221,7 +221,7 @@ export default function OverviewTab() {
                 label="Retirement Rate"
                 labelColor={retireColor} valueColor={retireColor} subColor={retireColor}
                 value={parseFloat(retireRate) > 0 ? retireRate + '%' : '—'}
-                sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥15%' : 'target 15%') : undefined}
+                sub={parseFloat(retireRate) > 0 ? (parseFloat(retireRate) >= 15 ? 'on track ≥ 15%' : 'target 15%') : undefined}
               />
             </div>
             <div>
@@ -230,7 +230,7 @@ export default function OverviewTab() {
                 label="Savings Rate"
                 labelColor={savingsColor} valueColor={savingsColor} subColor={savingsColor}
                 value={parseFloat(savingsRate) > 0 ? savingsRate + '%' : '—'}
-                sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥15%' : 'target 15–20%') : undefined}
+                sub={parseFloat(savingsRate) > 0 ? (parseFloat(savingsRate) >= 15 ? 'on track ≥ 15%' : 'target 15–20%') : undefined}
               />
             </div>
           </div>

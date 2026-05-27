@@ -360,7 +360,7 @@ export default function NavAvatar({ setActiveTab }: NavAvatarProps) {
               textAlign: 'left',
               padding: '8px 14px',
               fontSize: 13,
-              color: '#f87171',
+              color: 'var(--color-danger)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -797,8 +797,8 @@ function ResetModal({ data, signOut, onClose }: ResetModalProps) {
                 disabled={deleting}
                 style={{
                   padding: '6px 14px', fontSize: 13,
-                  background: '#2a0a0a', border: '1px solid #f87171',
-                  borderRadius: 6, color: '#f87171', cursor: 'pointer',
+                  background: 'var(--color-danger-dim)', border: '1px solid var(--color-danger)',
+                  borderRadius: 6, color: 'var(--color-danger)', cursor: 'pointer',
                 }}
               >
                 {deleting ? 'Deleting…' : 'Delete Everything'}

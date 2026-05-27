@@ -94,13 +94,27 @@ Controlled by `onboardScreen` state in `App.tsx` (`'welcome' | 'quickstart' | 'd
 
 ## Design System
 
-- **Background:** `#022e2e` (dark teal)
-- **Surface:** `#043a3a`
-- **Accent:** `#0d9488` (teal)
+Theme tokens live in `src/index.css` under `[data-theme="dark"]` and `[data-theme="light"]`. Always use `var(--token)` in code — never hard-code hex values.
+
+| Token | Dark | Light | Usage |
+|---|---|---|---|
+| `--color-bg` | `#1d1b18` | `#f2f0ec` | Page background |
+| `--color-surface` | `#252220` | `#faf9f7` | Card / panel background |
+| `--color-surface-2` | `#2a2724` | `#ffffff` | Elevated surface (hover bg, nested cards) |
+| `--color-border` | `#342f2a` | `#ddd9d4` | Dividers, card borders |
+| `--color-text` | `#e8e4e0` | `#18140f` | Primary text |
+| `--color-text-muted` | `#8a8078` | `#6b6560` | Secondary / label text |
+| `--color-text-dim` | `#5a5450` | `#9a9590` | Tertiary / hint text |
+| `--color-accent` | `#0d9488` | `#0a7a70` | Teal accent, active states |
+| `--color-accent-dim` | `rgba(13,148,136,.12)` | `rgba(10,122,112,.10)` | Tinted accent backgrounds |
+| `--color-danger` | `#f87171` | `#dc2626` | Destructive actions, debt labels, error text |
+| `--color-danger-dim` | `rgba(248,113,113,.12)` | `rgba(220,38,38,.10)` | Danger button backgrounds, tinted borders |
+| `--color-nav` | `rgba(24,22,20,.94)` | `rgba(238,236,232,.94)` | Sticky navbar backdrop |
+
+Additional semantic colors used inline (not yet tokenized — see Known Gaps):
 - **Green (healthy):** `#10b981` / `#34d399`
 - **Amber (caution):** `#f59e0b`
-- **Red (danger):** `#f87171`
-- **Muted text:** `#5a7a9a`
+
 - **Fonts:** IBM Plex Sans (display), IBM Plex Mono (numbers/data), DM Mono (milestone pills)
 - Charts are hand-rolled SVG — no external chart library
 - Inline styles are common alongside Tailwind; follow whichever pattern the surrounding code uses
@@ -215,6 +229,8 @@ interface Debt {
 ---
 
 ## Known Gaps / Future Work
+
+- **Raw hex colors in source files:** `#f87171`, `#ef4444`, `#10b981`, `#f59e0b` and similar are hard-coded throughout tabs and components instead of using CSS variables. `--color-danger` and `--color-danger-dim` have been added to the token system; the remaining semantic colors (`--color-positive`, `--color-caution`) should be added and all raw hex in `src/tabs/` and `src/components/` migrated to variables. Key files: `SettingsTab.tsx`, `PlanTab.tsx`, `ExpensesTab.tsx`, `OverviewTab.tsx`, `SavingsTab.tsx`, `SankeyChart.tsx`.
 
 - **No multi-device conflict resolution:** Cloud wins on sign-in load; local changes during a session overwrite cloud on the 3s debounce. If the same account is used on two devices simultaneously, whichever saves last wins. Acceptable for now.
 - **Fidelity row is projection-only:** No confirmed history since the app has no balance tracking over time.

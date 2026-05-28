@@ -8,6 +8,7 @@ type PillRole = DollarRole | FidelityRole
 interface Props {
   earnedDollar: Set<number>
   fidelityOnTrack: Set<string>
+  compact?: boolean
 }
 
 function rollingWindow4<T>(
@@ -72,27 +73,33 @@ const BASE: CSSProperties = {
   justifyContent: 'center', width: 82, height: 42, boxSizing: 'border-box' as const,
 }
 
-function Pill({ label, role }: { label: string; role: PillRole }) {
+const BASE_COMPACT: CSSProperties = {
+  borderRadius: 2, padding: 0, fontSize: 10, fontFamily: 'DM Mono, monospace',
+  whiteSpace: 'nowrap', lineHeight: 1, display: 'inline-flex', alignItems: 'center',
+  justifyContent: 'center', width: 70, height: 32, boxSizing: 'border-box' as const,
+}
+
+function Pill({ label, role, compact }: { label: string; role: PillRole; compact?: boolean }) {
   const prefix = (role === 'dim-earned' || role === 'latest-earned') ? '✓ '
     : role === 'on-track' ? '→ '
     : ''
-  return <span style={{ ...BASE, ...ROLE_STYLES[role] }}>{prefix}{label}</span>
+  return <span style={{ ...(compact ? BASE_COMPACT : BASE), ...ROLE_STYLES[role] }}>{prefix}{label}</span>
 }
 
-export default function MilestoneBadges({ earnedDollar, fidelityOnTrack }: Props) {
+export default function MilestoneBadges({ earnedDollar, fidelityOnTrack, compact }: Props) {
   const dollarPills = getDollarPills(earnedDollar)
   const fidelityPills = getFidelityPills(fidelityOnTrack)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 3 : 4 }}>
+      <div style={{ display: 'flex', gap: compact ? 2 : 3, alignItems: 'center' }}>
         {dollarPills.map(({ threshold, role }) => (
-          <Pill key={threshold} label={DOLLAR_LABELS[threshold]} role={role} />
+          <Pill key={threshold} label={DOLLAR_LABELS[threshold]} role={role} compact={compact} />
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: compact ? 2 : 3, alignItems: 'center' }}>
         {fidelityPills.map(({ label, role }) => (
-          <Pill key={label} label={label} role={role} />
+          <Pill key={label} label={label} role={role} compact={compact} />
         ))}
       </div>
     </div>

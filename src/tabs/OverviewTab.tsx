@@ -328,7 +328,7 @@ export default function OverviewTab() {
           <Card className="flex-1">
             {projBal > 0 && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', marginBottom: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', rowGap: isMobile ? 12 : 0, marginBottom: isMobile ? 16 : 10 }}>
                   {/* Nominal — left half */}
                   {[
                     { label: `Projected at ${retTargetAge}`, value: fmtShort(projBal), color: '#34d399' },
@@ -336,7 +336,7 @@ export default function OverviewTab() {
                     { label: 'Replaces', value: grossMonthly > 0 ? `${Math.round((projBal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBal * 0.04 / 12) / grossMonthly >= 1 ? '#34d399' : '#f59e0b') : '#3a5a7a' },
                   ].map((s, i) => (
                     <div key={i} style={{ paddingRight: 10, marginRight: 10, borderRight: !isMobile && i === 2 ? '1px solid var(--color-border)' : 'none' }}>
-                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-1" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                       <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>
                   ))}
@@ -346,8 +346,8 @@ export default function OverviewTab() {
                     { label: 'Monthly today', value: fmt(projBalReal * 0.04 / 12), color: 'var(--color-text-dim)' },
                     { label: 'Income today', value: grossMonthly > 0 ? `${Math.round((projBalReal * 0.04 / 12) / grossMonthly * 100)}%` : '—', color: grossMonthly > 0 ? ((projBalReal * 0.04 / 12) / grossMonthly >= 1 ? 'var(--color-text-dim)' : '#c07a30') : '#3a5a7a' },
                   ].map((s, i) => (
-                    <div key={i} style={{ paddingLeft: i === 0 ? 10 : 0 }}>
-                      <div className="text-[9px] uppercase tracking-[0.08em] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
+                    <div key={i} style={{ paddingLeft: !isMobile && i === 0 ? 10 : 0 }}>
+                      <div className="text-[9px] uppercase tracking-[0.08em] mb-1" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
                       <div className="font-mono text-[14px] font-bold" style={{ color: s.color }}>{s.value}</div>
                     </div>
                   ))}
@@ -402,6 +402,7 @@ export default function OverviewTab() {
                 <MilestoneBadges
                   earnedDollar={earnedDollar}
                   fidelityOnTrack={fidelityOnTrack}
+                  compact
                 />
               </div>
             )}

@@ -200,84 +200,69 @@ export default function SankeyChart({ input, data, mobile = false }: SankeyChart
 
     return (
       <div>
-        {/* ── Deduction summary card ── */}
-        {showDeductionCard && (
-          <div style={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 5,
-            padding: '12px 14px',
-            marginBottom: 14,
-          }}>
-            {/* Gross Income row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                Gross Income
-              </span>
-              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
-                {fmt(input.grossMonthly)}
-              </span>
-            </div>
-            <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: 10 }} />
-
-            {/* Taxes row */}
-            {taxes > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.taxes, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Taxes</span>
-                </div>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
-                  − {fmt(taxes)}
-                </span>
-              </div>
-            )}
-
-            {/* 401(k) & HSA row */}
-            {retHsa > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.retHsa, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>401(k) & HSA</span>
-                </div>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
-                  − {fmt(retHsa)}
-                </span>
-              </div>
-            )}
-
-            <div style={{ borderTop: '1px solid var(--color-border)', marginBottom: 10 }} />
-
-            {/* Take-Home total row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: CATEGORY_COLORS.takehome, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: CATEGORY_COLORS.takehome, fontWeight: 600 }}>Take-Home</span>
-              </div>
-              <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
-                {fmt(input.netMonthly)}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* ── Take-Home breakdown table ── */}
+        {/* ── Combined budget flow card ── */}
         <div style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
           borderRadius: 5,
           overflow: 'hidden',
         }}>
-          {/* Table header */}
+          {/* Gross Income + deductions — shown when detailed income is entered */}
+          {showDeductionCard && (
+            <>
+              {/* Gross Income */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '10px 14px', borderBottom: '1px solid var(--color-border)' }}>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                  Gross Income
+                </span>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
+                  {fmt(input.grossMonthly)}
+                </span>
+              </div>
+
+              {/* Taxes */}
+              {taxes > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: '1px solid var(--color-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: CATEGORY_COLORS.taxes, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Taxes</span>
+                  </div>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
+                    − {fmt(taxes)}
+                  </span>
+                </div>
+              )}
+
+              {/* 401(k) & HSA */}
+              {retHsa > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: '1px solid var(--color-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: CATEGORY_COLORS.retHsa, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>401(k) & HSA</span>
+                  </div>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text-dim)' }}>
+                    − {fmt(retHsa)}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Take-Home section header — acts as waterfall total above and category parent below */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-            padding: '10px 14px 8px',
+            padding: '10px 14px',
             borderBottom: '1px solid var(--color-border)',
           }}>
-            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-              Take-Home
-            </span>
-            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--color-text)', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: showDeductionCard ? 7 : 0 }}>
+              {showDeductionCard && (
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: CATEGORY_COLORS.takehome, flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: 11, color: showDeductionCard ? CATEGORY_COLORS.takehome : 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                Take-Home
+              </span>
+            </div>
+            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, color: 'var(--color-text)', fontWeight: 600 }}>
               {fmt(input.netMonthly)}
             </span>
           </div>

@@ -304,34 +304,34 @@ export default function DebtTimeline({ data, liquidSavingsBalance, retirementBal
           {activeMaxMonths > 0 && (
             <>
               {/* Row 2: Debt-Free · Interest Paid · Freed/Mo */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: (showVsMin || showInterestSaved) ? 6 : 0 }}>
-                <div>
-                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Debt-free</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: (showVsMin || showInterestSaved) ? '1px solid var(--color-border)' : undefined }}>
+                <div style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid var(--color-border)' }}>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, color: 'var(--color-text-dim)' }}>Debt-free</div>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#10b981' }}>{monthLabel(activeMaxMonths)}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Interest paid</div>
+                <div style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid var(--color-border)' }}>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, color: 'var(--color-text-dim)' }}>Interest paid</div>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#f87171' }}>{fmtShort(Math.round(activeTotalInterest))}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Freed/mo</div>
+                <div style={{ textAlign: 'center', padding: '6px 4px' }}>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, color: 'var(--color-text-dim)' }}>Freed/mo</div>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: '#34d399' }}>+{fmt(Math.round(freedMonthly))}</div>
                 </div>
               </div>
               {/* Row 3: VS Min · Interest Saved (conditional) */}
               {(showVsMin || showInterestSaved) && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 6 }}>
                   {showVsMin && (
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>vs Min</div>
+                    <div style={{ textAlign: 'center', padding: '6px 4px', borderRight: showInterestSaved ? '1px solid var(--color-border)' : undefined }}>
+                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, color: 'var(--color-text-dim)' }}>vs Min</div>
                       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: minMonthsDiff >= 0 ? '#34d399' : '#f87171' }}>
                         {minMonthsDiff >= 0 ? '-' : '+'}{fmtMonthDiff(Math.abs(minMonthsDiff))}
                       </div>
                     </div>
                   )}
                   {showInterestSaved && (
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2, color: 'var(--color-text-dim)' }}>Interest saved</div>
+                    <div style={{ textAlign: 'center', padding: '6px 4px' }}>
+                      <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4, color: 'var(--color-text-dim)' }}>Interest saved</div>
                       <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 700, color: minInterestDiff >= 0 ? '#34d399' : '#f87171' }}>
                         {minInterestDiff >= 0 ? '' : '+'}{fmtShort(Math.round(Math.abs(minInterestDiff)))}
                       </div>

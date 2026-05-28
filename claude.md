@@ -142,6 +142,8 @@ The app is a single-page tabbed layout. Tabs:
 ### `SankeyChart.tsx`
 Monthly budget flow visualization. Shows gross income flowing through taxes → 401k/HSA → take-home → essentials/discretionary/debt/savings. Health-coded node colors (orange when housing >28%, red when DTI ≥36%).
 
+On **mobile** (`mobile` prop), renders as a single combined table card instead of the SVG diagram: Gross Income header → deduction rows (Taxes, 401k/HSA) → Take-Home section row → expandable category breakdown rows. The deduction section is only shown when the user has detailed income data (taxes or pre-tax deductions). Desktop shows the full SVG Sankey with a collapsible drill-down panel.
+
 ### `DebtTimeline.tsx`
 Stacked area chart showing debt payoff over time. Supports four modes:
 - **Min** — minimum payments only
@@ -151,11 +153,13 @@ Stacked area chart showing debt payoff over time. Supports four modes:
 
 Plan/Snowball/Avalanche show a "vs Min" diff in the KPI bar (how much sooner and cheaper vs. minimum payments). Min mode shows no diff. Promo APR debts use two-phase interest calculation: 0% during promo period, then post-promo rate. Min simulation uses a dynamic minimum (`max(staticMin, 1% × balance + monthly interest)`) so the balance always declines — matching real credit card behavior. If plan payment can't cover post-promo interest in a static payment scenario, simulates 120 months and shows "↑ growing" in legend.
 
+On **mobile** (`isMobile` prop), the KPI stats (Debt-Free, Interest Paid, Freed/Mo, VS Min, Interest Saved) render centered within each cell with vertical separators between columns, matching the KPI strip style. The chart uses smart tick spacing (at most 4 ticks regardless of payoff horizon) and larger axis labels (fontSize 13 SVG units). The payoff legend renders as an HTML table below the chart rather than SVG text inside it.
+
 ### `LineChart.tsx`
-Retirement projection curve. Renders SVG with crosshair tooltip, Fidelity benchmark lines, and a `badgeOverlay?: ReactNode` prop for milestone badges. The overlay scales responsively via `ResizeObserver` — captures the initial render width as the scale reference (so `scale = 1` at page-load size) and adjusts proportionally on resize.
+Retirement projection curve. Renders SVG with crosshair tooltip, Fidelity benchmark lines, and a `badgeOverlay?: ReactNode` prop for milestone badges. The overlay scales responsively via `ResizeObserver` — captures the initial render width as the scale reference (so `scale = 1` at page-load size) and adjusts proportionally on resize. Accepts `isMobile` prop — bumps axis font sizes to fontSize 13 SVG units for readability at 390px.
 
 ### `MilestoneBadges.tsx`
-Two-row pill strip overlaid on the retirement chart's top-left dead space. Pills are fixed `82×42px` with font 11px; overlay scales with chart via `transform: scale()`.
+Two-row pill strip showing retirement milestones. Default size: `82×42px`, font 11px — used as a `badgeOverlay` inside the retirement chart (desktop), scaling with the chart via `transform: scale()`. Pass `compact` for `70×32px` / font 10px — used below the chart on mobile where overlay scaling doesn't apply.
 - **Row 1:** Dollar milestones ($10K → $10M) — 4-pill rolling window (up to 2 recent earned + fill with upcoming). Visual hierarchy: dim past earned → bright latest earned → solid-outline next-up → faded upcoming.
 - **Row 2:** Fidelity benchmarks (1× by 30 → 8× by 60) — all shown as projections only (`→` dashed outline when on-track, faded when not). No `✓` ever — app is point-in-time, not a historical tracker. "1× by 30" always shown.
 
@@ -195,6 +199,9 @@ Currency/number formatting (`fmt`, `fmtShort`).
 
 ### `useMetrics.ts`
 Derives computed metrics from raw data: `grossMonthly`, `netMonthly`, `dti`, `consumerDti`, `housingPct`, `savingsRate`, `retireRate`, `sourceCalcs`, etc.
+
+### `useIsMobile.ts`
+Returns `true` when `window.innerWidth < 768`, updated on resize. Used throughout the Overview tab and chart components to switch between desktop and mobile layouts.
 
 ### `useMilestones.ts`
 Computes which retirement milestones are earned and detects new unlocks.
